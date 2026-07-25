@@ -1,3 +1,4 @@
+using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Apartments;
 using EdificiosOliva.Application.Interfaces;
 using EdificiosOliva.Domain.Entities;
@@ -8,15 +9,57 @@ namespace EdificiosOliva.Infrastructure.Services;
 
 public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmentService
 {
-    public async Task<IReadOnlyList<ApartmentResponse>> GetAllAsync(
+    public async Task<PagedResult<ApartmentResponse>> GetPagedAsync(
+        ApartmentQueryParameters parameters,
         CancellationToken cancellationToken = default)
     {
-        return await dbContext.Apartments
+        var query = dbContext.Apartments
             .AsNoTracking()
-            .Where(apartment => !apartment.IsDeleted)
-            .OrderBy(apartment => apartment.Name)
+            .Where(apartment => !apartment.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(parameters.Search))
+        {
+            var search = parameters.Search.Trim();
+            query = query.Where(apartment =>
+                apartment.Name.Contains(search) ||
+                apartment.Description.Contains(search) ||
+                apartment.Location.Contains(search));
+        }
+
+        if (parameters.Status.HasValue)
+        {
+            query = query.Where(apartment => apartment.Status == parameters.Status.Value);
+        }
+
+        if (parameters.MinimumPrice.HasValue)
+        {
+            query = query.Where(apartment => apartment.PricePerNight >= parameters.MinimumPrice.Value);
+        }
+
+        if (parameters.MaximumPrice.HasValue)
+        {
+            query = query.Where(apartment => apartment.PricePerNight <= parameters.MaximumPrice.Value);
+        }
+
+        if (parameters.MinimumGuestCapacity.HasValue)
+        {
+            query = query.Where(apartment => apartment.GuestCapacity >= parameters.MinimumGuestCapacity.Value);
+        }
+
+        query = ApplyOrdering(query, parameters.SortBy, parameters.Descending);
+
+        var totalItems = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((parameters.Page - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
             .Select(apartment => Map(apartment))
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<ApartmentResponse>(
+            items,
+            parameters.Page,
+            parameters.PageSize,
+            totalItems);
     }
 
     public async Task<ApartmentResponse?> GetByIdAsync(
@@ -100,6 +143,24 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    private static IQueryable<Apartment> ApplyOrdering(
+        IQueryable<Apartment> query,
+        string sortBy,
+        bool descending)
+    {
+        return (sortBy.ToLowerInvariant(), descending) switch
+        {
+            ("price", false) => query.OrderBy(apartment => apartment.PricePerNight),
+            ("price", true) => query.OrderByDescending(apartment => apartment.PricePerNight),
+            ("capacity", false) => query.OrderBy(apartment => apartment.GuestCapacity),
+            ("capacity", true) => query.OrderByDescending(apartment => apartment.GuestCapacity),
+            ("createdat", false) => query.OrderBy(apartment => apartment.CreatedAtUtc),
+            ("createdat", true) => query.OrderByDescending(apartment => apartment.CreatedAtUtc),
+            ("name", true) => query.OrderByDescending(apartment => apartment.Name),
+            _ => query.OrderBy(apartment => apartment.Name)
+        };
     }
 
     private static ApartmentResponse Map(Apartment apartment) =>
