@@ -1,13 +1,29 @@
+using EdificiosOliva.Api.Middlewares;
 using EdificiosOliva.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+const string FrontendCorsPolicy = "Frontend";
+
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -15,7 +31,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors(FrontendCorsPolicy);
 app.UseAuthorization();
 
 app.MapControllers();
