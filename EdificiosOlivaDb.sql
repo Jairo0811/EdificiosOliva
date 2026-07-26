@@ -1,0 +1,13 @@
+USE EdificiosOlivaDb;
+GO
+
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+ORDER BY TABLE_NAME;
+
+
+SELECT *
+FROM __EFMigrationsHistory;
+
+SELECT *
+FROM Apartments;

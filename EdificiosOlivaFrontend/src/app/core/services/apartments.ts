@@ -1,113 +1,198 @@
 import { inject, Injectable } from '@angular/core';
 import {
-  CollectionReference,
-  DocumentData,
-  DocumentReference,
-  Firestore,
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  serverTimestamp,
-  updateDoc,
-} from '@angular/fire/firestore';
-import { Observable, map } from 'rxjs';
+  catchError,
+  firstValueFrom,
+  map,
+  Observable,
+  of,
+} from 'rxjs';
 
-import { Apartment } from '../models/apartment.model';
+import {
+  ApiApartment,
+  ApartmentStatus,
+} from '../models/apartment-api.model';
+import {
+  Apartment,
+  ApartmentViewStatus,
+} from '../models/apartment.model';
+import { ApartmentApiService } from './apartment-api.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Apartments {
-  private readonly firestore = inject(Firestore);
-
-  private readonly apartmentsCollection = collection(
-    this.firestore,
-    'apartments',
-  ) as CollectionReference<DocumentData>;
+  private readonly apartmentApiService =
+    inject(ApartmentApiService);
 
   getApartments(): Observable<Apartment[]> {
-    return new Observable<Apartment[]>((observer) => {
-      const unsubscribe = onSnapshot(
-        this.apartmentsCollection,
-        (snapshot) => {
-          const apartments = snapshot.docs
-            .map(
-              (document) =>
-                ({
-                  id: document.id,
-                  ...document.data(),
-                }) as Apartment,
-            )
-            .sort((a, b) => a.name.localeCompare(b.name));
-
-          observer.next(apartments);
-        },
-        (error) => observer.error(error),
+    return this.apartmentApiService
+      .getAll({
+        page: 1,
+        pageSize: 100,
+        sortBy: 'name',
+        descending: false,
+      })
+      .pipe(
+        map((result) =>
+          result.items.map((apartment) =>
+            this.toViewModel(apartment),
+          ),
+        ),
       );
-
-      return unsubscribe;
-    });
   }
 
   getAvailableApartments(): Observable<Apartment[]> {
-    return this.getApartments().pipe(
-      map((apartments) => apartments.filter((apartment) => apartment.status === 'Disponible')),
+    return this.apartmentApiService
+      .getAll({
+        page: 1,
+        pageSize: 100,
+        status: ApartmentStatus.Available,
+        sortBy: 'name',
+        descending: false,
+      })
+      .pipe(
+        map((result) =>
+          result.items.map((apartment) =>
+            this.toViewModel(apartment),
+          ),
+        ),
+      );
+  }
+
+  getApartmentById(
+    id: string,
+  ): Observable<Apartment | null> {
+    return this.apartmentApiService
+      .getById(id)
+      .pipe(
+        map((apartment) => this.toViewModel(apartment)),
+        catchError(() => of(null)),
+      );
+  }
+
+  async addApartment(
+    apartment: Apartment,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.apartmentApiService.create(
+        this.toApiRequest(apartment),
+      ),
     );
   }
 
-  getApartmentById(id: string): Observable<Apartment | null> {
-    return new Observable<Apartment | null>((observer) => {
-      const apartmentReference = doc(this.firestore, `apartments/${id}`);
-
-      const unsubscribe = onSnapshot(
-        apartmentReference,
-        (snapshot) => {
-          if (!snapshot.exists()) {
-            observer.next(null);
-            return;
-          }
-
-          observer.next({
-            id: snapshot.id,
-            ...snapshot.data(),
-          } as Apartment);
-        },
-        (error) => observer.error(error),
-      );
-
-      return unsubscribe;
-    });
+  async updateApartment(
+    id: string,
+    apartment: Apartment,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.apartmentApiService.update(
+        id,
+        this.toApiRequest(apartment),
+      ),
+    );
   }
 
-  addApartment(apartment: Apartment): Promise<DocumentReference<DocumentData>> {
-    const { id, createdAt, ...data } = apartment;
+  async updateApartmentStatus(
+    id: string,
+    status: ApartmentViewStatus,
+  ): Promise<void> {
+    const currentApartment = await firstValueFrom(
+      this.apartmentApiService.getById(id),
+    );
 
-    return addDoc(this.apartmentsCollection, {
-      ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    await firstValueFrom(
+      this.apartmentApiService.update(id, {
+        name: currentApartment.name,
+        description: currentApartment.description,
+        pricePerNight: currentApartment.pricePerNight,
+        guestCapacity: currentApartment.guestCapacity,
+        bedrooms: currentApartment.bedrooms,
+        bathrooms: currentApartment.bathrooms,
+        location: currentApartment.location,
+        status: this.toApiStatus(status),
+      }),
+    );
   }
 
-  updateApartment(id: string, apartment: Apartment): Promise<void> {
-    const { id: apartmentId, createdAt, ...data } = apartment;
-
-    return updateDoc(doc(this.firestore, `apartments/${id}`), {
-      ...data,
-      updatedAt: serverTimestamp(),
-    });
+  async deleteApartment(id: string): Promise<void> {
+    await firstValueFrom(
+      this.apartmentApiService.delete(id),
+    );
   }
 
-  updateApartmentStatus(id: string, status: Apartment['status']): Promise<void> {
-    return updateDoc(doc(this.firestore, `apartments/${id}`), {
-      status,
-      updatedAt: serverTimestamp(),
-    });
+  private toViewModel(
+    apartment: ApiApartment,
+  ): Apartment {
+    return {
+      id: apartment.id,
+      name: apartment.name,
+      description: apartment.description,
+      price: apartment.pricePerNight,
+      guests: apartment.guestCapacity,
+      bedrooms: apartment.bedrooms,
+      bathrooms: apartment.bathrooms,
+      location: apartment.location,
+      status: this.toViewStatus(apartment.status),
+
+      /*
+       * Estos campos todavía no son enviados por la API.
+       * Se conectarán cuando implementemos imágenes y amenidades.
+       */
+      amenities: [],
+      images: [],
+
+      createdAt: new Date(apartment.createdAtUtc),
+
+      updatedAt: apartment.updatedAtUtc
+        ? new Date(apartment.updatedAtUtc)
+        : null,
+    };
   }
 
-  deleteApartment(id: string): Promise<void> {
-    return deleteDoc(doc(this.firestore, `apartments/${id}`));
+  private toApiRequest(
+    apartment: Apartment,
+  ) {
+    return {
+      name: apartment.name.trim(),
+      description: apartment.description.trim(),
+      pricePerNight: apartment.price,
+      guestCapacity: apartment.guests,
+      bedrooms: apartment.bedrooms,
+      bathrooms: apartment.bathrooms,
+      location: apartment.location.trim(),
+      status: this.toApiStatus(apartment.status),
+    };
+  }
+
+  private toApiStatus(
+    status: ApartmentViewStatus,
+  ): ApartmentStatus {
+    switch (status) {
+      case 'Ocupado':
+        return ApartmentStatus.Occupied;
+
+      case 'Mantenimiento':
+        return ApartmentStatus.Maintenance;
+
+      case 'Disponible':
+      default:
+        return ApartmentStatus.Available;
+    }
+  }
+
+  private toViewStatus(
+    status: ApartmentStatus,
+  ): ApartmentViewStatus {
+    switch (status) {
+      case ApartmentStatus.Occupied:
+        return 'Ocupado';
+
+      case ApartmentStatus.Maintenance:
+        return 'Mantenimiento';
+
+      case ApartmentStatus.Available:
+      default:
+        return 'Disponible';
+    }
   }
 }
