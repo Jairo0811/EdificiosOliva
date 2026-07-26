@@ -3710,11 +3710,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Infrastructure\\EdificiosOliva.Infrastructure.csproj",
+      "projectUniqueName": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Infrastructure\\EdificiosOliva.Infrastructure.csproj",
       "projectName": "EdificiosOliva.Infrastructure",
-      "projectPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Infrastructure\\EdificiosOliva.Infrastructure.csproj",
+      "projectPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Infrastructure\\EdificiosOliva.Infrastructure.csproj",
       "packagesPath": "C:\\Users\\jairo\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Infrastructure\\obj\\",
+      "outputPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -3736,11 +3736,11 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Application\\EdificiosOliva.Application.csproj": {
-              "projectPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Application\\EdificiosOliva.Application.csproj"
+            "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Application\\EdificiosOliva.Application.csproj": {
+              "projectPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Application\\EdificiosOliva.Application.csproj"
             },
-            "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Domain\\EdificiosOliva.Domain.csproj": {
-              "projectPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Domain\\EdificiosOliva.Domain.csproj"
+            "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Domain\\EdificiosOliva.Domain.csproj": {
+              "projectPath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Domain\\EdificiosOliva.Domain.csproj"
             }
           }
         }
@@ -3799,7 +3799,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "EYJuoidu9nc=",
+  "dgSpecHash": "S3uELvrWY/c=",
   "success": true,
-  "projectFilePath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\ResidencialOliva\\EdificiosOliva\\EdificiosOliva.Api\\EdificiosOliva.Api.csproj",
+  "projectFilePath": "C:\\Users\\jairo\\OneDrive\\Escritorio\\PROYECTOS DE PROGRAMACION\\EdificiosOliva\\EdificiosOlivaBackend\\EdificiosOliva.Api\\EdificiosOliva.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\jairo\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\jairo\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
