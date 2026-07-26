@@ -5,6 +5,7 @@ import {
   map,
   Observable,
   of,
+  throwError,
 } from 'rxjs';
 
 import {
@@ -15,7 +16,12 @@ import {
   Apartment,
   ApartmentViewStatus,
 } from '../models/apartment.model';
+import { CreateApartmentRequest } from '../models/apartment-request.model';
 import { ApartmentApiService } from './apartment-api.service';
+
+interface ApiClientError extends Error {
+  status?: number;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -66,7 +72,11 @@ export class Apartments {
       .getById(id)
       .pipe(
         map((apartment) => this.toViewModel(apartment)),
-        catchError(() => of(null)),
+        catchError((error: ApiClientError) =>
+          error.status === 404
+            ? of(null)
+            : throwError(() => error),
+        ),
       );
   }
 
@@ -134,15 +144,11 @@ export class Apartments {
       location: apartment.location,
       status: this.toViewStatus(apartment.status),
 
-      /*
-       * Estos campos todavía no son enviados por la API.
-       * Se conectarán cuando implementemos imágenes y amenidades.
-       */
+      // Se conectarán cuando la API incluya imágenes y amenidades.
       amenities: [],
       images: [],
 
       createdAt: new Date(apartment.createdAtUtc),
-
       updatedAt: apartment.updatedAtUtc
         ? new Date(apartment.updatedAtUtc)
         : null,
@@ -151,7 +157,7 @@ export class Apartments {
 
   private toApiRequest(
     apartment: Apartment,
-  ) {
+  ): CreateApartmentRequest {
     return {
       name: apartment.name.trim(),
       description: apartment.description.trim(),
