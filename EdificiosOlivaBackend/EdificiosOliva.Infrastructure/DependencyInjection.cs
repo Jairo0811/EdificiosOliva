@@ -1,5 +1,7 @@
 using EdificiosOliva.Application.Interfaces;
+using EdificiosOliva.Domain.Interfaces;
 using EdificiosOliva.Infrastructure.Persistence.Context;
+using EdificiosOliva.Infrastructure.Repositories;
 using EdificiosOliva.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +23,7 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(connectionString));
 
+        services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IApartmentService, ApartmentService>();
 
         return services;
