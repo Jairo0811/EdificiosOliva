@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.edificiosoliva.com/api'
+  apiUrl: '/api'
 };
