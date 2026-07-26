@@ -16,6 +16,43 @@ public sealed record ApartmentResponse(
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc);
 
+public sealed class ApartmentQueryParameters
+{
+    private const int MaximumPageSize = 100;
+    private int _pageSize = 10;
+
+    [Range(1, int.MaxValue)]
+    public int Page { get; init; } = 1;
+
+    [Range(1, MaximumPageSize)]
+    public int PageSize
+    {
+        get => _pageSize;
+        init => _pageSize = Math.Min(value, MaximumPageSize);
+    }
+
+    [StringLength(150)]
+    public string? Search { get; init; }
+
+    public ApartmentStatus? Status { get; init; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? MinimumPrice { get; init; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? MaximumPrice { get; init; }
+
+    [Range(1, 50)]
+    public int? MinimumGuestCapacity { get; init; }
+
+    [RegularExpression(
+        "^(name|price|capacity|createdAt)$",
+        ErrorMessage = "SortBy debe ser name, price, capacity o createdAt.")]
+    public string SortBy { get; init; } = "name";
+
+    public bool Descending { get; init; }
+}
+
 public sealed class CreateApartmentRequest
 {
     [Required, StringLength(150)]

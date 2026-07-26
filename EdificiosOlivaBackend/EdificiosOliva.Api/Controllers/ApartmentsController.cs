@@ -1,3 +1,4 @@
+using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Apartments;
 using EdificiosOliva.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -9,11 +10,24 @@ namespace EdificiosOliva.Api.Controllers;
 public sealed class ApartmentsController(IApartmentService apartmentService) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType<IReadOnlyList<ApartmentResponse>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<ApartmentResponse>>> GetAll(
+    [ProducesResponseType<PagedResult<ApartmentResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<ApartmentResponse>>> GetAll(
+        [FromQuery] ApartmentQueryParameters parameters,
         CancellationToken cancellationToken)
     {
-        var apartments = await apartmentService.GetAllAsync(cancellationToken);
+        if (parameters.MinimumPrice.HasValue &&
+            parameters.MaximumPrice.HasValue &&
+            parameters.MinimumPrice > parameters.MaximumPrice)
+        {
+            ModelState.AddModelError(
+                nameof(parameters.MinimumPrice),
+                "MinimumPrice no puede ser mayor que MaximumPrice.");
+
+            return ValidationProblem(ModelState);
+        }
+
+        var apartments = await apartmentService.GetPagedAsync(parameters, cancellationToken);
         return Ok(apartments);
     }
 
