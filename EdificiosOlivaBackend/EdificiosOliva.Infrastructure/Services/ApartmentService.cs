@@ -2,24 +2,26 @@ using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Apartments;
 using EdificiosOliva.Application.Interfaces;
 using EdificiosOliva.Domain.Entities;
-using EdificiosOliva.Infrastructure.Persistence.Context;
+using EdificiosOliva.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace EdificiosOliva.Infrastructure.Services;
 
-public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmentService
+public sealed class ApartmentService(IApartmentRepository apartmentRepository)
+    : IApartmentService
 {
     public async Task<PagedResult<ApartmentResponse>> GetPagedAsync(
         ApartmentQueryParameters parameters,
         CancellationToken cancellationToken = default)
     {
-        var query = dbContext.Apartments
+        var query = apartmentRepository.Query()
             .AsNoTracking()
             .Where(apartment => !apartment.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
             var search = parameters.Search.Trim();
+
             query = query.Where(apartment =>
                 apartment.Name.Contains(search) ||
                 apartment.Description.Contains(search) ||
@@ -28,27 +30,35 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
 
         if (parameters.Status.HasValue)
         {
-            query = query.Where(apartment => apartment.Status == parameters.Status.Value);
+            query = query.Where(apartment =>
+                apartment.Status == parameters.Status.Value);
         }
 
         if (parameters.MinimumPrice.HasValue)
         {
-            query = query.Where(apartment => apartment.PricePerNight >= parameters.MinimumPrice.Value);
+            query = query.Where(apartment =>
+                apartment.PricePerNight >= parameters.MinimumPrice.Value);
         }
 
         if (parameters.MaximumPrice.HasValue)
         {
-            query = query.Where(apartment => apartment.PricePerNight <= parameters.MaximumPrice.Value);
+            query = query.Where(apartment =>
+                apartment.PricePerNight <= parameters.MaximumPrice.Value);
         }
 
         if (parameters.MinimumGuestCapacity.HasValue)
         {
-            query = query.Where(apartment => apartment.GuestCapacity >= parameters.MinimumGuestCapacity.Value);
+            query = query.Where(apartment =>
+                apartment.GuestCapacity >= parameters.MinimumGuestCapacity.Value);
         }
 
-        query = ApplyOrdering(query, parameters.SortBy, parameters.Descending);
+        query = ApplyOrdering(
+            query,
+            parameters.SortBy,
+            parameters.Descending);
 
         var totalItems = await query.CountAsync(cancellationToken);
+
         var items = await query
             .Skip((parameters.Page - 1) * parameters.PageSize)
             .Take(parameters.PageSize)
@@ -66,7 +76,7 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        return await dbContext.Apartments
+        return await apartmentRepository.Query()
             .AsNoTracking()
             .Where(apartment => apartment.Id == id && !apartment.IsDeleted)
             .Select(apartment => Map(apartment))
@@ -89,8 +99,8 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
             Status = request.Status
         };
 
-        dbContext.Apartments.Add(apartment);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await apartmentRepository.AddAsync(apartment, cancellationToken);
+        await apartmentRepository.SaveChangesAsync(cancellationToken);
 
         return Map(apartment);
     }
@@ -100,10 +110,9 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
         UpdateApartmentRequest request,
         CancellationToken cancellationToken = default)
     {
-        var apartment = await dbContext.Apartments
-            .SingleOrDefaultAsync(
-                item => item.Id == id && !item.IsDeleted,
-                cancellationToken);
+        var apartment = await apartmentRepository.GetByIdAsync(
+            id,
+            cancellationToken);
 
         if (apartment is null)
         {
@@ -120,7 +129,7 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
         apartment.Status = request.Status;
         apartment.UpdatedAtUtc = DateTime.UtcNow;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await apartmentRepository.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -128,10 +137,9 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var apartment = await dbContext.Apartments
-            .SingleOrDefaultAsync(
-                item => item.Id == id && !item.IsDeleted,
-                cancellationToken);
+        var apartment = await apartmentRepository.GetByIdAsync(
+            id,
+            cancellationToken);
 
         if (apartment is null)
         {
@@ -141,7 +149,7 @@ public sealed class ApartmentService(ApplicationDbContext dbContext) : IApartmen
         apartment.IsDeleted = true;
         apartment.UpdatedAtUtc = DateTime.UtcNow;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await apartmentRepository.SaveChangesAsync(cancellationToken);
         return true;
     }
 
