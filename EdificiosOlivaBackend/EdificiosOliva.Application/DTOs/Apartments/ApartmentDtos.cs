@@ -34,6 +34,9 @@ public sealed class ApartmentQueryParameters
     [StringLength(150)]
     public string? Search { get; init; }
 
+    [EnumDataType(
+        typeof(ApartmentStatus),
+        ErrorMessage = "El estado del apartamento no es válido.")]
     public ApartmentStatus? Status { get; init; }
 
     [Range(0, double.MaxValue)]
@@ -55,10 +58,12 @@ public sealed class ApartmentQueryParameters
 
 public sealed class CreateApartmentRequest
 {
-    [Required, StringLength(150)]
+    [Required]
+    [StringLength(150)]
     public string Name { get; init; } = string.Empty;
 
-    [Required, StringLength(2000)]
+    [Required]
+    [StringLength(2000)]
     public string Description { get; init; } = string.Empty;
 
     [Range(0.01, double.MaxValue)]
@@ -73,18 +78,25 @@ public sealed class CreateApartmentRequest
     [Range(0, 20)]
     public int Bathrooms { get; init; }
 
-    [Required, StringLength(250)]
+    [Required]
+    [StringLength(250)]
     public string Location { get; init; } = string.Empty;
 
-    public ApartmentStatus Status { get; init; } = ApartmentStatus.Available;
+    [EnumDataType(
+        typeof(ApartmentStatus),
+        ErrorMessage = "El estado del apartamento no es válido.")]
+    public ApartmentStatus Status { get; init; } =
+        ApartmentStatus.Available;
 }
 
 public sealed class UpdateApartmentRequest
 {
-    [Required, StringLength(150)]
+    [Required]
+    [StringLength(150)]
     public string Name { get; init; } = string.Empty;
 
-    [Required, StringLength(2000)]
+    [Required]
+    [StringLength(2000)]
     public string Description { get; init; } = string.Empty;
 
     [Range(0.01, double.MaxValue)]
@@ -99,8 +111,12 @@ public sealed class UpdateApartmentRequest
     [Range(0, 20)]
     public int Bathrooms { get; init; }
 
-    [Required, StringLength(250)]
+    [Required]
+    [StringLength(250)]
     public string Location { get; init; } = string.Empty;
 
+    [EnumDataType(
+        typeof(ApartmentStatus),
+        ErrorMessage = "El estado del apartamento no es válido.")]
     public ApartmentStatus Status { get; init; }
 }
