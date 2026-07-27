@@ -2,54 +2,250 @@
   <div class="page-header">
     <div>
       <h1>Galería</h1>
-
-      <p>Administra las imágenes del sitio web.</p>
+      <p>Administra las imágenes publicadas en el sitio web.</p>
     </div>
 
-    <button class="upload-btn">
-      <i class="bi bi-cloud-upload"></i>
-
-      Subir imágenes
+    <button class="upload-btn" type="button" (click)="openCreateForm()">
+      <i class="bi bi-plus-circle" aria-hidden="true"></i>
+      Registrar imagen
     </button>
   </div>
 
-  <div class="upload-zone">
-    <i class="bi bi-images"></i>
+  @if (successMessage) {
+    <div class="feedback success" role="status">{{ successMessage }}</div>
+  }
 
-    <h2>Arrastra imágenes aquí</h2>
+  @if (errorMessage && !showForm) {
+    <div class="feedback error" role="alert">{{ errorMessage }}</div>
+  }
 
-    <p>o selecciona archivos desde tu computadora.</p>
+  <section class="toolbar" aria-label="Filtros de galería">
+    <label>
+      <span>Buscar</span>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        placeholder="Título o descripción"
+        (keyup.enter)="loadImages()"
+      />
+    </label>
 
-    <button>Seleccionar archivos</button>
-  </div>
+    <button class="search-btn" type="button" (click)="loadImages()">
+      Buscar
+    </button>
+  </section>
 
-  <div class="filters">
+  <div class="filters" aria-label="Categorías">
+    <button
+      type="button"
+      [class.active]="selectedCategory === ''"
+      (click)="selectCategory('')"
+    >
+      Todas
+    </button>
+
     @for (category of categories; track category) {
-      <button>
+      <button
+        type="button"
+        [class.active]="selectedCategory === category"
+        (click)="selectCategory(category)"
+      >
         {{ category }}
       </button>
     }
   </div>
 
-  <div class="gallery-grid">
-    @for (image of images; track image.id) {
-      <article class="photo-card">
-        <img [src]="image.url" alt="Imagen" />
+  @if (loading) {
+    <p class="empty-state">Cargando imágenes...</p>
+  } @else if (images.length === 0) {
+    <p class="empty-state">No se encontraron imágenes.</p>
+  } @else {
+    <div class="gallery-grid">
+      @for (image of images; track image.id) {
+        <article class="photo-card">
+          <img [src]="image.url" [alt]="image.altText" loading="lazy" />
 
-        <div class="photo-info">
-          <span>{{ image.category }}</span>
+          <div class="photo-info">
+            <div>
+              <strong>{{ image.title }}</strong>
+              <span>{{ image.category }}</span>
+              <small>{{ image.isPublished ? 'Publicada' : 'Oculta' }}</small>
+            </div>
 
+            <div class="actions">
+              <button
+                class="view"
+                type="button"
+                (click)="openPreview(image)"
+                [attr.aria-label]="'Ver ' + image.title"
+              >
+                <i class="bi bi-eye" aria-hidden="true"></i>
+              </button>
+
+              <button
+                class="edit"
+                type="button"
+                (click)="openEditForm(image)"
+                [attr.aria-label]="'Editar ' + image.title"
+              >
+                <i class="bi bi-pencil" aria-hidden="true"></i>
+              </button>
+
+              <button
+                class="delete"
+                type="button"
+                (click)="deleteImage(image)"
+                [attr.aria-label]="'Eliminar ' + image.title"
+              >
+                <i class="bi bi-trash" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  @if (showForm) {
+    <div class="modal-backdrop">
+      <div class="gallery-modal" role="dialog" aria-modal="true" aria-labelledby="gallery-title">
+        <div class="modal-header">
           <div>
-            <button class="view">
-              <i class="bi bi-eye"></i>
+            <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>
+            <h2 id="gallery-title">
+              {{ editingId ? 'Editar imagen' : 'Registrar imagen' }}
+            </h2>
+          </div>
+
+          <button
+            class="close-btn"
+            type="button"
+            (click)="closeForm()"
+            [disabled]="saving"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+
+        @if (errorMessage) {
+          <div class="feedback error" role="alert">{{ errorMessage }}</div>
+        }
+
+        <form class="gallery-form" (ngSubmit)="saveImage()">
+          <div class="form-grid">
+            <label>
+              <span>Título</span>
+              <input
+                type="text"
+                name="title"
+                [(ngModel)]="imageForm.title"
+                required
+                [disabled]="saving"
+              />
+            </label>
+
+            <label>
+              <span>Categoría</span>
+              <select
+                name="category"
+                [(ngModel)]="imageForm.category"
+                required
+                [disabled]="saving"
+              >
+                @for (category of categories; track category) {
+                  <option [value]="category">{{ category }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="full-width">
+              <span>URL de la imagen</span>
+              <input
+                type="url"
+                name="url"
+                [(ngModel)]="imageForm.url"
+                required
+                [disabled]="saving"
+              />
+            </label>
+
+            <label>
+              <span>Public ID</span>
+              <input
+                type="text"
+                name="publicId"
+                [(ngModel)]="imageForm.publicId"
+                [disabled]="saving"
+              />
+            </label>
+
+            <label>
+              <span>Orden</span>
+              <input
+                type="number"
+                name="sortOrder"
+                [(ngModel)]="imageForm.sortOrder"
+                min="0"
+                [disabled]="saving"
+              />
+            </label>
+
+            <label class="full-width">
+              <span>Texto alternativo</span>
+              <input
+                type="text"
+                name="altText"
+                [(ngModel)]="imageForm.altText"
+                required
+                [disabled]="saving"
+              />
+            </label>
+
+            <label class="checkbox-label full-width">
+              <input
+                type="checkbox"
+                name="isPublished"
+                [(ngModel)]="imageForm.isPublished"
+                [disabled]="saving"
+              />
+              <span>Publicar en la galería pública</span>
+            </label>
+          </div>
+
+          @if (imageForm.url) {
+            <div class="form-preview">
+              <img [src]="imageForm.url" [alt]="imageForm.altText || 'Vista previa'" />
+            </div>
+          }
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeForm()"
+              [disabled]="saving"
+            >
+              Cancelar
             </button>
 
-            <button class="delete">
-              <i class="bi bi-trash"></i>
+            <button type="submit" class="primary-btn" [disabled]="saving">
+              {{ saving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Registrar imagen' }}
             </button>
           </div>
-        </div>
-      </article>
-    }
-  </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (previewImage) {
+    <div class="modal-backdrop" (click)="closePreview()">
+      <div class="image-preview" (click)="$event.stopPropagation()">
+        <button class="preview-close" type="button" (click)="closePreview()" aria-label="Cerrar">×</button>
+        <img [src]="previewImage.url" [alt]="previewImage.altText" />
+        <h2>{{ previewImage.title }}</h2>
+        <p>{{ previewImage.category }}</p>
+      </div>
+    </div>
+  }
 </div>
