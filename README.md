@@ -101,31 +101,83 @@ El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación prof
 
 ---
 
-# 🛠️ Tecnologías
+# 🛠️ Stack tecnológico
 
-| Tecnología | Uso |
-|---|---|
-| Angular 21 | Frontend SPA |
-| TypeScript 5.9 | Lógica del cliente |
-| HTML5 | Estructura semántica |
-| CSS3 | Diseño y responsive |
-| Bootstrap 5 | Componentes e interfaz |
-| Angular Material / CDK | Componentes y utilidades UI |
-| AOS | Animaciones al desplazarse |
-| Swiper | Carruseles y galerías |
-| Leaflet | Mapas |
-| Firebase Authentication | Autenticación e inicio con Google |
-| ASP.NET Core Web API | Backend REST |
-| ASP.NET Core Static Files | Publicación de imágenes |
-| Multipart/Form-Data | Carga de archivos |
-| .NET 10 | Plataforma del backend |
-| C# | Lógica del servidor |
-| Entity Framework Core 10 | ORM y migraciones |
-| SQL Server | Persistencia principal |
-| OpenAPI | Documentación de la API |
-| npm | Gestión de dependencias frontend |
-| Git y GitHub | Control de versiones y repositorio |
-| GitHub Actions | Integración continua |
+## 🎨 Frontend y diseño de interfaces
+
+<p>
+  <img src="https://skillicons.dev/icons?i=angular,ts,html,css,bootstrap" alt="Angular, TypeScript, HTML, CSS y Bootstrap" />
+</p>
+
+- **Angular 21:** framework principal de la aplicación SPA.
+- **TypeScript 5.9:** lógica del cliente y tipado estático.
+- **HTML5:** estructura semántica de las vistas.
+- **CSS3:** estilos personalizados y diseño responsive.
+- **Bootstrap 5:** componentes y utilidades de interfaz.
+- **Angular Material y CDK:** componentes, overlays y utilidades de experiencia de usuario.
+- **AOS:** animaciones al desplazarse.
+- **Swiper:** carruseles y galerías.
+- **Leaflet:** mapas y visualización geográfica.
+
+## ⚙️ Backend, frameworks y APIs
+
+<p>
+  <img src="https://skillicons.dev/icons?i=dotnet,cs" alt=".NET y C#" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/ASP.NET%20Core%20Web%20API-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="ASP.NET Core Web API" />
+  <img src="https://img.shields.io/badge/Entity%20Framework%20Core%2010-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="Entity Framework Core 10" />
+  <img src="https://img.shields.io/badge/OpenAPI-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white" alt="OpenAPI" />
+</p>
+
+- **.NET 10:** plataforma de ejecución del backend.
+- **C#:** lenguaje principal del servidor.
+- **ASP.NET Core Web API:** construcción de endpoints REST.
+- **Entity Framework Core 10:** ORM, configuraciones y migraciones.
+- **ASP.NET Core Static Files:** publicación de imágenes almacenadas localmente.
+- **Multipart/Form-Data:** carga de archivos desde el frontend.
+- **OpenAPI:** especificación y documentación de la API.
+- **Clean Architecture:** separación en capas `Api`, `Application`, `Domain` e `Infrastructure`.
+
+## 🔐 Autenticación y seguridad
+
+<p>
+  <img src="https://skillicons.dev/icons?i=firebase" alt="Firebase" />
+</p>
+
+- **Firebase Authentication:** autenticación mediante correo y contraseña.
+- **Google Sign-In:** acceso mediante cuentas de Google.
+- **Angular Guards:** protección de rutas del panel administrativo.
+- **Roles administrativos:** control de acceso en la aplicación cliente.
+- **Validación de tokens en la API:** integración planificada para completar la autorización del backend.
+
+## 🗄️ Base de datos y almacenamiento
+
+<p>
+  <img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white" alt="SQL Server" />
+</p>
+
+- **Microsoft SQL Server:** persistencia principal de la información del negocio.
+- **Entity Framework Core Migrations:** control de evolución del esquema.
+- **Fluent API:** configuración de entidades, relaciones e índices.
+- **`wwwroot/uploads`:** almacenamiento local y publicación de imágenes.
+
+## 🧰 Herramientas e infraestructura
+
+<p>
+  <img src="https://skillicons.dev/icons?i=npm,visualstudio,vscode,git,github" alt="npm, Visual Studio, Visual Studio Code, Git y GitHub" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Actions" />
+</p>
+
+- **npm:** gestión de dependencias del frontend.
+- **Visual Studio:** desarrollo y depuración del backend.
+- **Visual Studio Code:** desarrollo del frontend y edición general.
+- **Git y GitHub:** control de versiones y alojamiento del repositorio.
+- **GitHub Actions:** integración continua.
 
 ---
 
@@ -373,8 +425,6 @@ Las imágenes ya no dependen de Firebase Storage. La base de datos almacena la i
 | 🧯 Manejo global de errores | 🚧 |
 | 📈 Reportes y estadísticas | ⏳ |
 | 🔔 Notificaciones | ⏳ |
-| 🧪 Testing automatizado | ⏳ |
-| 🚀 Despliegue en producción | ⏳ |
 
 Leyenda:
 
