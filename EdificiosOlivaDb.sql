@@ -1,13 +1,14 @@
 USE EdificiosOlivaDb;
 GO
 
-SELECT
-    Id,
-    Name,
-    PricePerNight,
-    Status,
-    CreatedAtUtc,
-    UpdatedAtUtc,
-    IsDeleted
-FROM Apartments
-ORDER BY CreatedAtUtc DESC;
+SELECT MigrationId, ProductVersion
+FROM __EFMigrationsHistory
+ORDER BY MigrationId;
+
+SELECT *
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_NAME = 'Customers';
+
+
+SELECT *
+FROM ApartmentImages;
