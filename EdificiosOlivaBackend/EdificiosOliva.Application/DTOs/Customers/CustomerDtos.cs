@@ -27,17 +27,26 @@ public sealed class CustomerQueryParameters
 
 public class CustomerRequest
 {
-    [Required, StringLength(150)]
+    [Required]
+    [StringLength(150)]
     public string Name { get; init; } = string.Empty;
 
-    [Required, EmailAddress, StringLength(200)]
+    [Required]
+    [EmailAddress]
+    [StringLength(200)]
     public string Email { get; init; } = string.Empty;
 
-    [Required, StringLength(30)]
+    [Required]
+    [StringLength(30)]
     public string Phone { get; init; } = string.Empty;
 
     public bool IsActive { get; init; } = true;
 }
 
-public sealed class CreateCustomerRequest : CustomerRequest;
-public sealed class UpdateCustomerRequest : CustomerRequest;
+public sealed class CreateCustomerRequest : CustomerRequest
+{
+}
+
+public sealed class UpdateCustomerRequest : CustomerRequest
+{
+}
