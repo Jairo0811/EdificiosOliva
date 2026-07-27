@@ -25,24 +25,28 @@
       <input
         type="search"
         [(ngModel)]="search"
+        (keyup.enter)="applyFilters()"
         placeholder="Nombre, correo o teléfono"
       />
     </label>
 
     <label>
       <span>Estado</span>
-      <select [(ngModel)]="statusFilter">
+      <select [(ngModel)]="statusFilter" (change)="applyFilters()">
         <option value="Todos">Todos</option>
         <option value="Activo">Activo</option>
         <option value="Inactivo">Inactivo</option>
       </select>
     </label>
 
+    <button class="new-btn" type="button" (click)="applyFilters()">Buscar</button>
     <p class="results-count">{{ filteredCustomers.length }} cliente(s)</p>
   </section>
 
   <div class="table-card" role="region" aria-label="Tabla de clientes" tabindex="0">
-    @if (filteredCustomers.length === 0) {
+    @if (loading) {
+      <p class="empty-state" role="status">Cargando clientes...</p>
+    } @else if (filteredCustomers.length === 0) {
       <p class="empty-state">No se encontraron clientes.</p>
     } @else {
       <table>
@@ -57,11 +61,10 @@
             <th scope="col">Acciones</th>
           </tr>
         </thead>
-
         <tbody>
           @for (customer of filteredCustomers; track customer.id) {
             <tr>
-              <td title="{{ customer.id }}">#{{ shortId(customer.id) }}</td>
+              <td [title]="customer.id">#{{ shortId(customer.id) }}</td>
               <td>{{ customer.name }}</td>
               <td>{{ customer.email }}</td>
               <td>{{ customer.phone }}</td>
@@ -94,7 +97,7 @@
             <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>
             <h2 id="customer-title">{{ editingId ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
           </div>
-          <button class="close-btn" type="button" (click)="closeForm()" aria-label="Cerrar">×</button>
+          <button class="close-btn" type="button" (click)="closeForm()" [disabled]="saving" aria-label="Cerrar">×</button>
         </div>
 
         @if (errorMessage) {
@@ -102,33 +105,22 @@
         }
 
         <form (ngSubmit)="saveCustomer()" class="customer-form">
-          <label>
-            <span>Nombre completo</span>
-            <input type="text" name="name" [(ngModel)]="customerForm.name" required />
-          </label>
-          <label>
-            <span>Correo electrónico</span>
-            <input type="email" name="email" [(ngModel)]="customerForm.email" required />
-          </label>
-          <label>
-            <span>Teléfono</span>
-            <input type="tel" name="phone" [(ngModel)]="customerForm.phone" required />
-          </label>
-          <label>
-            <span>Cantidad de reservas</span>
-            <input type="number" name="bookings" [(ngModel)]="customerForm.bookings" min="0" />
-          </label>
+          <label><span>Nombre completo</span><input type="text" name="name" [(ngModel)]="customerForm.name" required [disabled]="saving" /></label>
+          <label><span>Correo electrónico</span><input type="email" name="email" [(ngModel)]="customerForm.email" required [disabled]="saving" /></label>
+          <label><span>Teléfono</span><input type="tel" name="phone" [(ngModel)]="customerForm.phone" required [disabled]="saving" /></label>
           <label>
             <span>Estado</span>
-            <select name="status" [(ngModel)]="customerForm.status">
+            <select name="status" [(ngModel)]="customerForm.status" [disabled]="saving">
               <option value="Activo">Activo</option>
               <option value="Inactivo">Inactivo</option>
             </select>
           </label>
 
           <div class="modal-actions">
-            <button type="button" class="secondary-btn" (click)="closeForm()">Cancelar</button>
-            <button type="submit" class="primary-btn">{{ editingId ? 'Guardar cambios' : 'Crear cliente' }}</button>
+            <button type="button" class="secondary-btn" (click)="closeForm()" [disabled]="saving">Cancelar</button>
+            <button type="submit" class="primary-btn" [disabled]="saving">
+              {{ saving ? 'Guardando...' : (editingId ? 'Guardar cambios' : 'Crear cliente') }}
+            </button>
           </div>
         </form>
       </div>

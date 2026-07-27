@@ -1,5 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+
 import { Customer } from '../../../core/models/customer.model';
 import { Customers as CustomersService } from '../../../core/services/customers';
 
@@ -11,36 +13,30 @@ import { Customers as CustomersService } from '../../../core/services/customers'
 })
 export class Customers implements OnInit {
   private readonly customersService = inject(CustomersService);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
   customers: Customer[] = [];
   search = '';
   statusFilter: 'Todos' | 'Activo' | 'Inactivo' = 'Todos';
   showForm = false;
   editingId: string | null = null;
+  loading = false;
+  saving = false;
   successMessage = '';
   errorMessage = '';
 
   customerForm: Omit<Customer, 'id' | 'createdAt'> = this.getEmptyForm();
 
   ngOnInit(): void {
-    this.loadCustomers();
+    void this.loadCustomers();
   }
 
   get filteredCustomers(): Customer[] {
-    const term = this.search.trim().toLowerCase();
+    return this.customers;
+  }
 
-    return this.customers.filter((customer) => {
-      const matchesSearch =
-        !term ||
-        customer.name.toLowerCase().includes(term) ||
-        customer.email.toLowerCase().includes(term) ||
-        customer.phone.toLowerCase().includes(term);
-
-      const matchesStatus =
-        this.statusFilter === 'Todos' || customer.status === this.statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
+  async applyFilters(): Promise<void> {
+    await this.loadCustomers();
   }
 
   openCreateForm(): void {
@@ -64,12 +60,13 @@ export class Customers implements OnInit {
   }
 
   closeForm(): void {
+    if (this.saving) return;
     this.showForm = false;
     this.editingId = null;
     this.customerForm = this.getEmptyForm();
   }
 
-  saveCustomer(): void {
+  async saveCustomer(): Promise<void> {
     this.clearMessages();
 
     const name = this.customerForm.name.trim();
@@ -81,57 +78,70 @@ export class Customers implements OnInit {
       return;
     }
 
-    const duplicatedEmail = this.customers.some(
-      (customer) =>
-        customer.email.toLowerCase() === email && customer.id !== this.editingId,
-    );
-
-    if (duplicatedEmail) {
-      this.errorMessage = 'Ya existe un cliente registrado con ese correo.';
-      return;
-    }
-
     const payload = {
-      ...this.customerForm,
       name,
       email,
       phone,
-      bookings: Math.max(0, Number(this.customerForm.bookings) || 0),
+      status: this.customerForm.status,
     };
+
+    this.saving = true;
+    this.changeDetectorRef.markForCheck();
 
     try {
       if (this.editingId) {
-        this.customersService.update(this.editingId, payload);
+        await firstValueFrom(this.customersService.update(this.editingId, payload));
         this.successMessage = 'Cliente actualizado correctamente.';
       } else {
-        this.customersService.create(payload);
+        await firstValueFrom(this.customersService.create(payload));
         this.successMessage = 'Cliente creado correctamente.';
       }
 
-      this.loadCustomers();
-      this.closeForm();
+      this.showForm = false;
+      this.editingId = null;
+      this.customerForm = this.getEmptyForm();
+      await this.loadCustomers(false);
     } catch (error: unknown) {
-      this.errorMessage =
-        error instanceof Error ? error.message : 'No fue posible guardar el cliente.';
+      this.errorMessage = error instanceof Error ? error.message : 'No fue posible guardar el cliente.';
+    } finally {
+      this.saving = false;
+      this.changeDetectorRef.markForCheck();
     }
   }
 
-  deleteCustomer(customer: Customer): void {
-    if (!customer.id || !confirm(`¿Deseas eliminar a "${customer.name}"?`)) {
-      return;
-    }
+  async deleteCustomer(customer: Customer): Promise<void> {
+    if (!customer.id || !confirm(`¿Deseas eliminar a "${customer.name}"?`)) return;
 
-    this.customersService.delete(customer.id);
-    this.loadCustomers();
-    this.successMessage = 'Cliente eliminado correctamente.';
+    this.clearMessages();
+    try {
+      await firstValueFrom(this.customersService.delete(customer.id));
+      this.successMessage = 'Cliente eliminado correctamente.';
+      await this.loadCustomers(false);
+    } catch (error: unknown) {
+      this.errorMessage = error instanceof Error ? error.message : 'No fue posible eliminar el cliente.';
+    }
   }
 
   shortId(id?: string): string {
     return id ? id.slice(0, 8) : '—';
   }
 
-  private loadCustomers(): void {
-    this.customers = this.customersService.getAll();
+  private async loadCustomers(clearMessages = true): Promise<void> {
+    this.loading = true;
+    if (clearMessages) this.clearMessages();
+    this.changeDetectorRef.markForCheck();
+
+    try {
+      this.customers = await firstValueFrom(
+        this.customersService.getAll(this.search, this.statusFilter),
+      );
+    } catch (error: unknown) {
+      this.customers = [];
+      this.errorMessage = error instanceof Error ? error.message : 'No fue posible cargar los clientes.';
+    } finally {
+      this.loading = false;
+      this.changeDetectorRef.markForCheck();
+    }
   }
 
   private getEmptyForm(): Omit<Customer, 'id' | 'createdAt'> {

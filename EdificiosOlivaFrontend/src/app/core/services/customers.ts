@@ -1,88 +1,81 @@
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { map, Observable } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+import { PagedResult } from '../interfaces/paged-result.interface';
 import { Customer } from '../models/customer.model';
+
+interface ApiCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  isActive: boolean;
+  createdAtUtc: string;
+  updatedAtUtc?: string | null;
+}
+
+interface CustomerRequest {
+  name: string;
+  email: string;
+  phone: string;
+  isActive: boolean;
+}
 
 @Injectable({ providedIn: 'root' })
 export class Customers {
-  private readonly storageKey = 'edificios-oliva-customers';
+  private readonly http = inject(HttpClient);
+  private readonly endpoint = `${environment.apiUrl}/customers`;
 
-  getAll(): Customer[] {
-    const stored = localStorage.getItem(this.storageKey);
-    if (!stored) {
-      const seed = this.getSeedData();
-      this.save(seed);
-      return seed;
+  getAll(search = '', status: 'Todos' | 'Activo' | 'Inactivo' = 'Todos'): Observable<Customer[]> {
+    let params = new HttpParams().set('page', '1').set('pageSize', '100');
+
+    if (search.trim()) {
+      params = params.set('search', search.trim());
     }
 
-    try {
-      return (JSON.parse(stored) as Customer[]).map((customer) => ({
-        ...customer,
-        createdAt: customer.createdAt ? new Date(customer.createdAt) : undefined,
-      }));
-    } catch {
-      const seed = this.getSeedData();
-      this.save(seed);
-      return seed;
+    if (status !== 'Todos') {
+      params = params.set('isActive', String(status === 'Activo'));
     }
+
+    return this.http
+      .get<PagedResult<ApiCustomer>>(this.endpoint, { params })
+      .pipe(map((result) => result.items.map((customer) => this.toViewModel(customer))));
   }
 
-  create(customer: Omit<Customer, 'id' | 'createdAt'>): Customer {
-    const customers = this.getAll();
-    const created: Customer = {
-      ...customer,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
+  create(customer: Omit<Customer, 'id' | 'createdAt' | 'bookings'>): Observable<Customer> {
+    return this.http
+      .post<ApiCustomer>(this.endpoint, this.toRequest(customer))
+      .pipe(map((created) => this.toViewModel(created)));
+  }
+
+  update(id: string, customer: Omit<Customer, 'id' | 'createdAt' | 'bookings'>): Observable<void> {
+    return this.http.put<void>(`${this.endpoint}/${id}`, this.toRequest(customer));
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.endpoint}/${id}`);
+  }
+
+  private toRequest(customer: Omit<Customer, 'id' | 'createdAt' | 'bookings'>): CustomerRequest {
+    return {
+      name: customer.name.trim(),
+      email: customer.email.trim().toLowerCase(),
+      phone: customer.phone.trim(),
+      isActive: customer.status === 'Activo',
     };
-
-    this.save([...customers, created]);
-    return created;
   }
 
-  update(id: string, customer: Omit<Customer, 'id' | 'createdAt'>): Customer {
-    const customers = this.getAll();
-    const current = customers.find((item) => item.id === id);
-
-    if (!current) {
-      throw new Error('El cliente solicitado no existe.');
-    }
-
-    const updated: Customer = {
-      ...current,
-      ...customer,
-      id,
+  private toViewModel(customer: ApiCustomer): Customer {
+    return {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      bookings: 0,
+      status: customer.isActive ? 'Activo' : 'Inactivo',
+      createdAt: new Date(customer.createdAtUtc),
     };
-
-    this.save(customers.map((item) => (item.id === id ? updated : item)));
-    return updated;
-  }
-
-  delete(id: string): void {
-    this.save(this.getAll().filter((customer) => customer.id !== id));
-  }
-
-  private save(customers: Customer[]): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(customers));
-  }
-
-  private getSeedData(): Customer[] {
-    return [
-      {
-        id: crypto.randomUUID(),
-        name: 'Juan Pérez',
-        email: 'juan@email.com',
-        phone: '+1 829-555-1001',
-        bookings: 4,
-        status: 'Activo',
-        createdAt: new Date(),
-      },
-      {
-        id: crypto.randomUUID(),
-        name: 'María López',
-        email: 'maria@email.com',
-        phone: '+1 829-555-1002',
-        bookings: 2,
-        status: 'Activo',
-        createdAt: new Date(),
-      },
-    ];
   }
 }

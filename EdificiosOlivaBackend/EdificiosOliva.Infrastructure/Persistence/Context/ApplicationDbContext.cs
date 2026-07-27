@@ -1,4 +1,4 @@
-﻿using EdificiosOliva.Domain.Entities;
+using EdificiosOliva.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EdificiosOliva.Infrastructure.Persistence.Context;
@@ -8,19 +8,14 @@ public sealed class ApplicationDbContext(
     : DbContext(options)
 {
     public DbSet<Apartment> Apartments => Set<Apartment>();
-
     public DbSet<ApartmentImage> ApartmentImages => Set<ApartmentImage>();
-
     public DbSet<Amenity> Amenities => Set<Amenity>();
-
-    public DbSet<ApartmentAmenity> ApartmentAmenities =>
-        Set<ApartmentAmenity>();
+    public DbSet<ApartmentAmenity> ApartmentAmenities => Set<ApartmentAmenity>();
+    public DbSet<Customer> Customers => Set<Customer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        modelBuilder.ApplyConfigurationsFromAssembly(
-            typeof(ApplicationDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }
