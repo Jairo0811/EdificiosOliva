@@ -325,7 +325,6 @@ C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\Edif
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\swae.build.ex.cache
-C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\Edificio.6A5F94A7.Up2Date
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\EdificiosOliva.Api.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\refint\EdificiosOliva.Api.dll

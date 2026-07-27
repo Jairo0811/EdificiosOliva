@@ -1,16 +1,14 @@
-using System;
-using EdificiosOliva.Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace EdificiosOliva.Infrastructure.Persistence.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260727022000_AddCustomers")]
+    /// <inheritdoc />
     public partial class AddCustomers : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -38,9 +36,11 @@ namespace EdificiosOliva.Infrastructure.Persistence.Migrations
                 unique: true);
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "Customers");
+            migrationBuilder.DropTable(
+                name: "Customers");
         }
     }
 }
