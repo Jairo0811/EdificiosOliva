@@ -19,6 +19,8 @@
       @for (category of categories; track category) {
         <button
           type="button"
+          [class.active]="selectedCategory === category"
+          (click)="selectCategory(category)"
           [attr.aria-label]="'Filtrar galería por ' + category"
         >
           {{ category }}
@@ -26,21 +28,30 @@
       }
     </div>
 
-    <div class="gallery-grid">
-      @for (image of images; track image; let i = $index) {
-        <button
-          class="photo"
-          type="button"
-          (click)="openLightbox(i)"
-          [attr.aria-label]="'Abrir imagen ' + (i + 1) + ' de la galería'"
-        >
-          <img
-            [src]="image"
-            [alt]="'Imagen ' + (i + 1) + ' de la galería de Edificios Oliva'"
-          />
-        </button>
-      }
-    </div>
+    @if (loading) {
+      <p class="gallery-state">Cargando galería...</p>
+    } @else if (errorMessage) {
+      <p class="gallery-state error" role="alert">{{ errorMessage }}</p>
+    } @else if (images.length === 0) {
+      <p class="gallery-state">No hay imágenes publicadas en esta categoría.</p>
+    } @else {
+      <div class="gallery-grid">
+        @for (image of images; track image.id; let i = $index) {
+          <button
+            class="photo"
+            type="button"
+            (click)="openLightbox(i)"
+            [attr.aria-label]="'Abrir ' + image.title"
+          >
+            <img
+              [src]="image.url"
+              [alt]="image.altText"
+              loading="lazy"
+            />
+          </button>
+        }
+      </div>
+    }
   </div>
 </section>
 
@@ -70,9 +81,14 @@
     </button>
 
     <img
-      [src]="selectedImage"
-      alt="Imagen ampliada de la galería de Edificios Oliva"
+      [src]="selectedImage.url"
+      [alt]="selectedImage.altText"
     />
+
+    <div class="lightbox-caption">
+      <strong>{{ selectedImage.title }}</strong>
+      <span>{{ selectedImage.category }}</span>
+    </div>
 
     <button
       class="lightbox-nav right"

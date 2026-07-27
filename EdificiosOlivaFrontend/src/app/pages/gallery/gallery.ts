@@ -1,4 +1,15 @@
-import { Component } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
+
+import { GalleryImage } from '../../core/models/gallery-image.model';
+import { GalleryImages } from '../../core/services/gallery-images';
 
 @Component({
   selector: 'app-gallery',
@@ -6,23 +17,68 @@ import { Component } from '@angular/core';
   templateUrl: './gallery.html',
   styleUrl: './gallery.css',
 })
-export class Gallery {
-  categories = ['Todos', 'Apartamentos', 'Habitaciones', 'Piscina', 'Exterior', 'Áreas comunes'];
+export class Gallery implements OnInit {
+  private readonly galleryService = inject(GalleryImages);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
-  images = [
-    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85',
-    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c',
-    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3',
-    'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c',
-    'https://images.unsplash.com/photo-1600566752355-35792bedcfea',
-    'https://images.unsplash.com/photo-1484154218962-a197022b5858',
-    'https://images.unsplash.com/photo-1494526585095-c41746248156',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
+  readonly categories = [
+    'Todos',
+    'Apartamentos',
+    'Habitaciones',
+    'Piscina',
+    'Exterior',
+    'Áreas comunes',
   ];
 
-  selectedImage: string | null = null;
+  images: GalleryImage[] = [];
+  selectedCategory = 'Todos';
+  selectedImage: GalleryImage | null = null;
   selectedIndex = 0;
+  loading = true;
+  errorMessage = '';
+
+  ngOnInit(): void {
+    this.loadImages();
+  }
+
+  loadImages(): void {
+    this.loading = true;
+    this.errorMessage = '';
+    this.changeDetector.markForCheck();
+
+    const category = this.selectedCategory === 'Todos' ? '' : this.selectedCategory;
+
+    this.galleryService
+      .getAll(category, '', true)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.loading = false;
+          this.changeDetector.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (result) => {
+          this.images = result.items;
+          this.selectedImage = null;
+          this.changeDetector.markForCheck();
+        },
+        error: (error: unknown) => {
+          this.images = [];
+          this.errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'No fue posible cargar la galería.';
+          this.changeDetector.markForCheck();
+        },
+      });
+  }
+
+  selectCategory(category: string): void {
+    this.selectedCategory = category;
+    this.loadImages();
+  }
 
   openLightbox(index: number): void {
     this.selectedIndex = index;
@@ -34,12 +90,15 @@ export class Gallery {
   }
 
   nextImage(): void {
+    if (this.images.length === 0) return;
     this.selectedIndex = (this.selectedIndex + 1) % this.images.length;
     this.selectedImage = this.images[this.selectedIndex];
   }
 
   previousImage(): void {
-    this.selectedIndex = this.selectedIndex === 0 ? this.images.length - 1 : this.selectedIndex - 1;
+    if (this.images.length === 0) return;
+    this.selectedIndex =
+      this.selectedIndex === 0 ? this.images.length - 1 : this.selectedIndex - 1;
     this.selectedImage = this.images[this.selectedIndex];
   }
 }
