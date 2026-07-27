@@ -16,12 +16,12 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
     {
         var query = apartmentRepository.Query()
             .AsNoTracking()
+            .Include(apartment => apartment.Images)
             .Where(apartment => !apartment.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(parameters.Search))
         {
             var search = parameters.Search.Trim();
-
             query = query.Where(apartment =>
                 apartment.Name.Contains(search) ||
                 apartment.Description.Contains(search) ||
@@ -30,35 +30,27 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
 
         if (parameters.Status.HasValue)
         {
-            query = query.Where(apartment =>
-                apartment.Status == parameters.Status.Value);
+            query = query.Where(apartment => apartment.Status == parameters.Status.Value);
         }
 
         if (parameters.MinimumPrice.HasValue)
         {
-            query = query.Where(apartment =>
-                apartment.PricePerNight >= parameters.MinimumPrice.Value);
+            query = query.Where(apartment => apartment.PricePerNight >= parameters.MinimumPrice.Value);
         }
 
         if (parameters.MaximumPrice.HasValue)
         {
-            query = query.Where(apartment =>
-                apartment.PricePerNight <= parameters.MaximumPrice.Value);
+            query = query.Where(apartment => apartment.PricePerNight <= parameters.MaximumPrice.Value);
         }
 
         if (parameters.MinimumGuestCapacity.HasValue)
         {
-            query = query.Where(apartment =>
-                apartment.GuestCapacity >= parameters.MinimumGuestCapacity.Value);
+            query = query.Where(apartment => apartment.GuestCapacity >= parameters.MinimumGuestCapacity.Value);
         }
 
-        query = ApplyOrdering(
-            query,
-            parameters.SortBy,
-            parameters.Descending);
+        query = ApplyOrdering(query, parameters.SortBy, parameters.Descending);
 
         var totalItems = await query.CountAsync(cancellationToken);
-
         var items = await query
             .Skip((parameters.Page - 1) * parameters.PageSize)
             .Take(parameters.PageSize)
@@ -78,6 +70,7 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
     {
         return await apartmentRepository.Query()
             .AsNoTracking()
+            .Include(apartment => apartment.Images)
             .Where(apartment => apartment.Id == id && !apartment.IsDeleted)
             .Select(apartment => Map(apartment))
             .SingleOrDefaultAsync(cancellationToken);
@@ -96,7 +89,8 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
             Bedrooms = request.Bedrooms,
             Bathrooms = request.Bathrooms,
             Location = request.Location.Trim(),
-            Status = request.Status
+            Status = request.Status,
+            Images = CreateImages(request.Images)
         };
 
         await apartmentRepository.AddAsync(apartment, cancellationToken);
@@ -110,10 +104,7 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
         UpdateApartmentRequest request,
         CancellationToken cancellationToken = default)
     {
-        var apartment = await apartmentRepository.GetByIdAsync(
-            id,
-            cancellationToken);
-
+        var apartment = await apartmentRepository.GetByIdAsync(id, cancellationToken);
         if (apartment is null)
         {
             return false;
@@ -129,6 +120,12 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
         apartment.Status = request.Status;
         apartment.UpdatedAtUtc = DateTime.UtcNow;
 
+        apartment.Images.Clear();
+        foreach (var image in CreateImages(request.Images))
+        {
+            apartment.Images.Add(image);
+        }
+
         await apartmentRepository.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -137,10 +134,7 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var apartment = await apartmentRepository.GetByIdAsync(
-            id,
-            cancellationToken);
-
+        var apartment = await apartmentRepository.GetByIdAsync(id, cancellationToken);
         if (apartment is null)
         {
             return false;
@@ -148,9 +142,34 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
 
         apartment.IsDeleted = true;
         apartment.UpdatedAtUtc = DateTime.UtcNow;
-
         await apartmentRepository.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    private static List<ApartmentImage> CreateImages(IReadOnlyList<string> urls)
+    {
+        return urls
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(10)
+            .Select((url, index) => new ApartmentImage
+            {
+                Url = url.Trim(),
+                PublicId = ExtractPublicId(url),
+                IsCover = index == 0,
+                SortOrder = index
+            })
+            .ToList();
+    }
+
+    private static string ExtractPublicId(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return uri.AbsolutePath.TrimStart('/');
+        }
+
+        return url.TrimStart('/');
     }
 
     private static IQueryable<Apartment> ApplyOrdering(
@@ -182,6 +201,12 @@ public sealed class ApartmentService(IApartmentRepository apartmentRepository)
             apartment.Bathrooms,
             apartment.Location,
             apartment.Status,
+            apartment.Images
+                .Where(image => !image.IsDeleted)
+                .OrderByDescending(image => image.IsCover)
+                .ThenBy(image => image.SortOrder)
+                .Select(image => image.Url)
+                .ToList(),
             apartment.CreatedAtUtc,
             apartment.UpdatedAtUtc);
 }

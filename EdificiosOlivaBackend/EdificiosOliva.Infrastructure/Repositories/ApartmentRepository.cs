@@ -15,6 +15,7 @@ public sealed class ApartmentRepository(ApplicationDbContext dbContext)
         CancellationToken cancellationToken = default)
     {
         return dbContext.Apartments
+            .Include(apartment => apartment.Images)
             .SingleOrDefaultAsync(
                 apartment => apartment.Id == id && !apartment.IsDeleted,
                 cancellationToken);

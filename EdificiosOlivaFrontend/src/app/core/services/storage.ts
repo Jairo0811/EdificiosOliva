@@ -1,11 +1,8 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import {
-  Storage as FirebaseStorage,
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
-} from '@angular/fire/storage';
+import { firstValueFrom } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
 
 export interface StorageUploadResult {
   downloadUrl: string;
@@ -22,7 +19,8 @@ export interface StorageDeleteSummary {
   providedIn: 'root',
 })
 export class StorageService {
-  private readonly storage = inject(FirebaseStorage);
+  private readonly http = inject(HttpClient);
+  private readonly endpoint = `${environment.apiUrl}/files/images`;
 
   private readonly allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   private readonly maxFileSizeBytes = 5 * 1024 * 1024;
@@ -34,38 +32,40 @@ export class StorageService {
   ): Promise<StorageUploadResult> {
     this.validateImage(file);
 
-    const safeName = this.createSafeFileName(file.name);
-    const fullPath = `${folder}/${crypto.randomUUID()}-${safeName}`;
-    const storageReference = ref(this.storage, fullPath);
-    const uploadTask = uploadBytesResumable(storageReference, file, {
-      contentType: file.type,
-      customMetadata: {
-        originalName: file.name,
-      },
-    });
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('folder', folder);
 
     return new Promise<StorageUploadResult>((resolve, reject) => {
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          onProgress?.(Math.round(progress));
-        },
-        (error) => reject(error),
-        async () => {
-          try {
-            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      const request = new XMLHttpRequest();
+      request.open('POST', this.endpoint);
 
-            resolve({
-              downloadUrl,
-              fullPath: uploadTask.snapshot.ref.fullPath,
-              fileName: file.name,
-            });
-          } catch (error) {
-            reject(error);
-          }
-        },
-      );
+      request.upload.addEventListener('progress', (event) => {
+        if (!event.lengthComputable) {
+          return;
+        }
+
+        onProgress?.(Math.round((event.loaded / event.total) * 100));
+      });
+
+      request.addEventListener('load', () => {
+        if (request.status < 200 || request.status >= 300) {
+          reject(new Error(this.extractErrorMessage(request)));
+          return;
+        }
+
+        try {
+          resolve(JSON.parse(request.responseText) as StorageUploadResult);
+        } catch {
+          reject(new Error('La API devolvió una respuesta de carga inválida.'));
+        }
+      });
+
+      request.addEventListener('error', () => {
+        reject(new Error('No fue posible conectar con la API de archivos.'));
+      });
+
+      request.send(formData);
     });
   }
 
@@ -87,17 +87,17 @@ export class StorageService {
     );
   }
 
-  deleteImage(pathOrUrl: string): Promise<void> {
+  async deleteImage(pathOrUrl: string): Promise<void> {
     if (!pathOrUrl.trim()) {
-      return Promise.resolve();
+      return;
     }
 
-    return deleteObject(ref(this.storage, pathOrUrl));
+    const params = new HttpParams().set('path', pathOrUrl);
+    await firstValueFrom(this.http.delete<void>(this.endpoint, { params }));
   }
 
   async deleteImages(pathsOrUrls: string[]): Promise<StorageDeleteSummary> {
     const uniqueValues = [...new Set(pathsOrUrls.filter((value) => value.trim()))];
-
     const results = await Promise.allSettled(
       uniqueValues.map((value) => this.deleteImage(value)),
     );
@@ -130,12 +130,21 @@ export class StorageService {
     }
   }
 
-  private createSafeFileName(fileName: string): string {
-    return fileName
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9.]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+  private extractErrorMessage(request: XMLHttpRequest): string {
+    const fallback = `La carga falló con estado HTTP ${request.status}.`;
+
+    if (!request.responseText) {
+      return fallback;
+    }
+
+    try {
+      const response = JSON.parse(request.responseText) as {
+        detail?: string;
+        title?: string;
+      };
+      return response.detail ?? response.title ?? fallback;
+    } catch {
+      return request.responseText || fallback;
+    }
   }
 }
