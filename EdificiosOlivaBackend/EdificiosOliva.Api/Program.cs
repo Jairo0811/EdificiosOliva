@@ -6,7 +6,6 @@ var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "Frontend";
 
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -34,11 +33,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseCors(FrontendCorsPolicy);
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
