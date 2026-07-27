@@ -1,123 +1,296 @@
-.admin-page{
-  padding:40px;
-  background:#f7f9fb;
-  min-height:100vh;
+.admin-page {
+  min-height: 100vh;
+  padding: 40px;
+  background: #f7f9fb;
 }
 
-.page-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:35px;
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
 }
 
-.page-header h1{
-  margin:0;
-  font-size:36px;
+.page-header h1 {
+  margin: 0;
+  font-size: 36px;
 }
 
-.page-header p{
-  margin-top:8px;
-  color:#666;
+.page-header p {
+  margin: 8px 0 0;
+  color: #667085;
 }
 
-.new-btn{
-  border:none;
-  background:#0F4C81;
-  color:white;
-  padding:14px 24px;
-  border-radius:14px;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  cursor:pointer;
-  font-weight:700;
-}
-
-.table-card{
-  background:white;
-  border-radius:24px;
-  overflow:auto;
-  box-shadow:0 15px 40px rgba(0,0,0,.08);
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th{
-  background:#0F4C81;
-  color:white;
-  padding:18px;
-  text-align:left;
-}
-
-td{
-  padding:18px;
-  border-bottom:1px solid #eee;
-}
-
-.confirmed{
-  background:#d8f5df;
-  color:#2d7a46;
-  padding:6px 12px;
-  border-radius:20px;
-  font-weight:600;
-}
-
-.pending{
-  background:#fff4d2;
-  color:#c47b00;
-  padding:6px 12px;
-  border-radius:20px;
-  font-weight:600;
-}
-
-.cancelled{
-  background:#ffe6e6;
-  color:#b00020;
-  padding:6px 12px;
-  border-radius:20px;
-  font-weight:600;
-}
-
-.view,
+.new-btn,
+.filter-btn,
+.primary-btn,
+.secondary-btn,
+.close-btn,
 .edit,
-.delete{
-  width:38px;
-  height:38px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  margin-right:8px;
+.delete {
+  border: 0;
+  cursor: pointer;
 }
 
-.view{
-  background:#eef6fb;
-  color:#0F4C81;
+.new-btn,
+.filter-btn,
+.primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 20px;
+  border-radius: 12px;
+  background: #0f4c81;
+  color: #fff;
+  font-weight: 700;
 }
 
-.edit{
-  background:#eef6fb;
-  color:#0F4C81;
+.filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 220px auto;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 22px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(15, 76, 129, 0.08);
 }
 
-.delete{
-  background:#ffeaea;
-  color:#d00000;
+.filters label,
+.reservation-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+  color: #25364a;
 }
 
-@media(max-width:992px){
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d7dee7;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+}
 
-  .page-header{
-    flex-direction:column;
-    align-items:flex-start;
-    gap:20px;
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 3px solid rgba(15, 76, 129, 0.15);
+  border-color: #0f4c81;
+}
+
+.table-card {
+  overflow: auto;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+th {
+  padding: 18px;
+  background: #0f4c81;
+  color: #fff;
+  text-align: left;
+}
+
+td {
+  padding: 18px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.status-badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.pending {
+  background: #fff4d2;
+  color: #9c6500;
+}
+
+.confirmed,
+.completed {
+  background: #d8f5df;
+  color: #2d7a46;
+}
+
+.in-progress {
+  background: #e7f0ff;
+  color: #245ea8;
+}
+
+.cancelled {
+  background: #ffe6e6;
+  color: #b00020;
+}
+
+.actions-cell {
+  white-space: nowrap;
+}
+
+.edit,
+.delete {
+  width: 38px;
+  height: 38px;
+  margin-right: 8px;
+  border-radius: 10px;
+}
+
+.edit {
+  background: #eef6fb;
+  color: #0f4c81;
+}
+
+.delete {
+  background: #ffeaea;
+  color: #d00000;
+}
+
+.empty-state {
+  padding: 40px;
+  color: #667085;
+  text-align: center;
+}
+
+.feedback {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.feedback.success {
+  background: #def7e5;
+  color: #24653a;
+}
+
+.feedback.error {
+  background: #ffe5e5;
+  color: #a41515;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 25, 41, 0.58);
+}
+
+.reservation-modal {
+  width: min(820px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 28px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.22);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.modal-header span {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modal-header h2 {
+  margin: 4px 0 0;
+}
+
+.close-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #edf2f7;
+  color: #25364a;
+  font-size: 24px;
+}
+
+.reservation-form {
+  display: grid;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.reservation-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f2f7fb;
+  color: #0f4c81;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.secondary-btn {
+  padding: 13px 20px;
+  border-radius: 12px;
+  background: #e9eef4;
+  color: #25364a;
+  font-weight: 700;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 24px 16px;
   }
 
-  table{
-    min-width:1100px;
+  .page-header,
+  .reservation-summary,
+  .modal-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
+  .filters,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .new-btn,
+  .filter-btn,
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+  }
 }

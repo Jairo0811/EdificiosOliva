@@ -1,15 +1,23 @@
+export type ReservationStatus =
+  | 'Pendiente'
+  | 'Confirmada'
+  | 'En curso'
+  | 'Completada'
+  | 'Cancelada';
+
 export interface Booking {
-  id?: string;
+  id: string;
+  customerId: string;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
   apartmentId: string;
   apartmentName: string;
-  checkIn: string;
-  checkOut: string;
-  guests: number;
-  total: number;
-  status: 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Finalizada';
-  paymentStatus: 'Pendiente' | 'Pagado' | 'Reembolsado';
-  createdAt?: Date;
+  checkInDate: string;
+  checkOutDate: string;
+  guestCount: number;
+  nightlyRate: number;
+  totalAmount: number;
+  status: number;
+  notes?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc?: string | null;
 }

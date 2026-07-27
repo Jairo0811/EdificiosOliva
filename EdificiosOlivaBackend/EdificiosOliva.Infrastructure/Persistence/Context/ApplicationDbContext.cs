@@ -12,6 +12,7 @@ public sealed class ApplicationDbContext(
     public DbSet<Amenity> Amenities => Set<Amenity>();
     public DbSet<ApartmentAmenity> ApartmentAmenities => Set<ApartmentAmenity>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
