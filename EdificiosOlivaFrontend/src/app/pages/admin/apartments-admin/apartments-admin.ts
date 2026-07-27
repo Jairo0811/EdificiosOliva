@@ -1,11 +1,20 @@
-import { Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, timeout } from 'rxjs';
 
 import { Apartment } from '../../../core/models/apartment.model';
 import { Apartments } from '../../../core/services/apartments';
-import { StorageService, StorageUploadResult } from '../../../core/services/storage';
+import {
+  StorageService,
+  StorageUploadResult,
+} from '../../../core/services/storage';
 
 interface PendingImage {
   file: File;
@@ -27,6 +36,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   private readonly maxImages = 10;
   private readonly allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   private readonly maxFileSizeBytes = 5 * 1024 * 1024;
+  private readonly requestTimeoutMs = 15000;
 
   apartments: Apartment[] = [];
 
@@ -61,6 +71,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     this.apartmentsService
       .getApartments()
       .pipe(
+        timeout(this.requestTimeoutMs),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
           this.loadingApartments = false;
@@ -73,8 +84,11 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
         error: (error: unknown) => {
           console.error('Error cargando apartamentos:', error);
 
-          this.errorMessage =
-            error instanceof Error ? error.message : 'No fue posible cargar los apartamentos.';
+          this.apartments = [];
+          this.errorMessage = this.getErrorMessage(
+            error,
+            'No fue posible cargar los apartamentos.',
+          );
         },
       });
   }
@@ -96,7 +110,6 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
 
   openCreateForm(): void {
     this.resetFormState();
-
     this.apartmentForm = this.getEmptyApartment();
     this.editingMode = false;
     this.showForm = true;
@@ -123,7 +136,6 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     this.showForm = false;
     this.editingMode = false;
     this.apartmentForm = this.getEmptyApartment();
-
     this.resetFormState();
   }
 
@@ -131,12 +143,16 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     const checked = (event.target as HTMLInputElement).checked;
 
     if (checked && !this.apartmentForm.amenities.includes(amenity)) {
-      this.apartmentForm.amenities = [...this.apartmentForm.amenities, amenity];
-
+      this.apartmentForm.amenities = [
+        ...this.apartmentForm.amenities,
+        amenity,
+      ];
       return;
     }
 
-    this.apartmentForm.amenities = this.apartmentForm.amenities.filter((item) => item !== amenity);
+    this.apartmentForm.amenities = this.apartmentForm.amenities.filter(
+      (item) => item !== amenity,
+    );
   }
 
   hasAmenity(amenity: string): boolean {
@@ -145,9 +161,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
 
   onFileInputChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-
     this.addFiles(Array.from(input.files ?? []));
-
     input.value = '';
   }
 
@@ -166,7 +180,6 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
-
     this.isDragging = false;
 
     if (!this.saving) {
@@ -182,9 +195,9 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     }
 
     URL.revokeObjectURL(image.previewUrl);
-
-    this.pendingImages = this.pendingImages.filter((_, currentIndex) => currentIndex !== index);
-
+    this.pendingImages = this.pendingImages.filter(
+      (_, currentIndex) => currentIndex !== index,
+    );
     this.calculateOverallProgress();
   }
 
@@ -195,7 +208,10 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
       return;
     }
 
-    this.removedExistingImages = [...this.removedExistingImages, imageUrl];
+    this.removedExistingImages = [
+      ...this.removedExistingImages,
+      imageUrl,
+    ];
 
     this.apartmentForm.images = this.apartmentForm.images.filter(
       (_, currentIndex) => currentIndex !== index,
@@ -210,20 +226,24 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     }
 
     this.removedExistingImages = this.removedExistingImages.slice(0, -1);
-
     this.apartmentForm.images = [...this.apartmentForm.images, imageUrl];
   }
 
   moveExistingImage(index: number, direction: -1 | 1): void {
     const targetIndex = index + direction;
 
-    if (targetIndex < 0 || targetIndex >= this.apartmentForm.images.length) {
+    if (
+      targetIndex < 0 ||
+      targetIndex >= this.apartmentForm.images.length
+    ) {
       return;
     }
 
     const images = [...this.apartmentForm.images];
-
-    [images[index], images[targetIndex]] = [images[targetIndex], images[index]];
+    [images[index], images[targetIndex]] = [
+      images[targetIndex],
+      images[index],
+    ];
 
     this.apartmentForm.images = images;
   }
@@ -236,8 +256,10 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     }
 
     const images = [...this.pendingImages];
-
-    [images[index], images[targetIndex]] = [images[targetIndex], images[index]];
+    [images[index], images[targetIndex]] = [
+      images[targetIndex],
+      images[index],
+    ];
 
     this.pendingImages = images;
   }
@@ -248,9 +270,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     }
 
     const images = [...this.apartmentForm.images];
-
     const [selectedImage] = images.splice(index, 1);
-
     images.unshift(selectedImage);
 
     this.apartmentForm.images = images;
@@ -262,9 +282,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     }
 
     const images = [...this.pendingImages];
-
     const [selectedImage] = images.splice(index, 1);
-
     images.unshift(selectedImage);
 
     this.pendingImages = images;
@@ -283,8 +301,8 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     const uploadedImages: StorageUploadResult[] = [];
 
     try {
-      const folderId = this.apartmentForm.id ?? `draft-${crypto.randomUUID()}`;
-
+      const folderId =
+        this.apartmentForm.id ?? `draft-${crypto.randomUUID()}`;
       const folder = `apartments/${folderId}`;
 
       if (this.pendingImages.length > 0) {
@@ -301,9 +319,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
             }
 
             image.progress = progress;
-
             this.pendingImages = [...this.pendingImages];
-
             this.calculateOverallProgress();
           },
         );
@@ -312,16 +328,20 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
       }
 
       const newUrls = uploadedImages.map((image) => image.downloadUrl);
-
       const apartmentToSave: Apartment = {
         ...this.apartmentForm,
         images: [...this.apartmentForm.images, ...newUrls],
       };
 
       if (this.editingMode && apartmentToSave.id) {
-        await this.apartmentsService.updateApartment(apartmentToSave.id, apartmentToSave);
+        await this.apartmentsService.updateApartment(
+          apartmentToSave.id,
+          apartmentToSave,
+        );
 
-        const deletionSummary = await this.storageService.deleteImages(this.removedExistingImages);
+        const deletionSummary = await this.storageService.deleteImages(
+          this.removedExistingImages,
+        );
 
         if (deletionSummary.failed.length > 0) {
           this.warningMessage =
@@ -331,24 +351,22 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
         this.successMessage = 'Apartamento actualizado correctamente.';
       } else {
         await this.apartmentsService.addApartment(apartmentToSave);
-
         this.successMessage = 'Apartamento creado correctamente.';
       }
 
       this.showForm = false;
       this.editingMode = false;
       this.apartmentForm = this.getEmptyApartment();
-
       this.resetFormState(false);
-
       this.loadApartments();
     } catch (error: unknown) {
       console.error('Error guardando apartamento:', error);
 
       await this.cleanupUploadedImages(uploadedImages);
-
-      this.errorMessage =
-        error instanceof Error ? error.message : 'No fue posible guardar el apartamento.';
+      this.errorMessage = this.getErrorMessage(
+        error,
+        'No fue posible guardar el apartamento.',
+      );
     } finally {
       this.saving = false;
       this.uploadProgress = 0;
@@ -358,7 +376,10 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   async deleteApartment(id: string): Promise<void> {
     const apartment = this.apartments.find((item) => item.id === id);
 
-    if (!apartment || !confirm(`¿Deseas eliminar el apartamento "${apartment.name}"?`)) {
+    if (
+      !apartment ||
+      !confirm(`¿Deseas eliminar el apartamento "${apartment.name}"?`)
+    ) {
       return;
     }
 
@@ -366,15 +387,14 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
 
     try {
       await this.apartmentsService.deleteApartment(id);
-
       this.successMessage = 'Apartamento eliminado correctamente.';
-
       this.loadApartments();
     } catch (error: unknown) {
       console.error('Error eliminando apartamento:', error);
-
-      this.errorMessage =
-        error instanceof Error ? error.message : 'No fue posible eliminar el apartamento.';
+      this.errorMessage = this.getErrorMessage(
+        error,
+        'No fue posible eliminar el apartamento.',
+      );
     }
   }
 
@@ -387,7 +407,10 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   }
 
   get firstNewImageWillBeCover(): boolean {
-    return this.apartmentForm.images.length === 0 && this.pendingImages.length > 0;
+    return (
+      this.apartmentForm.images.length === 0 &&
+      this.pendingImages.length > 0
+    );
   }
 
   private addFiles(files: File[]): void {
@@ -400,8 +423,8 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     const availableSlots = this.maxImages - this.totalImageCount;
 
     if (availableSlots <= 0) {
-      this.errorMessage = `Solo puedes guardar hasta ${this.maxImages} imágenes por apartamento.`;
-
+      this.errorMessage =
+        `Solo puedes guardar hasta ${this.maxImages} imágenes por apartamento.`;
       return;
     }
 
@@ -412,7 +435,6 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
 
       if (validationError) {
         this.errorMessage = validationError;
-
         continue;
       }
 
@@ -437,7 +459,8 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     this.pendingImages = [...this.pendingImages, ...newImages];
 
     if (files.length > availableSlots) {
-      this.errorMessage = `Se añadieron solo ${availableSlots} imágenes porque el límite es ${this.maxImages}.`;
+      this.errorMessage =
+        `Se añadieron solo ${availableSlots} imágenes porque el límite es ${this.maxImages}.`;
     }
   }
 
@@ -456,25 +479,21 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   private isFormValid(): boolean {
     if (!this.apartmentForm.name.trim()) {
       this.errorMessage = 'Ingresa el nombre del apartamento.';
-
       return false;
     }
 
     if (!this.apartmentForm.description.trim()) {
       this.errorMessage = 'Ingresa la descripción del apartamento.';
-
       return false;
     }
 
     if (!this.apartmentForm.location.trim()) {
       this.errorMessage = 'Ingresa la ubicación del apartamento.';
-
       return false;
     }
 
     if (this.apartmentForm.price <= 0) {
       this.errorMessage = 'El precio por noche debe ser mayor que cero.';
-
       return false;
     }
 
@@ -483,8 +502,8 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
       this.apartmentForm.bedrooms < 1 ||
       this.apartmentForm.bathrooms < 1
     ) {
-      this.errorMessage = 'Huéspedes, habitaciones y baños deben ser mayores que cero.';
-
+      this.errorMessage =
+        'Huéspedes, habitaciones y baños deben ser mayores que cero.';
       return false;
     }
 
@@ -497,22 +516,30 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
       return;
     }
 
-    const totalProgress = this.pendingImages.reduce((total, image) => total + image.progress, 0);
+    const totalProgress = this.pendingImages.reduce(
+      (total, image) => total + image.progress,
+      0,
+    );
 
-    this.uploadProgress = Math.round(totalProgress / this.pendingImages.length);
+    this.uploadProgress = Math.round(
+      totalProgress / this.pendingImages.length,
+    );
   }
 
-  private async cleanupUploadedImages(images: StorageUploadResult[]): Promise<void> {
+  private async cleanupUploadedImages(
+    images: StorageUploadResult[],
+  ): Promise<void> {
     if (images.length === 0) {
       return;
     }
 
-    await this.storageService.deleteImages(images.map((image) => image.fullPath));
+    await this.storageService.deleteImages(
+      images.map((image) => image.fullPath),
+    );
   }
 
   private resetFormState(clearMessages = true): void {
     this.revokePreviewUrls();
-
     this.pendingImages = [];
     this.removedExistingImages = [];
     this.uploadProgress = 0;
@@ -533,5 +560,15 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     this.successMessage = '';
     this.errorMessage = '';
     this.warningMessage = '';
+  }
+
+  private getErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return 'La API tardó demasiado en responder. Verifica que el backend esté ejecutándose.';
+    }
+
+    return error instanceof Error && error.message.trim()
+      ? error.message
+      : fallback;
   }
 }
