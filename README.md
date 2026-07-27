@@ -17,9 +17,13 @@
 
 **Edificios Oliva** es una plataforma web Full Stack orientada a la promoción, alquiler y administración de apartamentos turísticos ubicados en **Bávaro, Punta Cana, República Dominicana**.
 
-El sistema combina un sitio web público para visitantes con un panel administrativo privado desde el cual se gestionarán apartamentos, imágenes, amenidades, clientes, reservas, pagos, disponibilidad, reportes y contenido general.
+El proyecto nace de **Residencial Oliva**, una iniciativa personal iniciada en **2019** e inspirada en un proyecto familiar relacionado con el residencial. En 2026 fue recuperado y reconstruido con una arquitectura moderna, manteniendo la esencia de su propósito original y ampliándolo hasta convertirlo en una solución integral de gestión.
 
-La solución está siendo reconstruida con una arquitectura moderna basada en **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core**, **SQL Server** y **Firebase Authentication**.
+El sistema combina un sitio web público para visitantes con un panel administrativo privado desde el cual se gestionan apartamentos, imágenes, amenidades, clientes, reservas, pagos, disponibilidad, reportes y contenido general.
+
+La solución está siendo reconstruida con **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication**.
+
+Firebase se utiliza exclusivamente como proveedor de autenticación. Toda la lógica del negocio, la persistencia de datos y la gestión de archivos son administradas por ASP.NET Core mediante una API REST y una arquitectura Clean.
 
 El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación profesional, mantenible, escalable y preparada para producción.
 
@@ -57,15 +61,20 @@ El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación prof
 
 - ✅ Layout administrativo independiente.
 - ✅ Sidebar de navegación.
-- ✅ Dashboard administrativo moderno.
-- ✅ Vista administrativa de apartamentos.
+- ✅ Dashboard administrativo con datos reales.
+- ✅ Gestión de apartamentos.
+- ✅ Gestión de clientes.
+- ✅ Gestión de reservas.
+- ✅ Gestión de pagos.
+- ✅ Gestión de galería.
 - ✅ Formularios para creación y edición.
 - ✅ Selección y previsualización de imágenes.
 - ✅ Ordenamiento visual de imágenes.
 - ✅ Gestión visual de amenidades.
 - ✅ Estados de apartamento.
-- 🚧 Persistencia definitiva mediante la API REST.
-- 🚧 Datos dinámicos del dashboard.
+- ✅ Persistencia mediante ASP.NET Core Web API.
+- ✅ Gestión de imágenes desde el backend.
+- ✅ Almacenamiento local de imágenes.
 
 ## ⚙️ Backend
 
@@ -75,13 +84,20 @@ El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación prof
 - ✅ Entity Framework Core 10.
 - ✅ SQL Server.
 - ✅ Base de datos `EdificiosOlivaDb`.
-- ✅ Migración inicial.
+- ✅ Migraciones de Entity Framework Core.
 - ✅ OpenAPI.
-- ✅ Entidades iniciales del dominio.
+- ✅ Entidades y relaciones del dominio.
 - ✅ Configuraciones Fluent API.
-- ✅ Relaciones entre apartamentos, imágenes y amenidades.
-- 🚧 CRUD REST de apartamentos.
-- 🚧 Validación de tokens de Firebase en la API.
+- ✅ CRUD REST de apartamentos.
+- ✅ CRUD REST de clientes.
+- ✅ CRUD REST de reservas.
+- ✅ CRUD REST de pagos.
+- ✅ Persistencia de galería.
+- ✅ Integración Angular ↔ ASP.NET Core.
+- ✅ Carga de imágenes mediante `multipart/form-data`.
+- ✅ Publicación de archivos mediante ASP.NET Core Static Files.
+- ✅ Almacenamiento local de imágenes en `wwwroot/uploads`.
+- 🚧 Validación completa de tokens de Firebase en la API.
 
 ---
 
@@ -100,6 +116,8 @@ El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación prof
 | Leaflet | Mapas |
 | Firebase Authentication | Autenticación e inicio con Google |
 | ASP.NET Core Web API | Backend REST |
+| ASP.NET Core Static Files | Publicación de imágenes |
+| Multipart/Form-Data | Carga de archivos |
 | .NET 10 | Plataforma del backend |
 | C# | Lógica del servidor |
 | Entity Framework Core 10 | ORM y migraciones |
@@ -124,20 +142,12 @@ El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación prof
               ▼                           ▼
  Firebase Authentication        ASP.NET Core Web API
                                           │
-                                          ▼
-                                  Application Layer
-                                          │
-                                          ▼
-                                    Domain Layer
-                                          │
-                                          ▼
-                                Infrastructure Layer
-                                          │
-                                          ▼
-                                   SQL Server Database
+                    ┌─────────────────────┴─────────────────────┐
+                    ▼                                           ▼
+             SQL Server Database                  wwwroot/uploads
 ```
 
-Firebase permanece como proveedor de identidad. Los datos del negocio se almacenarán en SQL Server y serán administrados exclusivamente mediante la API REST.
+Firebase Authentication se utiliza exclusivamente para la autenticación e inicio de sesión. Toda la información del negocio se administra mediante ASP.NET Core y SQL Server. Las imágenes se almacenan y sirven directamente desde `wwwroot/uploads`.
 
 ---
 
@@ -188,6 +198,10 @@ Apartment
 ApartmentImage
 Amenity
 ApartmentAmenity
+Customer
+Reservation
+Payment
+GalleryImage
 ApartmentStatus
 BaseEntity
 ```
@@ -262,7 +276,20 @@ dotnet run --project EdificiosOliva.Api
 
 La URL HTTPS se obtiene desde `EdificiosOliva.Api/Properties/launchSettings.json`.
 
-## 4. Requisitos
+## 4. Almacenamiento de imágenes
+
+Las imágenes cargadas desde el panel administrativo se almacenan automáticamente en:
+
+```text
+EdificiosOlivaBackend/
+└── EdificiosOliva.Api/
+    └── wwwroot/
+        └── uploads/
+```
+
+La carpeta `uploads` está excluida del repositorio mediante `.gitignore`, por lo que las imágenes generadas en cada entorno no forman parte del código fuente.
+
+## 5. Requisitos
 
 - Node.js compatible con Angular 21.
 - npm 11 o superior.
@@ -282,26 +309,36 @@ La base de datos principal es:
 EdificiosOlivaDb
 ```
 
-Tablas iniciales:
+Tablas principales:
 
 ```text
 Apartments
 ApartmentImages
 Amenities
 ApartmentAmenities
+Customers
+Reservations
+Payments
+GalleryImages
 __EFMigrationsHistory
 ```
 
 Los modelos actuales permiten:
 
-- Registrar apartamentos.
+- Registrar y administrar apartamentos.
 - Asociar múltiples imágenes.
 - Seleccionar una imagen de portada.
 - Ordenar imágenes.
 - Registrar amenidades.
 - Asociar amenidades mediante una relación muchos a muchos.
+- Registrar clientes.
+- Gestionar reservas y sus estados.
+- Registrar pagos y balances pendientes.
+- Persistir imágenes de galería.
 - Manejar estados de disponibilidad, ocupación y mantenimiento.
 - Aplicar eliminación lógica y auditoría básica mediante `BaseEntity`.
+
+Las imágenes ya no dependen de Firebase Storage. La base de datos almacena la información y la ruta pública de los archivos generados por el backend.
 
 ---
 
@@ -323,16 +360,17 @@ Los modelos actuales permiten:
 | ⚙️ ASP.NET Core Web API | ✅ |
 | 🗄️ SQL Server | ✅ |
 | 🧩 Entity Framework Core | ✅ |
-| 🧱 Migración inicial | ✅ |
-| 🏢 CRUD API de apartamentos | 🚧 |
-| 🔗 Integración Angular ↔ API | 🚧 |
+| 🧱 Migraciones | ✅ |
+| 🏢 CRUD de apartamentos | ✅ |
+| 👥 Gestión de clientes | ✅ |
+| 📅 Reservas y disponibilidad | ✅ |
+| 💳 Gestión de pagos | ✅ |
+| 📊 Dashboard dinámico | ✅ |
+| 🖼️ Galería administrativa | ✅ |
+| 🔗 Integración Angular ↔ API | ✅ |
+| 📁 Almacenamiento local de imágenes | ✅ |
 | 🛡️ Autorización Firebase en API | 🚧 |
 | 🧯 Manejo global de errores | 🚧 |
-| 🖼️ Almacenamiento definitivo de imágenes | ⏳ |
-| 👥 Gestión de clientes | ⏳ |
-| 📅 Reservas y disponibilidad | ⏳ |
-| 💳 Gestión de pagos | ⏳ |
-| 📊 Dashboard dinámico | ⏳ |
 | 📈 Reportes y estadísticas | ⏳ |
 | 🔔 Notificaciones | ⏳ |
 | 🧪 Testing automatizado | ⏳ |
@@ -358,7 +396,6 @@ Leyenda:
 - Inicio por correo y Google.
 - Guards y roles.
 - Panel administrativo.
-- Interfaz del módulo de apartamentos.
 
 ## ✅ Etapa 2 — Backend y persistencia
 
@@ -367,76 +404,47 @@ Leyenda:
 - Clean Architecture.
 - Entity Framework Core.
 - SQL Server.
-- Migración inicial.
-- Entidades de apartamentos, imágenes y amenidades.
+- Migraciones.
+- Entidades, configuraciones y relaciones del dominio.
 - OpenAPI.
 
-## 🚧 Etapa 3 — Integración Full Stack y CRUD de apartamentos
+## ✅ Etapa 3 — Integración Full Stack
 
-Esta es la **fase activa del proyecto**. El objetivo es completar el primer módulo funcional de extremo a extremo y establecer el patrón técnico que reutilizarán los módulos de clientes, reservas, pagos y reportes.
+- CRUD REST de apartamentos.
+- CRUD REST de clientes.
+- CRUD REST de reservas.
+- CRUD REST de pagos.
+- Servicios de aplicación.
+- Repositorios con Entity Framework Core.
+- Integración Angular ↔ API.
+- Persistencia de galería.
+- Dashboard con datos reales.
 
-### Backend
+## ✅ Etapa 4 — Imágenes y contenido
 
-- 🚧 Crear DTOs de creación, actualización, listado y detalle.
-- 🚧 Implementar validaciones de entrada.
-- 🚧 Crear interfaces y servicios de aplicación.
-- 🚧 Implementar repositorios con Entity Framework Core.
-- 🚧 Crear endpoints REST para listar, consultar, crear, actualizar y eliminar apartamentos.
-- 🚧 Incorporar búsqueda, filtros, ordenamiento y paginación.
-- 🚧 Aplicar eliminación lógica.
-- 🚧 Estandarizar respuestas HTTP.
-- 🚧 Implementar manejo global de excepciones.
-
-### Seguridad
-
-- 🚧 Validar tokens de Firebase en ASP.NET Core.
-- 🚧 Proteger los endpoints administrativos.
-- 🚧 Sincronizar perfiles, roles y permisos con SQL Server.
-- 🚧 Garantizar que la autorización sea decidida por la API.
-
-### Frontend
-
-- 🚧 Crear servicios basados en `HttpClient`.
-- 🚧 Implementar interceptor para tokens de Firebase.
-- 🚧 Implementar interceptor global de errores.
-- 🚧 Sustituir Firestore en el módulo de apartamentos.
-- 🚧 Conectar el catálogo público con la API.
-- 🚧 Conectar el panel administrativo con la API.
-- 🚧 Mostrar estados de carga, errores y confirmaciones.
-
-### Criterio de finalización
-
-La etapa se considerará terminada cuando un apartamento pueda crearse, consultarse, editarse y eliminarse desde Angular, persistiendo todos sus datos en `EdificiosOlivaDb` mediante la API REST.
-
-## ⏳ Etapa 4 — Imágenes y contenido
-
-- Migrar Firebase Storage.
-- Implementar proveedor de almacenamiento desacoplado.
+- Migración desde Firebase Storage.
 - Subida segura de imágenes mediante la API.
+- Almacenamiento local mediante `wwwroot/uploads`.
 - Imagen de portada.
 - Ordenamiento de galería.
-- Eliminación y optimización de archivos.
+- Eliminación de archivos locales.
 - Galería administrativa.
 
-## ⏳ Etapa 5 — Operación del negocio
+## 🚧 Etapa 5 — Seguridad y robustez
 
-- Clientes.
-- Reservas.
-- Disponibilidad por fechas.
-- Prevención de reservas cruzadas.
-- Check-in y check-out.
-- Estados de reserva.
-- Pagos parciales y completos.
-- Balance pendiente.
-- Comprobantes.
+- Validar tokens de Firebase en ASP.NET Core.
+- Proteger endpoints administrativos.
+- Sincronizar perfiles, roles y permisos con SQL Server.
+- Estandarizar respuestas HTTP.
+- Implementar manejo global de excepciones.
+- Mejorar validaciones de entrada.
 
 ## ⏳ Etapa 6 — Inteligencia administrativa
 
-- Dashboard dinámico.
+- Reportes PDF y Excel.
 - Ocupación por apartamento.
 - Ingresos por período.
 - Próximas entradas y salidas.
-- Reportes PDF y Excel.
 - Auditoría.
 - Notificaciones.
 - Registro de actividad.
@@ -458,38 +466,33 @@ La etapa se considerará terminada cuando un apartamento pueda crearse, consulta
 
 # 🎯 Próximo objetivo
 
-El siguiente entregable técnico es completar el módulo de apartamentos de extremo a extremo:
+El siguiente entregable técnico es reforzar la seguridad y la robustez transversal de la plataforma:
 
 ```text
-Angular Admin
-      │
-      ▼
-ASP.NET Core API
-      │
-      ▼
+Firebase Authentication
+          │
+          ▼
+Angular Interceptors
+          │
+          ▼
+ASP.NET Core Authorization
+          │
+          ▼
 Application Services
-      │
-      ▼
-Entity Framework Core
-      │
-      ▼
-EdificiosOlivaDb
+          │
+          ▼
+SQL Server
 ```
 
-Este módulo incluirá:
+Este bloque incluirá:
 
-- CRUD completo.
-- DTOs de entrada y salida.
-- Validaciones.
-- Búsqueda, filtros y paginación.
-- Amenidades.
-- Eliminación lógica.
-- Respuestas HTTP consistentes.
+- Validación de tokens de Firebase en la API.
+- Protección de endpoints administrativos.
 - Manejo global de excepciones.
-- Validación de tokens de Firebase.
-- Integración con el panel administrativo de Angular.
-
-La gestión definitiva de imágenes se realizará en la etapa siguiente mediante un proveedor de almacenamiento desacoplado.
+- Respuestas HTTP consistentes.
+- Validaciones de entrada.
+- Auditoría básica.
+- Preparación para pruebas automatizadas.
 
 ---
 
