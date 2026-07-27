@@ -2,86 +2,261 @@
   <div class="page-header">
     <div>
       <h1>Reservas</h1>
-
-      <p>Gestiona todas las reservas realizadas.</p>
+      <p>Gestiona clientes, apartamentos, fechas y estados de las reservas.</p>
     </div>
 
-    <button class="new-btn">
-      <i class="bi bi-calendar-plus"></i>
-
+    <button class="new-btn" type="button" (click)="openCreateForm()">
+      <i class="bi bi-calendar-plus" aria-hidden="true"></i>
       Nueva Reserva
     </button>
   </div>
 
-  <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
+  @if (successMessage) {
+    <div class="feedback success" role="status">{{ successMessage }}</div>
+  }
 
-          <th>Cliente</th>
+  @if (errorMessage && !showForm) {
+    <div class="feedback error" role="alert">{{ errorMessage }}</div>
+  }
 
-          <th>Apartamento</th>
+  <section class="filters" aria-label="Filtros de reservas">
+    <label>
+      <span>Buscar</span>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        placeholder="Cliente, correo o apartamento"
+        (keyup.enter)="loadBookings()"
+      />
+    </label>
 
-          <th>Entrada</th>
+    <label>
+      <span>Estado</span>
+      <select [(ngModel)]="statusFilter" (change)="loadBookings()">
+        <option [ngValue]="0">Todos</option>
+        <option [ngValue]="1">Pendiente</option>
+        <option [ngValue]="2">Confirmada</option>
+        <option [ngValue]="3">En curso</option>
+        <option [ngValue]="4">Completada</option>
+        <option [ngValue]="5">Cancelada</option>
+      </select>
+    </label>
 
-          <th>Salida</th>
+    <button class="filter-btn" type="button" (click)="loadBookings()">
+      Buscar
+    </button>
+  </section>
 
-          <th>Total</th>
-
-          <th>Estado</th>
-
-          <th>Acciones</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        @for (booking of bookings; track booking.id) {
+  <div class="table-card" role="region" aria-label="Tabla de reservas" tabindex="0">
+    @if (loading) {
+      <p class="empty-state">Cargando reservas...</p>
+    } @else if (bookings.length === 0) {
+      <p class="empty-state">No se encontraron reservas.</p>
+    } @else {
+      <table>
+        <thead>
           <tr>
-            <td>#{{ booking.id }}</td>
-
-            <td>{{ booking.customer }}</td>
-
-            <td>{{ booking.apartment }}</td>
-
-            <td>{{ booking.checkIn }}</td>
-
-            <td>{{ booking.checkOut }}</td>
-
-            <td>US$ {{ booking.total }}</td>
-
-            <td>
-              @switch (booking.status) {
-                @case ('Confirmada') {
-                  <span class="confirmed">{{ booking.status }}</span>
-                }
-
-                @case ('Pendiente') {
-                  <span class="pending">{{ booking.status }}</span>
-                }
-
-                @case ('Cancelada') {
-                  <span class="cancelled">{{ booking.status }}</span>
-                }
-              }
-            </td>
-
-            <td>
-              <button class="view">
-                <i class="bi bi-eye"></i>
-              </button>
-
-              <button class="edit">
-                <i class="bi bi-pencil"></i>
-              </button>
-
-              <button class="delete">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
+            <th scope="col">ID</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Apartamento</th>
+            <th scope="col">Entrada</th>
+            <th scope="col">Salida</th>
+            <th scope="col">Huéspedes</th>
+            <th scope="col">Total</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+
+        <tbody>
+          @for (booking of bookings; track booking.id) {
+            <tr>
+              <td [title]="booking.id">#{{ shortId(booking.id) }}</td>
+              <td>{{ booking.customerName }}</td>
+              <td>{{ booking.apartmentName }}</td>
+              <td>{{ booking.checkInDate }}</td>
+              <td>{{ booking.checkOutDate }}</td>
+              <td>{{ booking.guestCount }}</td>
+              <td>US$ {{ booking.totalAmount }}</td>
+              <td>
+                <span
+                  class="status-badge"
+                  [class.pending]="booking.status === 1"
+                  [class.confirmed]="booking.status === 2"
+                  [class.in-progress]="booking.status === 3"
+                  [class.completed]="booking.status === 4"
+                  [class.cancelled]="booking.status === 5"
+                >
+                  {{ statusLabel(booking.status) }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button
+                  class="edit"
+                  type="button"
+                  (click)="openEditForm(booking)"
+                  [attr.aria-label]="'Editar reserva de ' + booking.customerName"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+
+                <button
+                  class="delete"
+                  type="button"
+                  (click)="deleteReservation(booking)"
+                  [attr.aria-label]="'Eliminar reserva de ' + booking.customerName"
+                >
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
   </div>
+
+  @if (showForm) {
+    <div class="modal-backdrop">
+      <div class="reservation-modal" role="dialog" aria-modal="true" aria-labelledby="reservation-title">
+        <div class="modal-header">
+          <div>
+            <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>
+            <h2 id="reservation-title">
+              {{ editingId ? 'Editar reserva' : 'Nueva reserva' }}
+            </h2>
+          </div>
+
+          <button
+            class="close-btn"
+            type="button"
+            (click)="closeForm()"
+            [disabled]="saving"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+
+        @if (errorMessage) {
+          <div class="feedback error" role="alert">{{ errorMessage }}</div>
+        }
+
+        <form class="reservation-form" (ngSubmit)="saveReservation()">
+          <div class="form-grid">
+            <label>
+              <span>Cliente</span>
+              <select
+                name="customerId"
+                [(ngModel)]="reservationForm.customerId"
+                required
+                [disabled]="saving"
+              >
+                <option value="">Selecciona un cliente</option>
+                @for (customer of customers; track customer.id) {
+                  <option [value]="customer.id">{{ customer.name }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              <span>Apartamento</span>
+              <select
+                name="apartmentId"
+                [(ngModel)]="reservationForm.apartmentId"
+                required
+                [disabled]="saving"
+              >
+                <option value="">Selecciona un apartamento</option>
+                @for (apartment of apartments; track apartment.id) {
+                  <option [value]="apartment.id">
+                    {{ apartment.name }} · US$ {{ apartment.price }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <label>
+              <span>Entrada</span>
+              <input
+                type="date"
+                name="checkInDate"
+                [(ngModel)]="reservationForm.checkInDate"
+                required
+                [disabled]="saving"
+              />
+            </label>
+
+            <label>
+              <span>Salida</span>
+              <input
+                type="date"
+                name="checkOutDate"
+                [(ngModel)]="reservationForm.checkOutDate"
+                required
+                [disabled]="saving"
+              />
+            </label>
+
+            <label>
+              <span>Huéspedes</span>
+              <input
+                type="number"
+                name="guestCount"
+                [(ngModel)]="reservationForm.guestCount"
+                min="1"
+                required
+                [disabled]="saving"
+              />
+            </label>
+
+            <label>
+              <span>Estado</span>
+              <select
+                name="status"
+                [(ngModel)]="reservationForm.status"
+                [disabled]="saving"
+              >
+                <option [ngValue]="1">Pendiente</option>
+                <option [ngValue]="2">Confirmada</option>
+                <option [ngValue]="3">En curso</option>
+                <option [ngValue]="4">Completada</option>
+                <option [ngValue]="5">Cancelada</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            <span>Notas</span>
+            <textarea
+              name="notes"
+              rows="4"
+              [(ngModel)]="reservationForm.notes"
+              [disabled]="saving"
+            ></textarea>
+          </label>
+
+          <div class="reservation-summary">
+            <span>{{ calculateNights() }} noche(s)</span>
+            <strong>Total estimado: US$ {{ estimatedTotal() }}</strong>
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeForm()"
+              [disabled]="saving"
+            >
+              Cancelar
+            </button>
+
+            <button type="submit" class="primary-btn" [disabled]="saving">
+              {{ saving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Crear reserva' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </div>
