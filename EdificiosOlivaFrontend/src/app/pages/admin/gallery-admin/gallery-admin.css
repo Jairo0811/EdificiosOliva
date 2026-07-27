@@ -1,14 +1,15 @@
 .admin-page {
+  min-height: 100vh;
   padding: 40px;
   background: #f7f9fb;
-  min-height: 100vh;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 35px;
+  gap: 20px;
+  margin-bottom: 28px;
 }
 
 .page-header h1 {
@@ -17,87 +18,106 @@
 }
 
 .page-header p {
-  color: #666;
-  margin-top: 8px;
+  margin: 8px 0 0;
+  color: #667085;
 }
 
-.upload-btn {
-  background: #0f4c81;
-  color: white;
-  border: none;
-  padding: 14px 24px;
-  border-radius: 14px;
+.upload-btn,
+.search-btn,
+.primary-btn,
+.secondary-btn,
+.close-btn,
+.view,
+.edit,
+.delete,
+.preview-close,
+.filters button {
+  border: 0;
   cursor: pointer;
-  display: flex;
+}
+
+.upload-btn,
+.search-btn,
+.primary-btn {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  padding: 13px 20px;
+  border-radius: 12px;
+  background: #0f4c81;
+  color: #fff;
   font-weight: 700;
 }
 
-.upload-zone {
-  background: white;
-  border: 3px dashed #9db8d1;
-  border-radius: 24px;
-  padding: 60px;
-  text-align: center;
-  margin-bottom: 40px;
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 22px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(15, 76, 129, 0.08);
 }
 
-.upload-zone i {
-  font-size: 60px;
-  color: #0f4c81;
+.toolbar label,
+.gallery-form label {
+  display: grid;
+  gap: 8px;
+  color: #25364a;
+  font-weight: 600;
 }
 
-.upload-zone h2 {
-  margin: 20px 0 10px;
+input,
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d7dee7;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
 }
 
-.upload-zone p {
-  color: #777;
-}
-
-.upload-zone button {
-  margin-top: 20px;
-  border: none;
-  background: #0f4c81;
-  color: white;
-  padding: 14px 26px;
-  border-radius: 14px;
-  cursor: pointer;
+input:focus,
+select:focus {
+  outline: 3px solid rgba(15, 76, 129, 0.15);
+  border-color: #0f4c81;
 }
 
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 35px;
+  gap: 12px;
+  margin-bottom: 28px;
 }
 
 .filters button {
-  border: none;
-  background: white;
-  padding: 12px 20px;
-  border-radius: 30px;
-  cursor: pointer;
-  font-weight: 600;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: #344054;
+  font-weight: 700;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
 }
 
+.filters button.active,
 .filters button:hover {
   background: #0f4c81;
-  color: white;
+  color: #fff;
 }
 
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 25px;
+  gap: 24px;
 }
 
 .photo-card {
-  background: white;
-  border-radius: 22px;
   overflow: hidden;
+  border-radius: 22px;
+  background: #fff;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
 }
 
@@ -110,26 +130,41 @@
 .photo-info {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  gap: 16px;
   padding: 18px;
 }
 
-.photo-info span {
-  font-weight: 700;
-  color: #444;
+.photo-info > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.photo-info strong {
+  color: #1f2933;
+}
+
+.photo-info span,
+.photo-info small {
+  color: #667085;
+}
+
+.actions {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .view,
+.edit,
 .delete {
   width: 38px;
   height: 38px;
-  border: none;
+  margin-left: 6px;
   border-radius: 10px;
-  cursor: pointer;
-  margin-left: 8px;
 }
 
-.view {
+.view,
+.edit {
   background: #eef6fb;
   color: #0f4c81;
 }
@@ -139,14 +174,177 @@
   color: #d00000;
 }
 
+.empty-state {
+  padding: 42px;
+  border-radius: 20px;
+  background: #fff;
+  color: #667085;
+  text-align: center;
+}
+
+.feedback {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.feedback.success {
+  background: #def7e5;
+  color: #24653a;
+}
+
+.feedback.error {
+  background: #ffe5e5;
+  color: #a41515;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 25, 41, 0.62);
+}
+
+.gallery-modal,
+.image-preview {
+  width: min(820px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 28px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.22);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.modal-header span {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modal-header h2 {
+  margin: 4px 0 0;
+}
+
+.close-btn,
+.preview-close {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #edf2f7;
+  color: #25364a;
+  font-size: 24px;
+}
+
+.gallery-form {
+  display: grid;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.checkbox-label {
+  grid-template-columns: auto 1fr !important;
+  align-items: center;
+}
+
+.checkbox-label input {
+  width: auto;
+}
+
+.form-preview {
+  overflow: hidden;
+  border-radius: 16px;
+  background: #eef3f7;
+}
+
+.form-preview img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.secondary-btn {
+  padding: 13px 20px;
+  border-radius: 12px;
+  background: #e9eef4;
+  color: #25364a;
+  font-weight: 700;
+}
+
+.image-preview {
+  position: relative;
+  text-align: center;
+}
+
+.image-preview .preview-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.image-preview img {
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  border-radius: 16px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 @media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
+  .admin-page {
+    padding: 24px 16px;
   }
 
-  .upload-zone {
-    padding: 35px;
+  .page-header,
+  .modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+
+  .upload-btn,
+  .search-btn,
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
   }
 }
