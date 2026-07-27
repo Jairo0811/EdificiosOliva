@@ -1,11 +1,16 @@
 export interface Payment {
-  id?: string;
-  bookingId: string;
+  id: string;
+  reservationId: string;
   customerName: string;
   apartmentName: string;
+  reservationTotal: number;
   amount: number;
-  method: 'PayPal' | 'Transferencia' | 'Efectivo';
-  status: 'Pagado' | 'Pendiente' | 'Reembolsado';
-  transactionId?: string;
-  createdAt?: Date;
+  method: number;
+  status: number;
+  transactionId?: string | null;
+  notes?: string | null;
+  paidAtUtc?: string | null;
+  refundedAtUtc?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc?: string | null;
 }

@@ -1,123 +1,255 @@
 <div class="admin-page">
-
   <div class="page-header">
-
     <div>
-
       <h1>Pagos</h1>
-
-      <p>Historial de pagos y transacciones.</p>
-
+      <p>Gestiona transacciones, estados y reembolsos vinculados a reservas.</p>
     </div>
 
-    <button class="new-btn">
-
-      <i class="bi bi-credit-card"></i>
-
+    <button class="new-btn" type="button" (click)="openCreateForm()">
+      <i class="bi bi-credit-card" aria-hidden="true"></i>
       Registrar Pago
-
     </button>
-
   </div>
 
-  <div class="table-card">
+  @if (successMessage) {
+    <div class="feedback success" role="status">{{ successMessage }}</div>
+  }
 
-    <table>
+  @if (errorMessage && !showForm) {
+    <div class="feedback error" role="alert">{{ errorMessage }}</div>
+  }
 
-      <thead>
+  <section class="filters" aria-label="Filtros de pagos">
+    <label>
+      <span>Buscar</span>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        placeholder="Cliente, apartamento o transacción"
+        (keyup.enter)="loadPayments()"
+      />
+    </label>
 
-        <tr>
+    <label>
+      <span>Estado</span>
+      <select [(ngModel)]="statusFilter" (change)="loadPayments()">
+        <option [ngValue]="0">Todos</option>
+        <option [ngValue]="1">Pendiente</option>
+        <option [ngValue]="2">Pagado</option>
+        <option [ngValue]="3">Reembolsado</option>
+        <option [ngValue]="4">Fallido</option>
+      </select>
+    </label>
 
-          <th>ID</th>
-          <th>Cliente</th>
-          <th>Apartamento</th>
-          <th>Monto</th>
-          <th>Método</th>
-          <th>Estado</th>
-          <th>Acciones</th>
+    <label>
+      <span>Método</span>
+      <select [(ngModel)]="methodFilter" (change)="loadPayments()">
+        <option [ngValue]="0">Todos</option>
+        <option [ngValue]="1">Efectivo</option>
+        <option [ngValue]="2">Transferencia</option>
+        <option [ngValue]="3">PayPal</option>
+        <option [ngValue]="4">Tarjeta</option>
+      </select>
+    </label>
 
-        </tr>
+    <button class="filter-btn" type="button" (click)="loadPayments()">
+      Buscar
+    </button>
+  </section>
 
-      </thead>
+  <div class="table-card" role="region" aria-label="Tabla de pagos" tabindex="0">
+    @if (loading) {
+      <p class="empty-state">Cargando pagos...</p>
+    } @else if (payments.length === 0) {
+      <p class="empty-state">No se encontraron pagos.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Apartamento</th>
+            <th scope="col">Monto</th>
+            <th scope="col">Método</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Transacción</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
 
-      <tbody>
-
-        @for(payment of payments; track payment.id){
-
-        <tr>
-
-          <td>{{payment.id}}</td>
-
-          <td>{{payment.customer}}</td>
-
-          <td>{{payment.apartment}}</td>
-
-          <td>US$ {{payment.amount}}</td>
-
-          <td>{{payment.method}}</td>
-
-          <td>
-
-            @switch(payment.status){
-
-              @case("Pagado"){
-
-                <span class="paid">
-
-                  {{payment.status}}
-
+        <tbody>
+          @for (payment of payments; track payment.id) {
+            <tr>
+              <td [title]="payment.id">#{{ shortId(payment.id) }}</td>
+              <td>{{ payment.customerName }}</td>
+              <td>{{ payment.apartmentName }}</td>
+              <td>US$ {{ payment.amount }}</td>
+              <td>{{ methodLabel(payment.method) }}</td>
+              <td>
+                <span
+                  class="status-badge"
+                  [class.pending]="payment.status === 1"
+                  [class.paid]="payment.status === 2"
+                  [class.refund]="payment.status === 3"
+                  [class.failed]="payment.status === 4"
+                >
+                  {{ statusLabel(payment.status) }}
                 </span>
+              </td>
+              <td>{{ payment.transactionId || '—' }}</td>
+              <td class="actions-cell">
+                <button
+                  class="edit"
+                  type="button"
+                  (click)="openEditForm(payment)"
+                  [attr.aria-label]="'Editar pago de ' + payment.customerName"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
 
-              }
+                <button
+                  class="refund-btn"
+                  type="button"
+                  (click)="refundPayment(payment)"
+                  [disabled]="payment.status !== 2"
+                  [attr.aria-label]="'Reembolsar pago de ' + payment.customerName"
+                >
+                  <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                </button>
 
-              @case("Pendiente"){
+                <button
+                  class="delete"
+                  type="button"
+                  (click)="deletePayment(payment)"
+                  [attr.aria-label]="'Eliminar pago de ' + payment.customerName"
+                >
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
 
-                <span class="pending">
+  @if (showForm) {
+    <div class="modal-backdrop">
+      <div class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+        <div class="modal-header">
+          <div>
+            <span>{{ editingId ? 'Actualizar transacción' : 'Nueva transacción' }}</span>
+            <h2 id="payment-title">
+              {{ editingId ? 'Editar pago' : 'Registrar pago' }}
+            </h2>
+          </div>
 
-                  {{payment.status}}
+          <button
+            class="close-btn"
+            type="button"
+            (click)="closeForm()"
+            [disabled]="saving"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
 
-                </span>
-
-              }
-
-              @case("Reembolsado"){
-
-                <span class="refund">
-
-                  {{payment.status}}
-
-                </span>
-
-              }
-
-            }
-
-          </td>
-
-          <td>
-
-            <button class="view">
-
-              <i class="bi bi-receipt"></i>
-
-            </button>
-
-            <button class="refund-btn">
-
-              <i class="bi bi-arrow-counterclockwise"></i>
-
-            </button>
-
-          </td>
-
-        </tr>
-
+        @if (errorMessage) {
+          <div class="feedback error" role="alert">{{ errorMessage }}</div>
         }
 
-      </tbody>
+        <form class="payment-form" (ngSubmit)="savePayment()">
+          <div class="form-grid">
+            <label>
+              <span>Reserva</span>
+              <select
+                name="reservationId"
+                [(ngModel)]="paymentForm.reservationId"
+                (change)="onReservationChange()"
+                required
+                [disabled]="saving"
+              >
+                <option value="">Selecciona una reserva</option>
+                @for (reservation of reservations; track reservation.id) {
+                  <option [value]="reservation.id">
+                    {{ reservation.customerName }} · {{ reservation.apartmentName }} · US$ {{ reservation.totalAmount }}
+                  </option>
+                }
+              </select>
+            </label>
 
-    </table>
+            <label>
+              <span>Monto</span>
+              <input
+                type="number"
+                name="amount"
+                [(ngModel)]="paymentForm.amount"
+                min="0.01"
+                step="0.01"
+                required
+                [disabled]="saving"
+              />
+            </label>
 
-  </div>
+            <label>
+              <span>Método</span>
+              <select name="method" [(ngModel)]="paymentForm.method" [disabled]="saving">
+                <option [ngValue]="1">Efectivo</option>
+                <option [ngValue]="2">Transferencia</option>
+                <option [ngValue]="3">PayPal</option>
+                <option [ngValue]="4">Tarjeta</option>
+              </select>
+            </label>
 
+            <label>
+              <span>Estado</span>
+              <select name="status" [(ngModel)]="paymentForm.status" [disabled]="saving">
+                <option [ngValue]="1">Pendiente</option>
+                <option [ngValue]="2">Pagado</option>
+                <option [ngValue]="3">Reembolsado</option>
+                <option [ngValue]="4">Fallido</option>
+              </select>
+            </label>
+
+            <label>
+              <span>ID de transacción</span>
+              <input
+                type="text"
+                name="transactionId"
+                [(ngModel)]="paymentForm.transactionId"
+                [disabled]="saving"
+                placeholder="Opcional"
+              />
+            </label>
+          </div>
+
+          <label>
+            <span>Notas</span>
+            <textarea
+              name="notes"
+              rows="4"
+              [(ngModel)]="paymentForm.notes"
+              [disabled]="saving"
+            ></textarea>
+          </label>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeForm()"
+              [disabled]="saving"
+            >
+              Cancelar
+            </button>
+
+            <button type="submit" class="primary-btn" [disabled]="saving">
+              {{ saving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Registrar pago' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </div>
