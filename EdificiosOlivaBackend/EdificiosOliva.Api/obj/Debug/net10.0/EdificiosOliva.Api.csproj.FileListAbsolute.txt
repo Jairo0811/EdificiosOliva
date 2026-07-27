@@ -329,4 +329,7 @@ C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\Edif
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\EdificiosOliva.Api.pdb
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\EdificiosOliva.Api.genruntimeconfig.cache
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\ref\EdificiosOliva.Api.dll
+C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

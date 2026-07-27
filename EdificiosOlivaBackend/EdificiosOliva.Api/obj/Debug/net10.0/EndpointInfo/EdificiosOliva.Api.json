@@ -1,17 +1,9 @@
 {
-  "openapi": "3.1.1",
+  "openapi": "3.0.4",
   "info": {
-    "title": "EdificiosOliva.Api | v1",
-    "version": "1.0.0"
+    "title": "EdificiosOliva.Api",
+    "version": "1.0"
   },
-  "servers": [
-    {
-      "url": "https://localhost:7238"
-    },
-    {
-      "url": "http://localhost:5160"
-    }
-  ],
   "paths": {
     "/api/Apartments": {
       "get": {
@@ -25,11 +17,7 @@
             "schema": {
               "maximum": 2147483647,
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           },
@@ -39,11 +27,7 @@
             "schema": {
               "maximum": 100,
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           },
@@ -67,12 +51,9 @@
             "name": "MinimumPrice",
             "in": "query",
             "schema": {
+              "maximum": 1.7976931348623157E+308,
               "minimum": 0,
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
-              "type": [
-                "number",
-                "string"
-              ],
+              "type": "number",
               "format": "double"
             }
           },
@@ -80,12 +61,9 @@
             "name": "MaximumPrice",
             "in": "query",
             "schema": {
+              "maximum": 1.7976931348623157E+308,
               "minimum": 0,
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
-              "type": [
-                "number",
-                "string"
-              ],
+              "type": "number",
               "format": "double"
             }
           },
@@ -95,11 +73,7 @@
             "schema": {
               "maximum": 50,
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           },
@@ -125,17 +99,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedResultOfApartmentResponse"
+                  "$ref": "#/components/schemas/ApartmentResponsePagedResult"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedResultOfApartmentResponse"
+                  "$ref": "#/components/schemas/ApartmentResponsePagedResult"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PagedResultOfApartmentResponse"
+                  "$ref": "#/components/schemas/ApartmentResponsePagedResult"
                 }
               }
             }
@@ -183,8 +157,7 @@
                 "$ref": "#/components/schemas/CreateApartmentRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -321,8 +294,7 @@
                 "$ref": "#/components/schemas/UpdateApartmentRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "204": {
@@ -416,19 +388,6 @@
   "components": {
     "schemas": {
       "ApartmentResponse": {
-        "required": [
-          "id",
-          "name",
-          "description",
-          "pricePerNight",
-          "guestCapacity",
-          "bedrooms",
-          "bathrooms",
-          "location",
-          "status",
-          "createdAtUtc",
-          "updatedAtUtc"
-        ],
         "type": "object",
         "properties": {
           "id": {
@@ -436,45 +395,32 @@
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "pricePerNight": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
+            "type": "number",
             "format": "double"
           },
           "guestCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "bedrooms": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "bathrooms": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "location": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "status": {
             "$ref": "#/components/schemas/ApartmentStatus"
@@ -484,182 +430,65 @@
             "format": "date-time"
           },
           "updatedAtUtc": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
-        }
+        },
+        "additionalProperties": false
       },
-      "ApartmentStatus": {
-        "type": "integer"
-      },
-      "CreateApartmentRequest": {
-        "required": [
-          "name",
-          "description",
-          "location"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "maxLength": 150,
-            "minLength": 0,
-            "type": "string"
-          },
-          "description": {
-            "maxLength": 2000,
-            "minLength": 0,
-            "type": "string"
-          },
-          "pricePerNight": {
-            "minimum": 0.01,
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
-          },
-          "guestCapacity": {
-            "maximum": 50,
-            "minimum": 1,
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "bedrooms": {
-            "maximum": 20,
-            "minimum": 0,
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "bathrooms": {
-            "maximum": 20,
-            "minimum": 0,
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "location": {
-            "maxLength": 250,
-            "minLength": 0,
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/ApartmentStatus"
-          }
-        }
-      },
-      "PagedResultOfApartmentResponse": {
-        "required": [
-          "items",
-          "page",
-          "pageSize",
-          "totalItems"
-        ],
+      "ApartmentResponsePagedResult": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ApartmentResponse"
-            }
+            },
+            "nullable": true
           },
           "page": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "pageSize": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "totalItems": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "totalPages": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
           },
           "hasPreviousPage": {
-            "type": "boolean"
+            "type": "boolean",
+            "readOnly": true
           },
           "hasNextPage": {
-            "type": "boolean"
+            "type": "boolean",
+            "readOnly": true
           }
-        }
+        },
+        "additionalProperties": false
       },
-      "ProblemDetails": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "title": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "status": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "detail": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "instance": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
+      "ApartmentStatus": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32"
       },
-      "UpdateApartmentRequest": {
+      "CreateApartmentRequest": {
         "required": [
-          "name",
           "description",
-          "location"
+          "location",
+          "name"
         ],
         "type": "object",
         "properties": {
@@ -674,42 +503,27 @@
             "type": "string"
           },
           "pricePerNight": {
+            "maximum": 1.7976931348623157E+308,
             "minimum": 0.01,
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
+            "type": "number",
             "format": "double"
           },
           "guestCapacity": {
             "maximum": 50,
             "minimum": 1,
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "bedrooms": {
             "maximum": 20,
             "minimum": 0,
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "bathrooms": {
             "maximum": 20,
             "minimum": 0,
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "location": {
@@ -720,7 +534,88 @@
           "status": {
             "$ref": "#/components/schemas/ApartmentStatus"
           }
-        }
+        },
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      },
+      "UpdateApartmentRequest": {
+        "required": [
+          "description",
+          "location",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "pricePerNight": {
+            "maximum": 1.7976931348623157E+308,
+            "minimum": 0.01,
+            "type": "number",
+            "format": "double"
+          },
+          "guestCapacity": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "bedrooms": {
+            "maximum": 20,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "bathrooms": {
+            "maximum": 20,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "location": {
+            "maxLength": 250,
+            "minLength": 0,
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApartmentStatus"
+          }
+        },
+        "additionalProperties": false
       }
     }
   },

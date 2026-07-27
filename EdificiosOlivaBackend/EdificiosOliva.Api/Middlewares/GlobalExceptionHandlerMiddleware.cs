@@ -13,35 +13,52 @@ public sealed class GlobalExceptionHandlerMiddleware(
         {
             await next(context);
         }
-        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        catch (OperationCanceledException)
+            when (context.RequestAborted.IsCancellationRequested)
         {
-            logger.LogInformation("La solicitud fue cancelada por el cliente.");
+            logger.LogInformation(
+                "La solicitud HTTP fue cancelada por el cliente. TraceId: {TraceId}",
+                context.TraceIdentifier);
+
+            context.Response.StatusCode = 499;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Ocurrió un error no controlado procesando la solicitud.");
+            logger.LogError(
+                exception,
+                "Ocurrió un error no controlado. TraceId: {TraceId}",
+                context.TraceIdentifier);
 
-            if (context.Response.HasStarted)
-            {
-                throw;
-            }
-
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            context.Response.ContentType = "application/problem+json";
-
-            var problem = new ProblemDetails
-            {
-                Status = StatusCodes.Status500InternalServerError,
-                Title = "Error interno del servidor",
-                Detail = "Ocurrió un error inesperado. Intente nuevamente más tarde.",
-                Instance = context.Request.Path
-            };
-
-            problem.Extensions["traceId"] = context.TraceIdentifier;
-
-            await context.Response.WriteAsJsonAsync(
-                problem,
-                context.RequestAborted);
+            await WriteProblemDetailsAsync(context, exception);
         }
+    }
+
+    private static async Task WriteProblemDetailsAsync(
+        HttpContext context,
+        Exception exception)
+    {
+        if (context.Response.HasStarted)
+        {
+            return;
+        }
+
+        var problemDetails = new ProblemDetails
+        {
+            Status = StatusCodes.Status500InternalServerError,
+            Title = "Ocurrió un error inesperado.",
+            Detail = "No fue posible completar la solicitud.",
+            Instance = context.Request.Path
+        };
+
+        problemDetails.Extensions["traceId"] =
+            context.TraceIdentifier;
+
+        context.Response.StatusCode =
+            problemDetails.Status.Value;
+
+        context.Response.ContentType =
+            "application/problem+json";
+
+        await context.Response.WriteAsJsonAsync(problemDetails);
     }
 }

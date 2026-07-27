@@ -1,13 +1,19 @@
 USE EdificiosOlivaDb;
 GO
 
-SELECT TABLE_NAME
-FROM INFORMATION_SCHEMA.TABLES
-ORDER BY TABLE_NAME;
+UPDATE Apartments
+SET Status = 1
+WHERE Status = 0;
 
-
-SELECT *
-FROM __EFMigrationsHistory;
-
-SELECT *
+SELECT Id, Name, Status
 FROM Apartments;
+
+
+
+
+USE EdificiosOlivaDb;
+GO
+
+SELECT COUNT(*)
+FROM Apartments
+WHERE IsDeleted = 0;
