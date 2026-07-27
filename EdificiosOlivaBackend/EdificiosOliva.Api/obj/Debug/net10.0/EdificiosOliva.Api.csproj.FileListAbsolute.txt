@@ -175,7 +175,6 @@ C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\Edif
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Azure.Core.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Azure.Identity.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Humanizer.dll
-C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Microsoft.AspNetCore.OpenApi.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Microsoft.Build.Framework.dll
@@ -205,6 +204,9 @@ C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\Edif
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Microsoft.VisualStudio.SolutionPersistence.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Mono.TextTemplating.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Newtonsoft.Json.dll
+C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\System.ClientModel.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\System.CodeDom.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\System.Composition.AttributedModel.dll
@@ -323,13 +325,10 @@ C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\Edif
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\swae.build.ex.cache
+C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\Edificio.6A5F94A7.Up2Date
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\EdificiosOliva.Api.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\refint\EdificiosOliva.Api.dll
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\EdificiosOliva.Api.pdb
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\EdificiosOliva.Api.genruntimeconfig.cache
 C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\ref\EdificiosOliva.Api.dll
-C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
-C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
-C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
-C:\Users\jairo\OneDrive\Escritorio\PROYECTOS DE PROGRAMACION\EdificiosOliva\EdificiosOlivaBackend\EdificiosOliva.Api\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

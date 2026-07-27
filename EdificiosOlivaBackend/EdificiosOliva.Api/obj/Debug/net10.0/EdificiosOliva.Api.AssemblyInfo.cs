@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EdificiosOliva.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1a01d87d193557823257bef695af61dcb8f16c19")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9210c3484c43d77210c010712c8ea30daf4b945d")]
 [assembly: System.Reflection.AssemblyProductAttribute("EdificiosOliva.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EdificiosOliva.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
