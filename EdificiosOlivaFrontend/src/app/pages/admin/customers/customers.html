@@ -1,119 +1,137 @@
 <div class="admin-page">
-
   <div class="page-header">
-
     <div>
-
       <h1>Clientes</h1>
-
       <p>Gestiona los huéspedes registrados en Edificios Oliva.</p>
-
     </div>
 
-    <button class="new-btn">
-
-      <i class="bi bi-person-plus-fill"></i>
-
+    <button class="new-btn" type="button" (click)="openCreateForm()">
+      <i class="bi bi-person-plus-fill" aria-hidden="true"></i>
       Nuevo Cliente
-
     </button>
-
   </div>
 
-  <div class="table-card">
+  @if (successMessage) {
+    <div class="feedback success" role="status">{{ successMessage }}</div>
+  }
 
-    <table>
+  @if (errorMessage && !showForm) {
+    <div class="feedback error" role="alert">{{ errorMessage }}</div>
+  }
 
-      <thead>
+  <section class="filters" aria-label="Filtros de clientes">
+    <label>
+      <span>Buscar</span>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        placeholder="Nombre, correo o teléfono"
+      />
+    </label>
 
-        <tr>
+    <label>
+      <span>Estado</span>
+      <select [(ngModel)]="statusFilter">
+        <option value="Todos">Todos</option>
+        <option value="Activo">Activo</option>
+        <option value="Inactivo">Inactivo</option>
+      </select>
+    </label>
 
-          <th>ID</th>
+    <p class="results-count">{{ filteredCustomers.length }} cliente(s)</p>
+  </section>
 
-          <th>Cliente</th>
+  <div class="table-card" role="region" aria-label="Tabla de clientes" tabindex="0">
+    @if (filteredCustomers.length === 0) {
+      <p class="empty-state">No se encontraron clientes.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Correo</th>
+            <th scope="col">Teléfono</th>
+            <th scope="col">Reservas</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
 
-          <th>Correo</th>
+        <tbody>
+          @for (customer of filteredCustomers; track customer.id) {
+            <tr>
+              <td title="{{ customer.id }}">#{{ shortId(customer.id) }}</td>
+              <td>{{ customer.name }}</td>
+              <td>{{ customer.email }}</td>
+              <td>{{ customer.phone }}</td>
+              <td>{{ customer.bookings }}</td>
+              <td>
+                <span [class.active]="customer.status === 'Activo'" [class.inactive]="customer.status === 'Inactivo'">
+                  {{ customer.status }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button class="edit" type="button" (click)="openEditForm(customer)" [attr.aria-label]="'Editar ' + customer.name">
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button class="delete" type="button" (click)="deleteCustomer(customer)" [attr.aria-label]="'Eliminar ' + customer.name">
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
 
-          <th>Teléfono</th>
+  @if (showForm) {
+    <div class="modal-backdrop">
+      <div class="customer-modal" role="dialog" aria-modal="true" aria-labelledby="customer-title">
+        <div class="modal-header">
+          <div>
+            <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>
+            <h2 id="customer-title">{{ editingId ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
+          </div>
+          <button class="close-btn" type="button" (click)="closeForm()" aria-label="Cerrar">×</button>
+        </div>
 
-          <th>Reservas</th>
-
-          <th>Estado</th>
-
-          <th>Acciones</th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-
-        @for(customer of customers; track customer.id){
-
-        <tr>
-
-          <td>#{{customer.id}}</td>
-
-          <td>{{customer.name}}</td>
-
-          <td>{{customer.email}}</td>
-
-          <td>{{customer.phone}}</td>
-
-          <td>{{customer.bookings}}</td>
-
-          <td>
-
-            @if(customer.status=="Activo"){
-
-              <span class="active">
-
-                {{customer.status}}
-
-              </span>
-
-            } @else {
-
-              <span class="inactive">
-
-                {{customer.status}}
-
-              </span>
-
-            }
-
-          </td>
-
-          <td>
-
-            <button class="view">
-
-              <i class="bi bi-eye"></i>
-
-            </button>
-
-            <button class="edit">
-
-              <i class="bi bi-pencil"></i>
-
-            </button>
-
-            <button class="delete">
-
-              <i class="bi bi-trash"></i>
-
-            </button>
-
-          </td>
-
-        </tr>
-
+        @if (errorMessage) {
+          <div class="feedback error" role="alert">{{ errorMessage }}</div>
         }
 
-      </tbody>
+        <form (ngSubmit)="saveCustomer()" class="customer-form">
+          <label>
+            <span>Nombre completo</span>
+            <input type="text" name="name" [(ngModel)]="customerForm.name" required />
+          </label>
+          <label>
+            <span>Correo electrónico</span>
+            <input type="email" name="email" [(ngModel)]="customerForm.email" required />
+          </label>
+          <label>
+            <span>Teléfono</span>
+            <input type="tel" name="phone" [(ngModel)]="customerForm.phone" required />
+          </label>
+          <label>
+            <span>Cantidad de reservas</span>
+            <input type="number" name="bookings" [(ngModel)]="customerForm.bookings" min="0" />
+          </label>
+          <label>
+            <span>Estado</span>
+            <select name="status" [(ngModel)]="customerForm.status">
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </label>
 
-    </table>
-
-  </div>
-
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn" (click)="closeForm()">Cancelar</button>
+            <button type="submit" class="primary-btn">{{ editingId ? 'Guardar cambios' : 'Crear cliente' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </div>
