@@ -7,10 +7,6 @@
   <strong>Bávaro • Punta Cana • República Dominicana</strong>
 </p>
 
-<p align="center">
-  <img src="https://skillicons.dev/icons?i=angular,ts,html,css,bootstrap,dotnet,cs,mssql,firebase,visualstudio,vscode,git,github,npm&perline=7" alt="Tecnologías utilizadas" />
-</p>
-
 ---
 
 # 📖 Descripción
@@ -21,11 +17,11 @@ El proyecto nace de **Residencial Oliva**, una iniciativa personal iniciada en *
 
 El sistema combina un sitio web público para visitantes con un panel administrativo privado desde el cual se gestionan apartamentos, imágenes, amenidades, clientes, reservas, pagos, disponibilidad, reportes y contenido general.
 
-La solución está siendo reconstruida con **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication**.
+La solución fue reconstruida con **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication**, y continúa evolucionando hacia una versión preparada para producción.
 
 Firebase se utiliza exclusivamente como proveedor de autenticación. Toda la lógica del negocio, la persistencia de datos y la gestión de archivos son administradas por ASP.NET Core mediante una API REST y una arquitectura Clean.
 
-El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación profesional, mantenible, escalable y preparada para producción.
+El objetivo es consolidar el proyecto como una aplicación profesional, mantenible, escalable, segura y preparada para producción.
 
 ---
 
@@ -75,6 +71,7 @@ El objetivo es evolucionar el proyecto hasta convertirlo en una aplicación prof
 - ✅ Persistencia mediante ASP.NET Core Web API.
 - ✅ Gestión de imágenes desde el backend.
 - ✅ Almacenamiento local de imágenes.
+- ✅ Eliminación física de imágenes.
 
 ## ⚙️ Backend
 
