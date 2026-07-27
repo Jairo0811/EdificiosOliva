@@ -14,6 +14,7 @@ export interface ApiApartment {
   bathrooms: number;
   location: string;
   status: ApartmentStatus;
+  images: string[];
   createdAtUtc: string;
   updatedAtUtc: string | null;
 }
