@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 
 import { Apartment } from '../../../core/models/apartment.model';
 import { Apartments } from '../../../core/services/apartments';
@@ -63,18 +64,28 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   }
 
   loadApartments(): void {
+    this.loadingApartments = true;
+    this.errorMessage = '';
+
     this.apartmentsService
       .getApartments()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.loadingApartments = false;
+        }),
+      )
       .subscribe({
-        next: (data) => {
-          this.apartments = data;
-          this.loadingApartments = false;
+        next: (apartments) => {
+          this.apartments = apartments;
         },
-        error: (error) => {
+        error: (error: unknown) => {
           console.error('Error cargando apartamentos:', error);
-          this.errorMessage = 'No fue posible cargar los apartamentos.';
-          this.loadingApartments = false;
+
+          this.errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'No fue posible cargar los apartamentos.';
         },
       });
   }
@@ -339,6 +350,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
 
       this.showForm = false;
       this.resetFormState(false);
+      this.loadApartments();
     } catch (error) {
       console.error('Error guardando apartamento:', error);
 
@@ -369,9 +381,14 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
     try {
       await this.apartmentsService.deleteApartment(id);
       this.successMessage = 'Apartamento eliminado correctamente.';
-    } catch (error) {
+      this.loadApartments();
+    } catch (error: unknown) {
       console.error('Error eliminando apartamento:', error);
-      this.errorMessage = 'No fue posible eliminar el apartamento.';
+
+      this.errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'No fue posible eliminar el apartamento.';
     }
   }
 
