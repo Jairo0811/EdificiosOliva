@@ -3,154 +3,152 @@
     <div>
       <span class="page-kicker">Resumen general</span>
       <h1>Dashboard</h1>
-
       <p>
         Consulta el estado actual de apartamentos, reservas,
         clientes e ingresos.
       </p>
     </div>
 
-  
+    <button class="refresh-btn" type="button" (click)="loadDashboard()" [disabled]="loading">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+      {{ loading ? 'Actualizando...' : 'Actualizar' }}
+    </button>
   </header>
 
-  <section
-    class="stats"
-    aria-label="Estadísticas generales"
-  >
-    @for (stat of stats; track stat.title) {
-      <article class="stat-card">
-        <div class="stat-icon" aria-hidden="true">
-          <i class="bi {{ stat.icon }}"></i>
+  @if (errorMessage) {
+    <div class="feedback error" role="alert">{{ errorMessage }}</div>
+  }
+
+  @if (loading && !summary) {
+    <div class="loading-state">Cargando información del dashboard...</div>
+  } @else if (summary) {
+    <section class="stats" aria-label="Estadísticas generales">
+      @for (stat of stats; track stat.title) {
+        <article class="stat-card">
+          <div class="stat-icon" aria-hidden="true">
+            <i class="bi {{ stat.icon }}"></i>
+          </div>
+
+          <div class="stat-content">
+            <span>{{ stat.title }}</span>
+            <strong>{{ stat.value }}</strong>
+          </div>
+        </article>
+      }
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel reservations-panel">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">Actividad reciente</span>
+            <h2>Últimas reservas</h2>
+          </div>
+
+          <a routerLink="/admin/reservas">
+            Ver todas
+            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+          </a>
         </div>
 
-        <div class="stat-content">
-          <span>{{ stat.title }}</span>
-          <strong>{{ stat.value }}</strong>
-        </div>
+        @if (summary.recentReservations.length === 0) {
+          <p class="empty-state">Todavía no hay reservas registradas.</p>
+        } @else {
+          <div
+            class="table-responsive"
+            role="region"
+            aria-label="Últimas reservas"
+            tabindex="0"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Apartamento</th>
+                  <th scope="col">Entrada</th>
+                  <th scope="col">Estado</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (
+                  reservation of summary.recentReservations;
+                  track reservation.id
+                ) {
+                  <tr>
+                    <td>{{ reservation.customerName }}</td>
+                    <td>{{ reservation.apartmentName }}</td>
+                    <td>{{ reservation.checkInDate }}</td>
+                    <td>
+                      <span class="status" [class]="'status ' + statusClass(reservation.status)">
+                        {{ statusLabel(reservation.status) }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </article>
-    }
-  </section>
 
-  <section class="dashboard-grid">
-    <article class="panel reservations-panel">
-      <div class="panel-header">
-        <div>
-          <span class="panel-kicker">Actividad reciente</span>
-          <h2>Últimas reservas</h2>
-        </div>
-
-        <a routerLink="/admin/reservas">
-          Ver todas
-          <i class="bi bi-arrow-right" aria-hidden="true"></i>
-        </a>
-      </div>
-
-      <div
-        class="table-responsive"
-        role="region"
-        aria-label="Últimas reservas"
-        tabindex="0"
+      <aside
+        class="panel summary-panel"
+        aria-labelledby="summary-title"
       >
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Cliente</th>
-              <th scope="col">Apartamento</th>
-              <th scope="col">Estado</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr>
-              <td>Juan Pérez</td>
-              <td>Ejecutivo</td>
-              <td>
-                <span class="status confirmed">
-                  Confirmada
-                </span>
-              </td>
-            </tr>
-
-            <tr>
-              <td>María López</td>
-              <td>Premium</td>
-              <td>
-                <span class="status pending">
-                  Pendiente
-                </span>
-              </td>
-            </tr>
-
-            <tr>
-              <td>Carlos Díaz</td>
-              <td>Familiar</td>
-              <td>
-                <span class="status confirmed">
-                  Confirmada
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </article>
-
-    <aside
-      class="panel summary-panel"
-      aria-labelledby="summary-title"
-    >
-      <div class="panel-header">
-        <div>
-          <span class="panel-kicker">Estado actual</span>
-          <h2 id="summary-title">Resumen</h2>
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">Estado actual</span>
+            <h2 id="summary-title">Resumen</h2>
+          </div>
         </div>
-      </div>
 
-      <ul class="summary-list">
-        <li>
-          <div class="summary-icon">
-            <i class="bi bi-building-check" aria-hidden="true"></i>
-          </div>
+        <ul class="summary-list">
+          <li>
+            <div class="summary-icon">
+              <i class="bi bi-building-check" aria-hidden="true"></i>
+            </div>
 
-          <div>
-            <span>Apartamentos disponibles</span>
-            <strong>8</strong>
-          </div>
-        </li>
+            <div>
+              <span>Apartamentos disponibles</span>
+              <strong>{{ summary.availableApartments }}</strong>
+            </div>
+          </li>
 
-        <li>
-          <div class="summary-icon">
-            <i class="bi bi-pie-chart-fill" aria-hidden="true"></i>
-          </div>
+          <li>
+            <div class="summary-icon">
+              <i class="bi bi-pie-chart-fill" aria-hidden="true"></i>
+            </div>
 
-          <div>
-            <span>Ocupación actual</span>
-            <strong>82%</strong>
-          </div>
-        </li>
+            <div>
+              <span>Ocupación actual</span>
+              <strong>{{ summary.currentOccupancyRate }}%</strong>
+            </div>
+          </li>
 
-        <li>
-          <div class="summary-icon">
-            <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
-          </div>
+          <li>
+            <div class="summary-icon">
+              <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+            </div>
 
-          <div>
-            <span>Próximo check-in</span>
-            <strong>Hoy</strong>
-          </div>
-        </li>
+            <div>
+              <span>Próximo check-in</span>
+              <strong>{{ nextCheckInLabel() }}</strong>
+            </div>
+          </li>
 
-        <li>
-          <div class="summary-icon">
-            <i class="bi bi-calendar2-week-fill" aria-hidden="true"></i>
-          </div>
+          <li>
+            <div class="summary-icon">
+              <i class="bi bi-calendar2-week-fill" aria-hidden="true"></i>
+            </div>
 
-          <div>
-            <span>Reservas este mes</span>
-            <strong>48</strong>
-          </div>
-        </li>
-      </ul>
-    </aside>
-  </section>
+            <div>
+              <span>Reservas este mes</span>
+              <strong>{{ summary.reservationsThisMonth }}</strong>
+            </div>
+          </li>
+        </ul>
+      </aside>
+    </section>
+  }
 </div>
