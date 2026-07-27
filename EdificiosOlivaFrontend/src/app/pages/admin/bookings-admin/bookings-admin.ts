@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, finalize } from 'rxjs';
+import { Observable, finalize, forkJoin } from 'rxjs';
 
 import { Apartment } from '../../../core/models/apartment.model';
 import { Booking } from '../../../core/models/booking.model';
@@ -156,7 +156,7 @@ export class BookingsAdmin implements OnInit {
     };
 
     this.saving = true;
-    const operation = this.editingId
+    const operation: Observable<unknown> = this.editingId
       ? this.reservationsService.update(this.editingId, request)
       : this.reservationsService.create(request);
 

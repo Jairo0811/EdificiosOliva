@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { Observable, finalize } from 'rxjs';
 
 import { Booking } from '../../../core/models/booking.model';
 import { Payment } from '../../../core/models/payment.model';
@@ -153,7 +153,7 @@ export class Payments implements OnInit {
     };
 
     this.saving = true;
-    const operation = this.editingId
+    const operation: Observable<unknown> = this.editingId
       ? this.paymentsService.update(this.editingId, request)
       : this.paymentsService.create(request);
 

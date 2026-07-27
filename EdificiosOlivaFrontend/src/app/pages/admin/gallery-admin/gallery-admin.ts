@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { Observable, finalize } from 'rxjs';
 
 import { GalleryImage } from '../../../core/models/gallery-image.model';
 import {
@@ -149,7 +149,7 @@ export class GalleryAdmin implements OnInit {
     };
 
     this.saving = true;
-    const operation = this.editingId
+    const operation: Observable<unknown> = this.editingId
       ? this.galleryService.update(this.editingId, request)
       : this.galleryService.create(request);
 

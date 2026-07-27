@@ -1,0 +1,13 @@
+# Visual Studio
+.vs/
+**/.vs/
+
+# .NET
+**/bin/
+**/obj/
+
+# Archivos subidos por usuarios
+EdificiosOlivaBackend/EdificiosOliva.Api/wwwroot/uploads/**
+
+# Mantener la carpeta uploads en Git
+!EdificiosOlivaBackend/EdificiosOliva.Api/wwwroot/uploads/.gitkeep
