@@ -35,6 +35,45 @@
   line-height: 1.6;
 }
 
+.refresh-btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0f4c81;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.feedback,
+.loading-state,
+.empty-state {
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.feedback.error {
+  margin-bottom: 20px;
+  background: #ffe5e5;
+  color: #a41515;
+  font-weight: 600;
+}
+
+.loading-state,
+.empty-state {
+  background: #fff;
+  color: #667085;
+  text-align: center;
+  border: 1px solid #e3e9ef;
+}
 
 .stats {
   display: grid;
@@ -145,7 +184,7 @@
 
 table {
   width: 100%;
-  min-width: 580px;
+  min-width: 650px;
   border-collapse: collapse;
 }
 
@@ -175,7 +214,8 @@ td {
   font-weight: 700;
 }
 
-.status.confirmed {
+.status.confirmed,
+.status.completed {
   color: #166534;
   background: #dcfce7;
 }
@@ -183,6 +223,16 @@ td {
 .status.pending {
   color: #92400e;
   background: #fef3c7;
+}
+
+.status.in-progress {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.status.cancelled {
+  color: #b91c1c;
+  background: #fee2e2;
 }
 
 .summary-list {
@@ -247,6 +297,10 @@ td {
     align-items: flex-start;
   }
 
+  .refresh-btn {
+    width: 100%;
+    justify-content: center;
+  }
 
   .stats {
     grid-template-columns: 1fr;
