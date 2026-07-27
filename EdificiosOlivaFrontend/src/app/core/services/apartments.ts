@@ -23,28 +23,14 @@ interface ApiClientError extends Error {
   status?: number;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class Apartments {
-  private readonly apartmentApiService =
-    inject(ApartmentApiService);
+  private readonly apartmentApiService = inject(ApartmentApiService);
 
   getApartments(): Observable<Apartment[]> {
     return this.apartmentApiService
-      .getAll({
-        page: 1,
-        pageSize: 100,
-        sortBy: 'name',
-        descending: false,
-      })
-      .pipe(
-        map((result) =>
-          result.items.map((apartment) =>
-            this.toViewModel(apartment),
-          ),
-        ),
-      );
+      .getAll({ page: 1, pageSize: 100, sortBy: 'name', descending: false })
+      .pipe(map((result) => result.items.map((apartment) => this.toViewModel(apartment))));
   }
 
   getAvailableApartments(): Observable<Apartment[]> {
@@ -56,59 +42,28 @@ export class Apartments {
         sortBy: 'name',
         descending: false,
       })
-      .pipe(
-        map((result) =>
-          result.items.map((apartment) =>
-            this.toViewModel(apartment),
-          ),
-        ),
-      );
+      .pipe(map((result) => result.items.map((apartment) => this.toViewModel(apartment))));
   }
 
-  getApartmentById(
-    id: string,
-  ): Observable<Apartment | null> {
-    return this.apartmentApiService
-      .getById(id)
-      .pipe(
-        map((apartment) => this.toViewModel(apartment)),
-        catchError((error: ApiClientError) =>
-          error.status === 404
-            ? of(null)
-            : throwError(() => error),
-        ),
-      );
-  }
-
-  async addApartment(
-    apartment: Apartment,
-  ): Promise<void> {
-    await firstValueFrom(
-      this.apartmentApiService.create(
-        this.toApiRequest(apartment),
+  getApartmentById(id: string): Observable<Apartment | null> {
+    return this.apartmentApiService.getById(id).pipe(
+      map((apartment) => this.toViewModel(apartment)),
+      catchError((error: ApiClientError) =>
+        error.status === 404 ? of(null) : throwError(() => error),
       ),
     );
   }
 
-  async updateApartment(
-    id: string,
-    apartment: Apartment,
-  ): Promise<void> {
-    await firstValueFrom(
-      this.apartmentApiService.update(
-        id,
-        this.toApiRequest(apartment),
-      ),
-    );
+  async addApartment(apartment: Apartment): Promise<void> {
+    await firstValueFrom(this.apartmentApiService.create(this.toApiRequest(apartment)));
   }
 
-  async updateApartmentStatus(
-    id: string,
-    status: ApartmentViewStatus,
-  ): Promise<void> {
-    const currentApartment = await firstValueFrom(
-      this.apartmentApiService.getById(id),
-    );
+  async updateApartment(id: string, apartment: Apartment): Promise<void> {
+    await firstValueFrom(this.apartmentApiService.update(id, this.toApiRequest(apartment)));
+  }
+
+  async updateApartmentStatus(id: string, status: ApartmentViewStatus): Promise<void> {
+    const currentApartment = await firstValueFrom(this.apartmentApiService.getById(id));
 
     await firstValueFrom(
       this.apartmentApiService.update(id, {
@@ -120,19 +75,16 @@ export class Apartments {
         bathrooms: currentApartment.bathrooms,
         location: currentApartment.location,
         status: this.toApiStatus(status),
+        images: currentApartment.images ?? [],
       }),
     );
   }
 
   async deleteApartment(id: string): Promise<void> {
-    await firstValueFrom(
-      this.apartmentApiService.delete(id),
-    );
+    await firstValueFrom(this.apartmentApiService.delete(id));
   }
 
-  private toViewModel(
-    apartment: ApiApartment,
-  ): Apartment {
+  private toViewModel(apartment: ApiApartment): Apartment {
     return {
       id: apartment.id,
       name: apartment.name,
@@ -143,21 +95,14 @@ export class Apartments {
       bathrooms: apartment.bathrooms,
       location: apartment.location,
       status: this.toViewStatus(apartment.status),
-
-      // Se conectarán cuando la API incluya imágenes y amenidades.
       amenities: [],
-      images: [],
-
+      images: apartment.images ?? [],
       createdAt: new Date(apartment.createdAtUtc),
-      updatedAt: apartment.updatedAtUtc
-        ? new Date(apartment.updatedAtUtc)
-        : null,
+      updatedAt: apartment.updatedAtUtc ? new Date(apartment.updatedAtUtc) : null,
     };
   }
 
-  private toApiRequest(
-    apartment: Apartment,
-  ): CreateApartmentRequest {
+  private toApiRequest(apartment: Apartment): CreateApartmentRequest {
     return {
       name: apartment.name.trim(),
       description: apartment.description.trim(),
@@ -167,35 +112,28 @@ export class Apartments {
       bathrooms: apartment.bathrooms,
       location: apartment.location.trim(),
       status: this.toApiStatus(apartment.status),
+      images: apartment.images ?? [],
     };
   }
 
-  private toApiStatus(
-    status: ApartmentViewStatus,
-  ): ApartmentStatus {
+  private toApiStatus(status: ApartmentViewStatus): ApartmentStatus {
     switch (status) {
       case 'Ocupado':
         return ApartmentStatus.Occupied;
-
       case 'Mantenimiento':
         return ApartmentStatus.Maintenance;
-
       case 'Disponible':
       default:
         return ApartmentStatus.Available;
     }
   }
 
-  private toViewStatus(
-    status: ApartmentStatus,
-  ): ApartmentViewStatus {
+  private toViewStatus(status: ApartmentStatus): ApartmentViewStatus {
     switch (status) {
       case ApartmentStatus.Occupied:
         return 'Ocupado';
-
       case ApartmentStatus.Maintenance:
         return 'Mantenimiento';
-
       case ApartmentStatus.Available:
       default:
         return 'Disponible';
