@@ -152,7 +152,7 @@ El objetivo es consolidar el proyecto como una aplicación profesional, mantenib
 ## 🗄️ Base de datos y almacenamiento
 
 <p>
-  <img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white" alt="SQL Server" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain.svg" alt="Microsoft SQL Server" width="48" height="48" />
 </p>
 
 - **Microsoft SQL Server:** persistencia principal de la información del negocio.
