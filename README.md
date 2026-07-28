@@ -104,6 +104,12 @@ El objetivo es consolidar el proyecto como una aplicación profesional, mantenib
 
 <p>
   <img src="https://skillicons.dev/icons?i=angular,ts,html,css,bootstrap" alt="Angular, TypeScript, HTML, CSS y Bootstrap" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/angularmaterial/angularmaterial-original.svg" alt="Angular Material" title="Angular Material" width="48" height="48" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swiper/swiper-original.svg" alt="Swiper" title="Swiper" width="48" height="48" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Leaflet-Mapas-199900?style=flat-square&logo=leaflet&logoColor=white" alt="Leaflet" />
 </p>
 
 - **Angular 21:** framework principal de la aplicación SPA.
