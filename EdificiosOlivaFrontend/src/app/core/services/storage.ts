@@ -1,8 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { getAuth } from 'firebase/auth';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { firebaseApp } from '../config/firebase.config';
 
 export interface StorageUploadResult {
   downloadUrl: string;
@@ -20,17 +22,25 @@ export interface StorageDeleteSummary {
 })
 export class StorageService {
   private readonly http = inject(HttpClient);
+  private readonly firebaseAuth = getAuth(firebaseApp);
   private readonly endpoint = `${environment.apiUrl}/files/images`;
 
   private readonly allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   private readonly maxFileSizeBytes = 5 * 1024 * 1024;
 
-  uploadImage(
+  async uploadImage(
     file: File,
     folder: string,
     onProgress?: (progress: number) => void,
   ): Promise<StorageUploadResult> {
     this.validateImage(file);
+
+    const user = this.firebaseAuth.currentUser;
+    if (!user) {
+      throw new Error('Debes iniciar sesión para cargar imágenes.');
+    }
+
+    const token = await user.getIdToken();
 
     const formData = new FormData();
     formData.append('file', file, file.name);
@@ -39,6 +49,7 @@ export class StorageService {
     return new Promise<StorageUploadResult>((resolve, reject) => {
       const request = new XMLHttpRequest();
       request.open('POST', this.endpoint);
+      request.setRequestHeader('Authorization', `Bearer ${token}`);
 
       request.upload.addEventListener('progress', (event) => {
         if (!event.lengthComputable) {
@@ -98,9 +109,7 @@ export class StorageService {
 
   async deleteImages(pathsOrUrls: string[]): Promise<StorageDeleteSummary> {
     const uniqueValues = [...new Set(pathsOrUrls.filter((value) => value.trim()))];
-    const results = await Promise.allSettled(
-      uniqueValues.map((value) => this.deleteImage(value)),
-    );
+    const results = await Promise.allSettled(uniqueValues.map((value) => this.deleteImage(value)));
 
     const summary: StorageDeleteSummary = {
       deleted: [],

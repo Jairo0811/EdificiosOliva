@@ -1,17 +1,7 @@
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  inject,
-} from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  NavigationEnd,
-  Router,
-  RouterLink,
-  RouterLinkActive,
-} from '@angular/router';
-import { User } from '@angular/fire/auth';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { User } from 'firebase/auth';
 import { filter } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth';
@@ -41,26 +31,19 @@ export class Navbar implements OnInit {
 
     this.router.events
       .pipe(
-        filter(
-          (event): event is NavigationEnd =>
-            event instanceof NavigationEnd
-        ),
-        takeUntilDestroyed(this.destroyRef)
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((event) => {
         this.updateAdminRoute(event.urlAfterRedirects);
         this.closeMenus();
       });
 
-    this.authService.user$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (user) => {
-        this.firebaseUser = user;
+    this.authService.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (user) => {
+      this.firebaseUser = user;
 
-        this.profile = user
-          ? await this.authService.getUserProfile(user.uid)
-          : null;
-      });
+      this.profile = user ? await this.authService.getUserProfile(user.uid) : null;
+    });
   }
 
   get displayName(): string {
@@ -106,8 +89,6 @@ export class Navbar implements OnInit {
   }
 
   private updateAdminRoute(url: string): void {
-    this.isAdminRoute =
-      url === '/admin' ||
-      url.startsWith('/admin/');
+    this.isAdminRoute = url === '/admin' || url.startsWith('/admin/');
   }
 }

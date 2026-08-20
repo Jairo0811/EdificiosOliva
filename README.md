@@ -94,7 +94,10 @@ El objetivo es consolidar el proyecto como una aplicación profesional, mantenib
 - ✅ Carga de imágenes mediante `multipart/form-data`.
 - ✅ Publicación de archivos mediante ASP.NET Core Static Files.
 - ✅ Almacenamiento local de imágenes en `wwwroot/uploads`.
-- 🚧 Validación completa de tokens de Firebase en la API.
+- ✅ Validación criptográfica de tokens de Firebase en la API.
+- ✅ Autorización administrativa mediante custom claims firmados.
+- ✅ Rate limiting, CORS restringido y encabezados de seguridad.
+- ✅ Validación y recodificación segura de imágenes.
 
 ---
 
@@ -152,8 +155,8 @@ El objetivo es consolidar el proyecto como una aplicación profesional, mantenib
 - **Firebase Authentication:** autenticación mediante correo y contraseña.
 - **Google Sign-In:** acceso mediante cuentas de Google.
 - **Angular Guards:** protección de rutas del panel administrativo.
-- **Roles administrativos:** control de acceso en la aplicación cliente.
-- **Validación de tokens en la API:** integración planificada para completar la autorización del backend.
+- **Roles administrativos:** el backend exige el custom claim firmado `role=admin` y correo verificado.
+- **Validación de tokens en la API:** cada operación privada valida firma, emisor, audiencia y vencimiento del Firebase ID token.
 
 ## 🗄️ Base de datos y almacenamiento
 
@@ -308,7 +311,7 @@ cd EdificiosOliva
 
 ```bash
 cd EdificiosOlivaFrontend
-npm install --legacy-peer-deps
+npm ci
 npm start
 ```
 
@@ -318,7 +321,7 @@ La aplicación estará disponible en:
 http://localhost:4200
 ```
 
-> `--legacy-peer-deps` es temporal mientras se completa la migración de AngularFire al SDK modular de Firebase compatible con Angular 21.
+El frontend usa directamente el SDK modular de Firebase compatible con Angular 21.
 
 ## 3. Ejecutar el backend
 
@@ -331,7 +334,26 @@ dotnet run --project EdificiosOliva.Api
 
 La URL HTTPS se obtiene desde `EdificiosOliva.Api/Properties/launchSettings.json`.
 
-## 4. Almacenamiento de imágenes
+La cadena de conexión de producción no se guarda en Git. Configúrala con User Secrets o con la variable `ConnectionStrings__DefaultConnection`:
+
+```bash
+cd EdificiosOlivaBackend/EdificiosOliva.Api
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=...;Database=EdificiosOlivaDb;..."
+```
+
+En producción también debes establecer `AllowedHosts` y `Cors__AllowedOrigins__0` con el dominio HTTPS real.
+
+## 4. Crear un administrador de forma segura
+
+El campo `role` de Firestore es solo información de perfil y nunca concede acceso a la API. Asigna el custom claim mediante Firebase Admin SDK desde un entorno administrativo confiable:
+
+```js
+await getAuth().setCustomUserClaims(uid, { role: 'admin' });
+```
+
+Después de asignarlo, el usuario debe cerrar sesión e iniciarla otra vez para recibir un token nuevo. No incluyas una clave de cuenta de servicio en el repositorio. Despliega además las reglas incluidas con `firebase deploy --only firestore:rules`.
+
+## 5. Almacenamiento de imágenes
 
 Las imágenes cargadas desde el panel administrativo se almacenan automáticamente en:
 
@@ -344,7 +366,7 @@ EdificiosOlivaBackend/
 
 La carpeta `uploads` está excluida del repositorio mediante `.gitignore`, por lo que las imágenes generadas en cada entorno no forman parte del código fuente.
 
-## 5. Requisitos
+## 6. Requisitos
 
 - Node.js compatible con Angular 21.
 - npm 11 o superior.
@@ -424,8 +446,8 @@ Las imágenes ya no dependen de Firebase Storage. La base de datos almacena la i
 | 🖼️ Galería administrativa | ✅ |
 | 🔗 Integración Angular ↔ API | ✅ |
 | 📁 Almacenamiento local de imágenes | ✅ |
-| 🛡️ Autorización Firebase en API | 🚧 |
-| 🧯 Manejo global de errores | 🚧 |
+| 🛡️ Autorización Firebase en API | ✅ |
+| 🧯 Manejo global de errores | ✅ |
 | 📈 Reportes y estadísticas | ⏳ |
 | 🔔 Notificaciones | ⏳ |
 

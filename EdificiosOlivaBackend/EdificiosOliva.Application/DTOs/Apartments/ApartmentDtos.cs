@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using EdificiosOliva.Application.Common.Validation;
 using EdificiosOliva.Domain.Enums;
 
 namespace EdificiosOliva.Application.DTOs.Apartments;
@@ -83,6 +84,7 @@ public abstract class ApartmentRequest
     public ApartmentStatus Status { get; init; } = ApartmentStatus.Available;
 
     [MaxLength(10)]
+    [AllowedImageUrlCollection]
     public IReadOnlyList<string> Images { get; init; } = [];
 }
 

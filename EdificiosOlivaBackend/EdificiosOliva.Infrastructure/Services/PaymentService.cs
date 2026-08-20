@@ -1,3 +1,4 @@
+using System.Data;
 using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Payments;
 using EdificiosOliva.Application.Interfaces;
@@ -72,6 +73,16 @@ public sealed class PaymentService(
         CreatePaymentRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (request.Status == PaymentStatus.Refunded)
+        {
+            throw new InvalidOperationException(
+                "Un pago nuevo no puede registrarse como reembolsado.");
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
         var reservation = await ValidateRequestAsync(request, null, cancellationToken);
 
         var payment = new Payment
@@ -88,6 +99,7 @@ public sealed class PaymentService(
 
         await paymentRepository.AddAsync(payment, cancellationToken);
         await paymentRepository.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         payment.Reservation = reservation;
         return MapResponse(payment);
@@ -98,10 +110,26 @@ public sealed class PaymentService(
         UpdatePaymentRequest request,
         CancellationToken cancellationToken = default)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
         var payment = await paymentRepository.GetByIdAsync(id, cancellationToken);
         if (payment is null)
         {
             return false;
+        }
+
+        if (payment.Status == PaymentStatus.Refunded)
+        {
+            throw new InvalidOperationException(
+                "Un pago reembolsado no puede modificarse.");
+        }
+
+        if (request.Status == PaymentStatus.Refunded)
+        {
+            throw new InvalidOperationException(
+                "Utiliza la operación de reembolso para cambiar este estado.");
         }
 
         var reservation = await ValidateRequestAsync(request, id, cancellationToken);
@@ -121,6 +149,7 @@ public sealed class PaymentService(
         payment.UpdatedAtUtc = DateTime.UtcNow;
 
         await paymentRepository.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return true;
     }
 

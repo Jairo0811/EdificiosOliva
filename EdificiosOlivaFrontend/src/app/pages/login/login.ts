@@ -20,80 +20,59 @@ export class Login {
   loading = false;
   errorMessage = '';
 
-async login(): Promise<void> {
-  this.errorMessage = '';
-  this.loading = true;
+  async login(): Promise<void> {
+    this.errorMessage = '';
 
-  try {
-    console.log('1. Antes del login');
-
-    const credential = await this.authService.login(
-      this.email.trim(),
-      this.password
-    );
-
-    console.log('2. Login terminado');
-    console.log(credential);
-
-    console.log('3. Antes de getUserProfile');
-
-    const profile = await this.authService.getUserProfile(
-      credential.user.uid
-    );
-
-    console.log('4. Después de getUserProfile');
-    console.log(profile);
-
-    if (!profile) {
-      this.errorMessage = 'No existe perfil.';
+    if (!this.isValidEmail(this.email.trim()) || this.password.length < 8) {
+      this.errorMessage = 'Ingresa un correo válido y tu contraseña.';
       return;
     }
 
-    if (profile.role !== 'admin') {
-      this.errorMessage = 'No eres administrador.';
-      return;
+    this.loading = true;
+
+    try {
+      await this.authService.login(this.email.trim(), this.password);
+
+      if (!(await this.authService.isCurrentUserAdmin(true))) {
+        await this.authService.logout();
+        this.errorMessage = 'Esta cuenta no tiene acceso administrativo.';
+        return;
+      }
+
+      await this.router.navigate(['/admin']);
+    } catch {
+      this.errorMessage = 'No fue posible iniciar sesión con esas credenciales.';
+    } finally {
+      this.loading = false;
     }
-
-    console.log('5. Navegando...');
-
-    await this.router.navigate(['/admin']);
-
-    console.log('6. Navegación completada');
-  } catch (e) {
-    console.error(e);
-  } finally {
-    this.loading = false;
   }
-}
 
-private isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
-async loginGoogle(): Promise<void> {
-  this.errorMessage = '';
+  async loginGoogle(): Promise<void> {
+    this.errorMessage = '';
 
-  try {
-    this.loading = true;
+    try {
+      this.loading = true;
+      await this.authService.loginWithGoogle();
 
-    const credential = await this.authService.loginWithGoogle();
-    const profile = await this.authService.getUserProfile(credential.user.uid);
+      if (!(await this.authService.isCurrentUserAdmin(true))) {
+        await this.authService.logout();
+        this.errorMessage = 'Esta cuenta no tiene acceso administrativo.';
+        return;
+      }
 
-    if (profile?.role === 'admin') {
-      window.location.href = '/admin';
-      return;
+      await this.router.navigate(['/admin']);
+    } catch {
+      this.errorMessage = 'No se pudo iniciar sesión con Google.';
+    } finally {
+      this.loading = false;
     }
-
-    window.location.href = '/mi-cuenta';
-  } catch (error) {
-    console.error('ERROR GOOGLE LOGIN:', error);
-    this.errorMessage = 'No se pudo iniciar sesión con Google.';
-  } finally {
-    this.loading = false;
   }
-}
 }

@@ -1,3 +1,4 @@
+using System.Data;
 using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Reservations;
 using EdificiosOliva.Application.Interfaces;
@@ -74,6 +75,10 @@ public sealed class ReservationService(
         CreateReservationRequest request,
         CancellationToken cancellationToken = default)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
         var (customer, apartment) = await ValidateRequestAsync(request, null, cancellationToken);
         var nights = request.CheckOutDate.DayNumber - request.CheckInDate.DayNumber;
 
@@ -92,6 +97,7 @@ public sealed class ReservationService(
 
         await reservationRepository.AddAsync(reservation, cancellationToken);
         await reservationRepository.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         reservation.Customer = customer;
         reservation.Apartment = apartment;
@@ -103,6 +109,10 @@ public sealed class ReservationService(
         UpdateReservationRequest request,
         CancellationToken cancellationToken = default)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
         var reservation = await reservationRepository.GetByIdAsync(id, cancellationToken);
         if (reservation is null)
         {
@@ -124,6 +134,7 @@ public sealed class ReservationService(
         reservation.UpdatedAtUtc = DateTime.UtcNow;
 
         await reservationRepository.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return true;
     }
 

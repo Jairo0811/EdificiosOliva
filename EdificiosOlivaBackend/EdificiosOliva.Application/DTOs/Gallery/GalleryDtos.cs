@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using EdificiosOliva.Application.Common.Validation;
 
 namespace EdificiosOliva.Application.DTOs.Gallery;
 
@@ -39,7 +40,7 @@ public class GalleryImageRequest
     [Required, StringLength(100)]
     public string Category { get; init; } = string.Empty;
 
-    [Required, Url, StringLength(1000)]
+    [Required, StringLength(1000), AllowedImageUrl]
     public string Url { get; init; } = string.Empty;
 
     [StringLength(300)]

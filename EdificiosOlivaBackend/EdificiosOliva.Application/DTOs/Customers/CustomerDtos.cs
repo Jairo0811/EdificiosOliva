@@ -38,6 +38,10 @@ public class CustomerRequest
 
     [Required]
     [StringLength(30)]
+    [RegularExpression(
+        @"^\+?[0-9 ()-]{7,30}$",
+        ErrorMessage = "El teléfono solo puede contener dígitos, espacios, paréntesis, + y -."
+    )]
     public string Phone { get; init; } = string.Empty;
 
     public bool IsActive { get; init; } = true;

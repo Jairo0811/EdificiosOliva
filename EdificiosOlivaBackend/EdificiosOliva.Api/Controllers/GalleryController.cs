@@ -1,6 +1,8 @@
 using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Gallery;
 using EdificiosOliva.Application.Interfaces;
+using EdificiosOliva.Api.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EdificiosOliva.Api.Controllers;
@@ -10,16 +12,29 @@ namespace EdificiosOliva.Api.Controllers;
 public sealed class GalleryController(IGalleryImageService galleryService) : ControllerBase
 {
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType<PagedResult<GalleryImageResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<GalleryImageResponse>>> GetAll(
         [FromQuery] GalleryQueryParameters parameters,
         CancellationToken cancellationToken)
     {
-        var images = await galleryService.GetPagedAsync(parameters, cancellationToken);
+        var effectiveParameters = User.IsInRole("admin")
+            ? parameters
+            : new GalleryQueryParameters
+            {
+                Page = parameters.Page,
+                PageSize = parameters.PageSize,
+                Category = parameters.Category,
+                Search = parameters.Search,
+                IsPublished = true
+            };
+
+        var images = await galleryService.GetPagedAsync(effectiveParameters, cancellationToken);
         return Ok(images);
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType<GalleryImageResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<GalleryImageResponse>> GetById(
@@ -27,10 +42,13 @@ public sealed class GalleryController(IGalleryImageService galleryService) : Con
         CancellationToken cancellationToken)
     {
         var image = await galleryService.GetByIdAsync(id, cancellationToken);
-        return image is null ? NotFound() : Ok(image);
+        return image is null || (!image.IsPublished && !User.IsInRole("admin"))
+            ? NotFound()
+            : Ok(image);
     }
 
     [HttpPost]
+    [Authorize(Policy = SecurityPolicies.Admin)]
     [ProducesResponseType<GalleryImageResponse>(StatusCodes.Status201Created)]
     public async Task<ActionResult<GalleryImageResponse>> Create(
         [FromBody] CreateGalleryImageRequest request,
@@ -41,6 +59,7 @@ public sealed class GalleryController(IGalleryImageService galleryService) : Con
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = SecurityPolicies.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
@@ -53,6 +72,7 @@ public sealed class GalleryController(IGalleryImageService galleryService) : Con
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = SecurityPolicies.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(

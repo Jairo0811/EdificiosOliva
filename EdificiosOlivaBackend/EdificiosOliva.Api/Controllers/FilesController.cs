@@ -1,21 +1,29 @@
+using System.Text.RegularExpressions;
+using EdificiosOliva.Api.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
 
 namespace EdificiosOliva.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class FilesController(IWebHostEnvironment environment) : ControllerBase
+[Authorize(Policy = SecurityPolicies.Admin)]
+public sealed partial class FilesController(
+    IWebHostEnvironment environment,
+    ILogger<FilesController> logger) : ControllerBase
 {
-    private static readonly HashSet<string> AllowedContentTypes =
-    [
-        "image/jpeg",
-        "image/png",
-        "image/webp"
-    ];
-
     private const long MaximumFileSize = 5 * 1024 * 1024;
+    private const long MaximumPixelCount = 20_000_000;
+
+    [GeneratedRegex("^[A-Za-z0-9_-]{1,50}$", RegexOptions.CultureInvariant)]
+    private static partial Regex SafeFolderPattern();
 
     [HttpPost("images")]
+    [EnableRateLimiting("uploads")]
     [RequestSizeLimit(MaximumFileSize)]
     [ProducesResponseType<FileUploadResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -24,7 +32,7 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
         [FromForm] string? folder,
         CancellationToken cancellationToken)
     {
-        if (file.Length == 0)
+        if (file is null || file.Length == 0)
         {
             return BadRequest("El archivo está vacío.");
         }
@@ -34,33 +42,75 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
             return BadRequest("Cada imagen debe pesar 5 MB o menos.");
         }
 
-        if (!AllowedContentTypes.Contains(file.ContentType))
+        byte[] payload;
+        await using (var input = file.OpenReadStream())
         {
-            return BadRequest("Solo se permiten imágenes JPG, PNG o WEBP.");
+            await using var buffer = new MemoryStream((int)file.Length);
+            await input.CopyToAsync(buffer, cancellationToken);
+            payload = buffer.ToArray();
         }
 
-        var safeFolder = SanitizeFolder(folder);
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var storedFileName = $"{Guid.NewGuid():N}{extension}";
-        var relativePath = Path.Combine("uploads", safeFolder, storedFileName)
-            .Replace('\\', '/');
-        var physicalDirectory = Path.Combine(
-            environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"),
-            "uploads",
-            safeFolder);
+        if (!HasAllowedImageSignature(payload))
+        {
+            return BadRequest("El archivo no contiene una imagen JPG, PNG o WEBP válida.");
+        }
 
+        Image image;
+        try
+        {
+            var information = Image.Identify(payload);
+            if (information is null ||
+                (long)information.Width * information.Height > MaximumPixelCount)
+            {
+                return BadRequest("La imagen supera el límite de 20 millones de píxeles.");
+            }
+
+            image = Image.Load(payload);
+        }
+        catch (Exception exception) when (
+            exception is UnknownImageFormatException or InvalidImageContentException)
+        {
+            logger.LogWarning(
+                exception,
+                "Se rechazó una carga de imagen inválida. TraceId: {TraceId}",
+                HttpContext.TraceIdentifier);
+            return BadRequest("El contenido del archivo no es una imagen válida.");
+        }
+
+        var safeFolder = NormalizeFolder(folder);
+        if (safeFolder is null)
+        {
+            image.Dispose();
+            return BadRequest("La carpeta solo puede contener letras, números, guiones y guiones bajos.");
+        }
+
+        var webRoot = GetWebRoot();
+        var physicalDirectory = Path.Combine(webRoot, "uploads", safeFolder);
         Directory.CreateDirectory(physicalDirectory);
 
+        var storedFileName = $"{Guid.NewGuid():N}.webp";
         var physicalPath = Path.Combine(physicalDirectory, storedFileName);
-        await using var stream = System.IO.File.Create(physicalPath);
-        await file.CopyToAsync(stream, cancellationToken);
 
-        var publicUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
+        using (image)
+        {
+            image.Mutate(operation => operation.AutoOrient());
+            image.Metadata.ExifProfile = null;
+            image.Metadata.IccProfile = null;
+            image.Metadata.XmpProfile = null;
 
-        return Created(publicUrl, new FileUploadResponse(
-            publicUrl,
+            await image.SaveAsWebpAsync(
+                physicalPath,
+                new WebpEncoder { Quality = 82 },
+                cancellationToken);
+        }
+
+        var relativePath = $"uploads/{safeFolder}/{storedFileName}";
+        var downloadUrl = $"/{relativePath}";
+
+        return Created(downloadUrl, new FileUploadResponse(
+            downloadUrl,
             relativePath,
-            file.FileName));
+            storedFileName));
     }
 
     [HttpDelete("images")]
@@ -74,16 +124,25 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
         }
 
         var relativePath = ExtractRelativePath(path);
-        if (!relativePath.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase))
+        if (!relativePath.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetExtension(relativePath), ".webp", StringComparison.OrdinalIgnoreCase))
         {
-            return BadRequest("La ruta indicada no pertenece al almacenamiento local.");
+            return BadRequest("La ruta indicada no pertenece al almacenamiento de imágenes.");
         }
 
-        var webRoot = environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot");
-        var fullPath = Path.GetFullPath(Path.Combine(webRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var webRoot = GetWebRoot();
         var allowedRoot = Path.GetFullPath(Path.Combine(webRoot, "uploads"));
+        var allowedPrefix = allowedRoot.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var fullPath = Path.GetFullPath(Path.Combine(
+            webRoot,
+            relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
 
-        if (!fullPath.StartsWith(allowedRoot, StringComparison.OrdinalIgnoreCase))
+        if (!fullPath.StartsWith(allowedPrefix, comparison))
         {
             return BadRequest("La ruta indicada no es válida.");
         }
@@ -96,23 +155,18 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
         return NoContent();
     }
 
-    private static string SanitizeFolder(string? folder)
+    private string GetWebRoot() =>
+        environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot");
+
+    private static string? NormalizeFolder(string? folder)
     {
         if (string.IsNullOrWhiteSpace(folder))
         {
             return "general";
         }
 
-        var segments = folder
-            .Replace('\\', '/')
-            .Split('/', StringSplitOptions.RemoveEmptyEntries)
-            .Select(segment => new string(segment
-                .Where(character => char.IsLetterOrDigit(character) || character is '-' or '_')
-                .ToArray()))
-            .Where(segment => !string.IsNullOrWhiteSpace(segment));
-
-        var safeFolder = Path.Combine(segments.ToArray());
-        return string.IsNullOrWhiteSpace(safeFolder) ? "general" : safeFolder;
+        var normalized = folder.Trim();
+        return SafeFolderPattern().IsMatch(normalized) ? normalized : null;
     }
 
     private static string ExtractRelativePath(string pathOrUrl)
@@ -123,6 +177,39 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
         }
 
         return pathOrUrl.TrimStart('/').Replace('\\', '/');
+    }
+
+    private static bool HasAllowedImageSignature(byte[] payload)
+    {
+        if (payload.Length < 12)
+        {
+            return false;
+        }
+
+        var isJpeg =
+            payload[0] == 0xFF &&
+            payload[1] == 0xD8 &&
+            payload[2] == 0xFF;
+        var isPng =
+            payload[0] == 0x89 &&
+            payload[1] == 0x50 &&
+            payload[2] == 0x4E &&
+            payload[3] == 0x47 &&
+            payload[4] == 0x0D &&
+            payload[5] == 0x0A &&
+            payload[6] == 0x1A &&
+            payload[7] == 0x0A;
+        var isWebp =
+            payload[0] == (byte)'R' &&
+            payload[1] == (byte)'I' &&
+            payload[2] == (byte)'F' &&
+            payload[3] == (byte)'F' &&
+            payload[8] == (byte)'W' &&
+            payload[9] == (byte)'E' &&
+            payload[10] == (byte)'B' &&
+            payload[11] == (byte)'P';
+
+        return isJpeg || isPng || isWebp;
     }
 }
 

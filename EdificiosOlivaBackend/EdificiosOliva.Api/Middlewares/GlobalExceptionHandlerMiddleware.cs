@@ -1,5 +1,5 @@
-using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EdificiosOliva.Api.Middlewares;
 
@@ -42,10 +42,23 @@ public sealed class GlobalExceptionHandlerMiddleware(
             return;
         }
 
+        var (status, title) = exception switch
+        {
+            InvalidOperationException => (
+                StatusCodes.Status409Conflict,
+                "La operación no es válida para el estado actual."),
+            DbUpdateException => (
+                StatusCodes.Status409Conflict,
+                "La operación entra en conflicto con los datos existentes."),
+            _ => (
+                StatusCodes.Status500InternalServerError,
+                "Ocurrió un error inesperado.")
+        };
+
         var problemDetails = new ProblemDetails
         {
-            Status = StatusCodes.Status500InternalServerError,
-            Title = "Ocurrió un error inesperado.",
+            Status = status,
+            Title = title,
             Detail = "No fue posible completar la solicitud.",
             Instance = context.Request.Path
         };

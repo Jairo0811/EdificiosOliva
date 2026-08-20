@@ -30,7 +30,10 @@ public sealed class PaymentQueryParameters
     [StringLength(150)]
     public string? Search { get; init; }
 
+    [EnumDataType(typeof(PaymentStatus))]
     public PaymentStatus? Status { get; init; }
+
+    [EnumDataType(typeof(PaymentMethod))]
     public PaymentMethod? Method { get; init; }
 }
 
@@ -42,7 +45,10 @@ public class PaymentRequest
     [Range(typeof(decimal), "0.01", "999999999")]
     public decimal Amount { get; init; }
 
+    [EnumDataType(typeof(PaymentMethod))]
     public PaymentMethod Method { get; init; }
+
+    [EnumDataType(typeof(PaymentStatus))]
     public PaymentStatus Status { get; init; } = PaymentStatus.Pending;
 
     [StringLength(200)]

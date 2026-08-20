@@ -1,6 +1,8 @@
-@EdificiosOliva.Api_HostAddress = http://localhost:5160
+@EdificiosOliva.Api_HostAddress = https://localhost:7238
+@FirebaseIdToken = replace-with-a-valid-firebase-id-token
 
 GET {{EdificiosOliva.Api_HostAddress}}/weatherforecast/
 Accept: application/json
+Authorization: Bearer {{FirebaseIdToken}}
 
 ###

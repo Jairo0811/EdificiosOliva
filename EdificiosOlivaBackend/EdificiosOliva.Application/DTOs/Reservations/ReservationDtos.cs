@@ -30,12 +30,13 @@ public sealed class ReservationQueryParameters
     [StringLength(150)]
     public string? Search { get; init; }
 
+    [EnumDataType(typeof(ReservationStatus))]
     public ReservationStatus? Status { get; init; }
     public DateOnly? FromDate { get; init; }
     public DateOnly? ToDate { get; init; }
 }
 
-public class ReservationRequest
+public class ReservationRequest : IValidatableObject
 {
     [Required]
     public Guid CustomerId { get; init; }
@@ -52,10 +53,28 @@ public class ReservationRequest
     [Range(1, 100)]
     public int GuestCount { get; init; }
 
+    [EnumDataType(typeof(ReservationStatus))]
     public ReservationStatus Status { get; init; } = ReservationStatus.Pending;
 
     [StringLength(1000)]
     public string? Notes { get; init; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (CheckOutDate <= CheckInDate)
+        {
+            yield return new ValidationResult(
+                "La fecha de salida debe ser posterior a la fecha de entrada.",
+                [nameof(CheckOutDate)]);
+        }
+
+        if (CheckOutDate.DayNumber - CheckInDate.DayNumber > 365)
+        {
+            yield return new ValidationResult(
+                "Una reserva no puede superar 365 noches.",
+                [nameof(CheckOutDate)]);
+        }
+    }
 }
 
 public sealed class CreateReservationRequest : ReservationRequest;
