@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 
 namespace EdificiosOliva.Api.Controllers;
 
@@ -45,49 +43,52 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
             return BadRequest("Solo se permiten imágenes JPG, PNG o WEBP.");
         }
 
-        Image image;
-        try
-        {
-            await using var input = file.OpenReadStream();
-            image = await Image.LoadAsync(input, cancellationToken);
-        }
-        catch (UnknownImageFormatException)
-        {
+        await using var input = file.OpenReadStream();
+        using var codec = SKCodec.Create(input);
+        if (codec is null)
             return BadRequest("El contenido no es una imagen válida.");
-        }
-        catch (InvalidImageContentException)
+
+        var imageInfo = codec.Info;
+        if (imageInfo.Width <= 0 || imageInfo.Height <= 0 ||
+            (long)imageInfo.Width * imageInfo.Height > MaximumPixels)
         {
+            return BadRequest("La imagen excede el límite de 20 megapíxeles.");
+        }
+
+        using var bitmap = new SKBitmap(
+            imageInfo.Width,
+            imageInfo.Height,
+            SKColorType.Rgba8888,
+            SKAlphaType.Premul);
+        var decodeResult = codec.GetPixels(bitmap.Info, bitmap.GetPixels());
+        if (decodeResult != SKCodecResult.Success)
             return BadRequest("La imagen está dañada o contiene datos inválidos.");
-        }
 
-        using (image)
-        {
-            if ((long)image.Width * image.Height > MaximumPixels)
-                return BadRequest("La imagen excede el límite de 20 megapíxeles.");
+        var safeFolder = SanitizeFolder(folder);
+        var storedFileName = $"{Guid.NewGuid():N}.webp";
+        var relativePath = Path.Combine("uploads", safeFolder, storedFileName)
+            .Replace('\\', '/');
+        var physicalDirectory = Path.Combine(
+            environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"),
+            "uploads",
+            safeFolder);
 
-            image.Mutate(context => context.AutoOrient());
+        Directory.CreateDirectory(physicalDirectory);
 
-            var safeFolder = SanitizeFolder(folder);
-            var storedFileName = $"{Guid.NewGuid():N}.webp";
-            var relativePath = Path.Combine("uploads", safeFolder, storedFileName)
-                .Replace('\\', '/');
-            var physicalDirectory = Path.Combine(
-                environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"),
-                "uploads",
-                safeFolder);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var encoded = image.Encode(SKEncodedImageFormat.Webp, 85);
+        if (encoded is null)
+            return BadRequest("No fue posible procesar la imagen.");
 
-            Directory.CreateDirectory(physicalDirectory);
+        var physicalPath = Path.Combine(physicalDirectory, storedFileName);
+        await using (var output = System.IO.File.Create(physicalPath))
+            encoded.SaveTo(output);
 
-            var physicalPath = Path.Combine(physicalDirectory, storedFileName);
-            await image.SaveAsync(physicalPath, new WebpEncoder { Quality = 85 }, cancellationToken);
-
-            var publicUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
-
-            return Created(publicUrl, new FileUploadResponse(
-                publicUrl,
-                relativePath,
-                Path.GetFileName(file.FileName)));
-        }
+        var publicUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
+        return Created(publicUrl, new FileUploadResponse(
+            publicUrl,
+            relativePath,
+            Path.GetFileName(file.FileName)));
     }
 
     [HttpDelete("images")]
