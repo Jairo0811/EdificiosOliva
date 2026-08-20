@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using SkiaSharp;
 
 namespace EdificiosOliva.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "Admin")]
 public sealed class FilesController(IWebHostEnvironment environment) : ControllerBase
 {
     private static readonly HashSet<string> AllowedContentTypes =
@@ -14,6 +17,7 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
     ];
 
     private const long MaximumFileSize = 5 * 1024 * 1024;
+    private const long MaximumPixels = 20_000_000;
 
     [HttpPost("images")]
     [RequestSizeLimit(MaximumFileSize)]
@@ -39,9 +43,29 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
             return BadRequest("Solo se permiten imágenes JPG, PNG o WEBP.");
         }
 
+        await using var input = file.OpenReadStream();
+        using var codec = SKCodec.Create(input);
+        if (codec is null)
+            return BadRequest("El contenido no es una imagen válida.");
+
+        var imageInfo = codec.Info;
+        if (imageInfo.Width <= 0 || imageInfo.Height <= 0 ||
+            (long)imageInfo.Width * imageInfo.Height > MaximumPixels)
+        {
+            return BadRequest("La imagen excede el límite de 20 megapíxeles.");
+        }
+
+        using var bitmap = new SKBitmap(
+            imageInfo.Width,
+            imageInfo.Height,
+            SKColorType.Rgba8888,
+            SKAlphaType.Premul);
+        var decodeResult = codec.GetPixels(bitmap.Info, bitmap.GetPixels());
+        if (decodeResult != SKCodecResult.Success)
+            return BadRequest("La imagen está dañada o contiene datos inválidos.");
+
         var safeFolder = SanitizeFolder(folder);
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var storedFileName = $"{Guid.NewGuid():N}{extension}";
+        var storedFileName = $"{Guid.NewGuid():N}.webp";
         var relativePath = Path.Combine("uploads", safeFolder, storedFileName)
             .Replace('\\', '/');
         var physicalDirectory = Path.Combine(
@@ -51,16 +75,20 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
 
         Directory.CreateDirectory(physicalDirectory);
 
+        using var image = SKImage.FromBitmap(bitmap);
+        using var encoded = image.Encode(SKEncodedImageFormat.Webp, 85);
+        if (encoded is null)
+            return BadRequest("No fue posible procesar la imagen.");
+
         var physicalPath = Path.Combine(physicalDirectory, storedFileName);
-        await using var stream = System.IO.File.Create(physicalPath);
-        await file.CopyToAsync(stream, cancellationToken);
+        await using (var output = System.IO.File.Create(physicalPath))
+            encoded.SaveTo(output);
 
         var publicUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
-
         return Created(publicUrl, new FileUploadResponse(
             publicUrl,
             relativePath,
-            file.FileName));
+            Path.GetFileName(file.FileName)));
     }
 
     [HttpDelete("images")]
@@ -83,7 +111,8 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
         var fullPath = Path.GetFullPath(Path.Combine(webRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
         var allowedRoot = Path.GetFullPath(Path.Combine(webRoot, "uploads"));
 
-        if (!fullPath.StartsWith(allowedRoot, StringComparison.OrdinalIgnoreCase))
+        var allowedPrefix = allowedRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(allowedPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest("La ruta indicada no es válida.");
         }

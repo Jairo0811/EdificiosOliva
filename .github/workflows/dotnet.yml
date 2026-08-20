@@ -1,0 +1,34 @@
+name: .NET Backend Build
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build .NET 10 backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore EdificiosOlivaBackend/EdificiosOliva.slnx
+
+      - name: Build backend
+        run: dotnet build EdificiosOlivaBackend/EdificiosOliva.slnx --configuration Release --no-restore
