@@ -15,9 +15,8 @@ export const authGuard: CanActivateFn = async () => {
     return false;
   }
 
-  const profile = await authService.getUserProfile(user.uid);
-
-  if (profile?.role === 'admin') {
+  const token = await user.getIdTokenResult(true);
+  if (token.claims['role'] === 'admin') {
     return true;
   }
 

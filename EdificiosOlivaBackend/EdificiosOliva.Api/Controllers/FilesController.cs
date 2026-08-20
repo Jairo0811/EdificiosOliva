@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
 
 namespace EdificiosOliva.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "Admin")]
 public sealed class FilesController(IWebHostEnvironment environment) : ControllerBase
 {
     private static readonly HashSet<string> AllowedContentTypes =
@@ -14,6 +19,7 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
     ];
 
     private const long MaximumFileSize = 5 * 1024 * 1024;
+    private const long MaximumPixels = 20_000_000;
 
     [HttpPost("images")]
     [RequestSizeLimit(MaximumFileSize)]
@@ -39,28 +45,49 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
             return BadRequest("Solo se permiten imágenes JPG, PNG o WEBP.");
         }
 
-        var safeFolder = SanitizeFolder(folder);
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var storedFileName = $"{Guid.NewGuid():N}{extension}";
-        var relativePath = Path.Combine("uploads", safeFolder, storedFileName)
-            .Replace('\\', '/');
-        var physicalDirectory = Path.Combine(
-            environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"),
-            "uploads",
-            safeFolder);
+        Image image;
+        try
+        {
+            await using var input = file.OpenReadStream();
+            image = await Image.LoadAsync(input, cancellationToken);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return BadRequest("El contenido no es una imagen válida.");
+        }
+        catch (InvalidImageContentException)
+        {
+            return BadRequest("La imagen está dañada o contiene datos inválidos.");
+        }
 
-        Directory.CreateDirectory(physicalDirectory);
+        using (image)
+        {
+            if ((long)image.Width * image.Height > MaximumPixels)
+                return BadRequest("La imagen excede el límite de 20 megapíxeles.");
 
-        var physicalPath = Path.Combine(physicalDirectory, storedFileName);
-        await using var stream = System.IO.File.Create(physicalPath);
-        await file.CopyToAsync(stream, cancellationToken);
+            image.Mutate(context => context.AutoOrient());
 
-        var publicUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
+            var safeFolder = SanitizeFolder(folder);
+            var storedFileName = $"{Guid.NewGuid():N}.webp";
+            var relativePath = Path.Combine("uploads", safeFolder, storedFileName)
+                .Replace('\\', '/');
+            var physicalDirectory = Path.Combine(
+                environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"),
+                "uploads",
+                safeFolder);
 
-        return Created(publicUrl, new FileUploadResponse(
-            publicUrl,
-            relativePath,
-            file.FileName));
+            Directory.CreateDirectory(physicalDirectory);
+
+            var physicalPath = Path.Combine(physicalDirectory, storedFileName);
+            await image.SaveAsync(physicalPath, new WebpEncoder { Quality = 85 }, cancellationToken);
+
+            var publicUrl = $"{Request.Scheme}://{Request.Host}/{relativePath}";
+
+            return Created(publicUrl, new FileUploadResponse(
+                publicUrl,
+                relativePath,
+                Path.GetFileName(file.FileName)));
+        }
     }
 
     [HttpDelete("images")]
@@ -83,7 +110,8 @@ public sealed class FilesController(IWebHostEnvironment environment) : Controlle
         var fullPath = Path.GetFullPath(Path.Combine(webRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
         var allowedRoot = Path.GetFullPath(Path.Combine(webRoot, "uploads"));
 
-        if (!fullPath.StartsWith(allowedRoot, StringComparison.OrdinalIgnoreCase))
+        var allowedPrefix = allowedRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(allowedPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest("La ruta indicada no es válida.");
         }

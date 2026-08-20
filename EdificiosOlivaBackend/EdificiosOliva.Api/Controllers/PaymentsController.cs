@@ -2,11 +2,13 @@ using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Payments;
 using EdificiosOliva.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EdificiosOliva.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "Admin")]
 public sealed class PaymentsController(IPaymentService paymentService) : ControllerBase
 {
     [HttpGet]

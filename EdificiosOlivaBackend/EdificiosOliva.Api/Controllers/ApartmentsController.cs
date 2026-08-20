@@ -2,6 +2,7 @@ using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Apartments;
 using EdificiosOliva.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EdificiosOliva.Api.Controllers;
 
@@ -10,6 +11,7 @@ namespace EdificiosOliva.Api.Controllers;
 public sealed class ApartmentsController(IApartmentService apartmentService) : ControllerBase
 {
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType<PagedResult<ApartmentResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<ApartmentResponse>>> GetAll(
@@ -32,6 +34,7 @@ public sealed class ApartmentsController(IApartmentService apartmentService) : C
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType<ApartmentResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApartmentResponse>> GetById(
@@ -43,6 +46,7 @@ public sealed class ApartmentsController(IApartmentService apartmentService) : C
     }
 
     [HttpPost]
+    [Authorize(Policy = "Admin")]
     [ProducesResponseType<ApartmentResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApartmentResponse>> Create(
@@ -58,6 +62,7 @@ public sealed class ApartmentsController(IApartmentService apartmentService) : C
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -71,6 +76,7 @@ public sealed class ApartmentsController(IApartmentService apartmentService) : C
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
