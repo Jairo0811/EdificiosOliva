@@ -3,250 +3,174 @@
 </p>
 
 <p align="center">
-  <strong>Plataforma Full Stack para alquiler y administración de apartamentos vacacionales</strong><br>
+  <strong>Plataforma Full Stack de reservas y administración de apartamentos vacacionales</strong><br>
   <strong>Bávaro • Punta Cana • República Dominicana</strong>
+</p>
+
+<p align="center">
+  <strong>Edificios Oliva v1.0</strong>
 </p>
 
 ---
 
 # 📖 Descripción
 
-**Edificios Oliva** es una plataforma web Full Stack orientada a la promoción, alquiler y administración de apartamentos turísticos ubicados en **Bávaro, Punta Cana, República Dominicana**.
+**Edificios Oliva** es una plataforma web Full Stack para la promoción, reserva y administración de apartamentos turísticos en **Bávaro, Punta Cana, República Dominicana**.
 
-El proyecto nace de **Residencial Oliva**, una iniciativa personal iniciada en **2019** e inspirada en un proyecto familiar relacionado con el residencial. En 2026 fue recuperado y reconstruido con una arquitectura moderna, manteniendo la esencia de su propósito original y ampliándolo hasta convertirlo en una solución integral de gestión.
+El proyecto nació en **2019** a partir de una iniciativa familiar relacionada con Residencial Oliva y fue reconstruido en 2026 con una arquitectura moderna. La versión **v1.0** consolida el proyecto como una aplicación funcional: el visitante consulta apartamentos y disponibilidad real, registra una solicitud de reserva y recibe un código de confirmación; el personal autorizado administra apartamentos, clientes, reservas, pagos, galería y operación desde un panel privado.
 
-El sistema combina un sitio web público para visitantes con un panel administrativo privado desde el cual se gestionan apartamentos, imágenes, amenidades, clientes, reservas, pagos, disponibilidad, reportes y contenido general.
+La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication**.
 
-La solución fue reconstruida con **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication**, y continúa evolucionando hacia una versión preparada para producción.
-
-Firebase se utiliza exclusivamente como proveedor de autenticación. Toda la lógica del negocio, la persistencia de datos y la gestión de archivos son administradas por ASP.NET Core mediante una API REST y una arquitectura Clean.
-
-El objetivo es consolidar el proyecto como una aplicación profesional, mantenible, escalable, segura y preparada para producción.
+> **Alcance comercial de v1.0:** la reserva se registra realmente en SQL Server y queda pendiente de confirmación/pago. El cobro se coordina fuera del checkout —por ejemplo mediante WhatsApp— y posteriormente se registra en el módulo administrativo de pagos. La integración con una pasarela de pago online queda explícitamente fuera del alcance de v1.0 para no simular transacciones inexistentes.
 
 ---
 
-# ✨ Funcionalidades actuales
+# ✅ Edificios Oliva v1.0
 
-## 🌐 Sitio web público
+## 🌐 Experiencia pública
 
-- ✅ Landing page moderna.
-- ✅ Hero principal con diseño turístico.
-- ✅ Navegación responsive.
-- ✅ Catálogo visual de apartamentos.
-- ✅ Vista de detalle de apartamentos.
-- ✅ Galería fotográfica.
-- ✅ Página de contacto.
-- ✅ Información institucional.
-- ✅ Integración de ubicación y mapas.
-- ✅ Animaciones mediante AOS.
-- ✅ Carruseles y contenido visual con Swiper.
-- ✅ Diseño adaptable a escritorio, tablet y móvil.
-
-## 🔐 Autenticación
-
-- ✅ Inicio de sesión con correo y contraseña.
-- ✅ Inicio de sesión con Google.
-- ✅ Firebase Authentication.
-- ✅ Protección de rutas mediante Guards.
-- ✅ Perfiles de usuario.
-- ✅ Roles administrativos.
-- ✅ Menú de usuario autenticado.
-- ✅ Cierre de sesión.
+- Landing page turística responsive.
+- Catálogo de apartamentos obtenido desde la API.
+- Vista de detalle y galería.
+- Información institucional, contacto y ubicación.
+- Consulta de disponibilidad real por apartamento y rango de fechas.
+- Validación de capacidad máxima de huéspedes.
+- Cálculo automático de noches, tarifa y total estimado.
+- Registro real de la reserva en SQL Server.
+- Creación/reutilización del cliente a partir de su correo electrónico.
+- Código de confirmación `EO-XXXXXXXX` para cada solicitud.
+- Estado inicial `Pending` hasta confirmación administrativa.
+- Enlace de WhatsApp generado con los datos de la reserva para coordinar confirmación y pago.
 
 ## 🖥️ Panel administrativo
 
-- ✅ Layout administrativo independiente.
-- ✅ Sidebar de navegación.
-- ✅ Dashboard administrativo con datos reales.
-- ✅ Gestión de apartamentos.
-- ✅ Gestión de clientes.
-- ✅ Gestión de reservas.
-- ✅ Gestión de pagos.
-- ✅ Gestión de galería.
-- ✅ Formularios para creación y edición.
-- ✅ Selección y previsualización de imágenes.
-- ✅ Ordenamiento visual de imágenes.
-- ✅ Gestión visual de amenidades.
-- ✅ Estados de apartamento.
-- ✅ Persistencia mediante ASP.NET Core Web API.
-- ✅ Gestión de imágenes desde el backend.
-- ✅ Almacenamiento local de imágenes.
-- ✅ Eliminación física de imágenes.
+- Dashboard con datos persistidos.
+- Gestión de apartamentos.
+- Gestión de clientes.
+- Gestión de reservas y estados.
+- Gestión de pagos, transacciones y reembolsos lógicos.
+- Gestión de galería e imágenes.
+- Formularios de creación y edición.
+- Imagen de portada y ordenamiento visual.
+- Estados de disponibilidad, ocupación y mantenimiento.
+- Eliminación lógica y auditoría básica mediante `BaseEntity`.
 
-## ⚙️ Backend
+## 🔐 Autenticación y seguridad
 
-- ✅ ASP.NET Core Web API sobre .NET 10.
-- ✅ Clean Architecture.
-- ✅ Separación en capas `Api`, `Application`, `Domain` e `Infrastructure`.
-- ✅ Entity Framework Core 10.
-- ✅ SQL Server.
-- ✅ Base de datos `EdificiosOlivaDb`.
-- ✅ Migraciones de Entity Framework Core.
-- ✅ OpenAPI.
-- ✅ Entidades y relaciones del dominio.
-- ✅ Configuraciones Fluent API.
-- ✅ CRUD REST de apartamentos.
-- ✅ CRUD REST de clientes.
-- ✅ CRUD REST de reservas.
-- ✅ CRUD REST de pagos.
-- ✅ Persistencia de galería.
-- ✅ Integración Angular ↔ ASP.NET Core.
-- ✅ Carga de imágenes mediante `multipart/form-data`.
-- ✅ Publicación de archivos mediante ASP.NET Core Static Files.
-- ✅ Almacenamiento local de imágenes en `wwwroot/uploads`.
-- 🚧 Validación completa de tokens de Firebase en la API.
+- Firebase Authentication por correo/contraseña.
+- Google Sign-In.
+- Firebase ID Tokens validados en ASP.NET Core.
+- Autenticación obligatoria por defecto en la API.
+- Policy `Admin` mediante custom claim `role=admin`.
+- Endpoints públicos limitados a catálogo, galería y motor público de reservas.
+- Guards e interceptor de autenticación en Angular.
+- Respuestas 400/401/403/404/500 mediante Problem Details.
+- `traceId` para diagnóstico.
+- HSTS fuera de desarrollo.
+- Validación y recodificación de imágenes a WebP.
+- Protección frente a path traversal en eliminación de archivos.
+- CORS configurable por entorno.
+
+## 📅 Motor de reservas
+
+El flujo público de v1.0 es:
+
+```text
+Visitante
+   │
+   ▼
+Angular /booking
+   │
+   ├── GET /api/apartments
+   │
+   ├── GET /api/public/bookings/availability
+   │          │
+   │          ├── valida fechas
+   │          ├── valida capacidad
+   │          └── detecta solapamientos
+   │
+   └── POST /api/public/bookings
+              │
+              ├── crea/reutiliza Customer
+              ├── vuelve a comprobar disponibilidad
+              ├── crea Reservation(Pending)
+              ├── persiste en transacción serializable
+              └── devuelve confirmación EO-XXXXXXXX
+```
+
+La creación pública vuelve a validar la disponibilidad dentro de una **transacción serializable** para reducir el riesgo de dobles reservas concurrentes.
 
 ---
 
 # 🛠️ Stack tecnológico
 
-## 🎨 Frontend y diseño de interfaces
+## Frontend
 
-<p>
-  <img src="https://skillicons.dev/icons?i=angular,ts,html,css,bootstrap" alt="Angular, TypeScript, HTML, CSS y Bootstrap" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/angularmaterial/angularmaterial-original.svg" alt="Angular Material" title="Angular Material" width="48" height="48" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swiper/swiper-original.svg" alt="Swiper" title="Swiper" width="48" height="48" />
-</p>
+- **Angular 21**
+- **TypeScript 5.9**
+- **Angular Material / CDK**
+- **Bootstrap 5**
+- **AOS**
+- **Swiper**
+- **Leaflet**
+- **Firebase / AngularFire**
+- **Vitest**
 
-<p>
-  <img src="https://img.shields.io/badge/Leaflet-Mapas-199900?style=flat-square&logo=leaflet&logoColor=white" alt="Leaflet" />
-</p>
+## Backend
 
-- **Angular 21:** framework principal de la aplicación SPA.
-- **TypeScript 5.9:** lógica del cliente y tipado estático.
-- **HTML5:** estructura semántica de las vistas.
-- **CSS3:** estilos personalizados y diseño responsive.
-- **Bootstrap 5:** componentes y utilidades de interfaz.
-- **Angular Material y CDK:** componentes, overlays y utilidades de experiencia de usuario.
-- **AOS:** animaciones al desplazarse.
-- **Swiper:** carruseles y galerías.
-- **Leaflet:** mapas y visualización geográfica.
+- **.NET 10**
+- **ASP.NET Core Web API**
+- **C#**
+- **Entity Framework Core 10**
+- **SQL Server**
+- **OpenAPI / Swagger**
+- **Clean Architecture**
+- **SkiaSharp** para validación y normalización de imágenes
 
-## ⚙️ Backend, frameworks y APIs
+## Infraestructura y calidad
 
-<p>
-  <img src="https://skillicons.dev/icons?i=dotnet,cs" alt=".NET y C#" />
-</p>
-
-<p>
-  <img src="https://img.shields.io/badge/ASP.NET%20Core%20Web%20API-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="ASP.NET Core Web API" />
-  <img src="https://img.shields.io/badge/Entity%20Framework%20Core%2010-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="Entity Framework Core 10" />
-  <img src="https://img.shields.io/badge/OpenAPI-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white" alt="OpenAPI" />
-</p>
-
-- **.NET 10:** plataforma de ejecución del backend.
-- **C#:** lenguaje principal del servidor.
-- **ASP.NET Core Web API:** construcción de endpoints REST.
-- **Entity Framework Core 10:** ORM, configuraciones y migraciones.
-- **ASP.NET Core Static Files:** publicación de imágenes almacenadas localmente.
-- **Multipart/Form-Data:** carga de archivos desde el frontend.
-- **OpenAPI:** especificación y documentación de la API.
-- **Clean Architecture:** separación en capas `Api`, `Application`, `Domain` e `Infrastructure`.
-
-## 🔐 Autenticación y seguridad
-
-<p>
-  <img src="https://skillicons.dev/icons?i=firebase" alt="Firebase" />
-</p>
-
-- **Firebase Authentication:** autenticación mediante correo y contraseña.
-- **Google Sign-In:** acceso mediante cuentas de Google.
-- **Angular Guards:** protección de rutas del panel administrativo.
-- **Roles administrativos:** control de acceso en la aplicación cliente.
-- **Validación de tokens en la API:** integración planificada para completar la autorización del backend.
-
-## 🗄️ Base de datos y almacenamiento
-
-<p>
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain.svg" alt="Microsoft SQL Server" width="48" height="48" />
-</p>
-
-- **Microsoft SQL Server:** persistencia principal de la información del negocio.
-- **Entity Framework Core Migrations:** control de evolución del esquema.
-- **Fluent API:** configuración de entidades, relaciones e índices.
-- **`wwwroot/uploads`:** almacenamiento local y publicación de imágenes.
-
-## 🧰 Herramientas e infraestructura
-
-<p>
-  <img src="https://skillicons.dev/icons?i=npm,visualstudio,vscode,git,github" alt="npm, Visual Studio, Visual Studio Code, Git y GitHub" />
-</p>
-
-<p>
-  <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Actions" />
-</p>
-
-- **npm:** gestión de dependencias del frontend.
-- **Visual Studio:** desarrollo y depuración del backend.
-- **Visual Studio Code:** desarrollo del frontend y edición general.
-- **Git y GitHub:** control de versiones y alojamiento del repositorio.
-- **GitHub Actions:** integración continua.
+- Git / GitHub
+- GitHub Actions
+- npm
+- CI de Angular y .NET
+- Build de producción de Angular
+- Pruebas frontend en CI
+- Auditoría npm de dependencias de producción
 
 ---
 
-# 🏗️ Arquitectura general
+# 🏗️ Arquitectura
 
 ```text
-                         Usuarios
+                           Visitantes
+                               │
+                               ▼
+                         Angular 21 SPA
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+                 ▼                           ▼
+       Firebase Authentication      ASP.NET Core Web API
+                                             │
+                            ┌────────────────┴───────────────┐
+                            ▼                                ▼
+                     SQL Server                       wwwroot/uploads
                             │
-                            ▼
-                      Angular 21 SPA
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-              ▼                           ▼
- Firebase Authentication        ASP.NET Core Web API
-                                          │
-                    ┌─────────────────────┴─────────────────────┐
-                    ▼                                           ▼
-             SQL Server Database                  wwwroot/uploads
+            ┌───────────────┼────────────────┐
+            ▼               ▼                ▼
+        Customers       Reservations       Payments
 ```
 
-Firebase Authentication se utiliza exclusivamente para la autenticación e inicio de sesión. Toda la información del negocio se administra mediante ASP.NET Core y SQL Server. Las imágenes se almacenan y sirven directamente desde `wwwroot/uploads`.
-
----
-
-# 🧱 Clean Architecture del backend
+El backend mantiene separación por capas:
 
 ```text
 EdificiosOliva.Api
-├── Controllers
-├── Configurations
-├── Extensions
-├── Filters
-├── Middlewares
-└── Program.cs
-
 EdificiosOliva.Application
-├── Common
-├── DTOs
-├── Features
-├── Interfaces
-├── Mappings
-├── Services
-└── Validators
-
 EdificiosOliva.Domain
-├── Common
-├── Entities
-├── Enums
-├── Exceptions
-├── Interfaces
-└── ValueObjects
-
 EdificiosOliva.Infrastructure
-├── Identity
-├── Persistence
-│   ├── Configurations
-│   ├── Context
-│   ├── Migrations
-│   └── Seed
-├── Repositories
-├── Services
-└── Storage
 ```
 
-## Entidades implementadas
+Entidades principales:
 
 ```text
 Apartment
@@ -257,8 +181,6 @@ Customer
 Reservation
 Payment
 GalleryImage
-ApartmentStatus
-BaseEntity
 ```
 
 ---
@@ -270,15 +192,13 @@ EdificiosOliva
 │
 ├── EdificiosOlivaFrontend
 │   ├── public
-│   ├── src
-│   │   ├── app
-│   │   │   ├── core
-│   │   │   ├── layouts
-│   │   │   ├── pages
-│   │   │   └── shared
-│   │   └── environments
-│   ├── angular.json
-│   └── package.json
+│   └── src
+│       ├── app
+│       │   ├── core
+│       │   ├── layouts
+│       │   ├── pages
+│       │   └── shared
+│       └── environments
 │
 ├── EdificiosOlivaBackend
 │   ├── EdificiosOliva.Api
@@ -287,24 +207,25 @@ EdificiosOliva
 │   ├── EdificiosOliva.Infrastructure
 │   └── EdificiosOliva.slnx
 │
-├── .github
-│   └── workflows
-│
+├── .github/workflows
+├── SECURITY_SETUP.md
 └── README.md
 ```
 
 ---
 
-# 🚀 Instalación
+# 🚀 Desarrollo local
 
-## 1. Clonar el repositorio
+## Requisitos
 
-```bash
-git clone https://github.com/Jairo0811/EdificiosOliva.git
-cd EdificiosOliva
-```
+- Node.js compatible con Angular 21.
+- npm 11 o superior.
+- Angular CLI 21.
+- .NET SDK 10.
+- SQL Server o SQL Server LocalDB.
+- Proyecto de Firebase configurado.
 
-## 2. Ejecutar el frontend
+## Frontend
 
 ```bash
 cd EdificiosOlivaFrontend
@@ -312,15 +233,23 @@ npm install --legacy-peer-deps
 npm start
 ```
 
-La aplicación estará disponible en:
+Disponible por defecto en:
 
 ```text
 http://localhost:4200
 ```
 
-> `--legacy-peer-deps` es temporal mientras se completa la migración de AngularFire al SDK modular de Firebase compatible con Angular 21.
+> El uso de `--legacy-peer-deps` se mantiene en v1.0 por la combinación actual Angular 21 / AngularFire 20. El proyecto compila con esta instalación en CI; eliminar esta compatibilidad es mantenimiento posterior y no bloquea el alcance funcional de v1.0.
 
-## 3. Ejecutar el backend
+## Backend
+
+En `Development`, el repositorio utiliza una cadena genérica de SQL Server LocalDB:
+
+```text
+Server=(localdb)\MSSQLLocalDB;Database=EdificiosOlivaDb;Trusted_Connection=True;TrustServerCertificate=True
+```
+
+Ejecutar:
 
 ```bash
 cd EdificiosOlivaBackend
@@ -329,36 +258,47 @@ dotnet ef database update --project EdificiosOliva.Infrastructure --startup-proj
 dotnet run --project EdificiosOliva.Api
 ```
 
-La URL HTTPS se obtiene desde `EdificiosOliva.Api/Properties/launchSettings.json`.
+---
 
-## 4. Almacenamiento de imágenes
+# ⚙️ Configuración de producción
 
-Las imágenes cargadas desde el panel administrativo se almacenan automáticamente en:
+La configuración personal de máquinas no se versiona. En producción deben suministrarse variables/secretos del entorno.
+
+Variables principales:
 
 ```text
-EdificiosOlivaBackend/
-└── EdificiosOliva.Api/
-    └── wwwroot/
-        └── uploads/
+ConnectionStrings__DefaultConnection
+Firebase__ProjectId
+AllowedHosts
+Cors__AllowedOrigins__0
+Cors__AllowedOrigins__1
 ```
 
-La carpeta `uploads` está excluida del repositorio mediante `.gitignore`, por lo que las imágenes generadas en cada entorno no forman parte del código fuente.
+Ejemplo conceptual:
 
-## 5. Requisitos
+```text
+ConnectionStrings__DefaultConnection=<SQL Server production connection string>
+Firebase__ProjectId=edificios-oliva
+AllowedHosts=api.edificiosoliva.com
+Cors__AllowedOrigins__0=https://edificiosoliva.com
+Cors__AllowedOrigins__1=https://www.edificiosoliva.com
+```
 
-- Node.js compatible con Angular 21.
-- npm 11 o superior.
-- Angular CLI 21.
-- .NET SDK 10.
-- SQL Server o SQL Server LocalDB.
-- Visual Studio 2026 o Visual Studio Code.
-- Proyecto configurado en Firebase Authentication.
+No deben versionarse contraseñas, service accounts ni cadenas de conexión de producción.
+
+Para asignar acceso administrativo se debe utilizar un Firebase custom claim:
+
+```text
+role=admin
+```
+
+Consultar `SECURITY_SETUP.md` para los pasos de seguridad asociados.
 
 ---
 
 # 🗄️ Base de datos
 
-La base de datos principal es:
+Base principal:
 
 ```text
 EdificiosOlivaDb
@@ -378,174 +318,105 @@ GalleryImages
 __EFMigrationsHistory
 ```
 
-Los modelos actuales permiten:
+Reglas de negocio relevantes de v1.0:
 
-- Registrar y administrar apartamentos.
-- Asociar múltiples imágenes.
-- Seleccionar una imagen de portada.
-- Ordenar imágenes.
-- Registrar amenidades.
-- Asociar amenidades mediante una relación muchos a muchos.
-- Registrar clientes.
-- Gestionar reservas y sus estados.
-- Registrar pagos y balances pendientes.
-- Persistir imágenes de galería.
-- Manejar estados de disponibilidad, ocupación y mantenimiento.
-- Aplicar eliminación lógica y auditoría básica mediante `BaseEntity`.
-
-Las imágenes ya no dependen de Firebase Storage. La base de datos almacena la información y la ruta pública de los archivos generados por el backend.
+- `CheckOutDate` debe ser posterior a `CheckInDate`.
+- No se permiten reservas nuevas con fecha de entrada pasada.
+- Un apartamento en mantenimiento no puede reservarse.
+- La cantidad de huéspedes no puede superar la capacidad.
+- Reservas `Pending`, `Confirmed` o `InProgress` bloquean fechas superpuestas.
+- El precio de la reserva se congela utilizando la tarifa nocturna vigente al crearla.
+- Los pagos completados no pueden superar el total de la reserva.
+- Un identificador de transacción no puede reutilizarse.
+- Solo pagos completados pueden marcarse como reembolsados.
 
 ---
 
-# 📊 Estado del proyecto
+# 📊 Estado de v1.0
 
 | Módulo | Estado |
 |---|:---:|
-| 🏠 Landing page | ✅ |
-| 📱 Responsive design | ✅ |
-| 🏢 Catálogo de apartamentos | ✅ |
-| 📷 Galería pública | ✅ |
-| 📍 Mapas y ubicación | ✅ |
-| 📞 Contacto visual | ✅ |
-| 🔐 Firebase Authentication | ✅ |
-| 🔑 Inicio con Google | ✅ |
-| 🛡️ Guards y roles | ✅ |
-| 🖥️ Panel administrativo | ✅ |
-| 🏛️ Clean Architecture | ✅ |
-| ⚙️ ASP.NET Core Web API | ✅ |
-| 🗄️ SQL Server | ✅ |
-| 🧩 Entity Framework Core | ✅ |
-| 🧱 Migraciones | ✅ |
-| 🏢 CRUD de apartamentos | ✅ |
-| 👥 Gestión de clientes | ✅ |
-| 📅 Reservas y disponibilidad | ✅ |
-| 💳 Gestión de pagos | ✅ |
-| 📊 Dashboard dinámico | ✅ |
-| 🖼️ Galería administrativa | ✅ |
-| 🔗 Integración Angular ↔ API | ✅ |
-| 📁 Almacenamiento local de imágenes | ✅ |
-| 🛡️ Autorización Firebase en API | 🚧 |
-| 🧯 Manejo global de errores | 🚧 |
-| 📈 Reportes y estadísticas | ⏳ |
-| 🔔 Notificaciones | ⏳ |
-
-Leyenda:
-
-- ✅ Completado.
-- 🚧 En desarrollo inmediato.
-- ⏳ Planificado.
+| Landing / responsive | ✅ |
+| Catálogo y detalle de apartamentos | ✅ |
+| Galería y mapas | ✅ |
+| Firebase Authentication | ✅ |
+| Firebase ID Token validation en API | ✅ |
+| Policy administrativa | ✅ |
+| Problem Details / manejo global de errores | ✅ |
+| CRUD de apartamentos | ✅ |
+| Gestión de clientes | ✅ |
+| Gestión administrativa de reservas | ✅ |
+| Consulta pública de disponibilidad | ✅ |
+| Reserva pública persistida | ✅ |
+| Protección contra solapamientos | ✅ |
+| Cálculo real de noches y total | ✅ |
+| Código de confirmación | ✅ |
+| Gestión administrativa de pagos | ✅ |
+| Carga segura de imágenes | ✅ |
+| CORS configurable | ✅ |
+| CI Angular | ✅ |
+| CI .NET | ✅ |
+| Pruebas frontend en CI | ✅ |
+| Pasarela de pago online | ➡️ v1.1 |
+| Reportes avanzados | ➡️ v1.1+ |
+| Notificaciones automáticas | ➡️ v1.1+ |
+| Docker / despliegue empaquetado | ➡️ v1.1+ |
+| Multi-tenant / SaaS | Fuera del alcance |
 
 ---
 
-# 🗺️ Roadmap
+# 🧪 Validación
 
-## ✅ Etapa 1 — Experiencia visual y autenticación
-
-- Reconstrucción del frontend con Angular moderno.
-- Landing page.
-- Responsive design.
-- Navegación pública.
-- Firebase Authentication.
-- Inicio por correo y Google.
-- Guards y roles.
-- Panel administrativo.
-
-## ✅ Etapa 2 — Backend y persistencia
-
-- ASP.NET Core Web API.
-- .NET 10.
-- Clean Architecture.
-- Entity Framework Core.
-- SQL Server.
-- Migraciones.
-- Entidades, configuraciones y relaciones del dominio.
-- OpenAPI.
-
-## ✅ Etapa 3 — Integración Full Stack
-
-- CRUD REST de apartamentos.
-- CRUD REST de clientes.
-- CRUD REST de reservas.
-- CRUD REST de pagos.
-- Servicios de aplicación.
-- Repositorios con Entity Framework Core.
-- Integración Angular ↔ API.
-- Persistencia de galería.
-- Dashboard con datos reales.
-
-## ✅ Etapa 4 — Imágenes y contenido
-
-- Migración desde Firebase Storage.
-- Subida segura de imágenes mediante la API.
-- Almacenamiento local mediante `wwwroot/uploads`.
-- Imagen de portada.
-- Ordenamiento de galería.
-- Eliminación de archivos locales.
-- Galería administrativa.
-
-## 🚧 Etapa 5 — Seguridad y robustez
-
-- Validar tokens de Firebase en ASP.NET Core.
-- Proteger endpoints administrativos.
-- Sincronizar perfiles, roles y permisos con SQL Server.
-- Estandarizar respuestas HTTP.
-- Implementar manejo global de excepciones.
-- Mejorar validaciones de entrada.
-
-## ⏳ Etapa 6 — Inteligencia administrativa
-
-- Reportes PDF y Excel.
-- Ocupación por apartamento.
-- Ingresos por período.
-- Próximas entradas y salidas.
-- Auditoría.
-- Notificaciones.
-- Registro de actividad.
-
-## ⏳ Etapa 7 — Calidad y producción
-
-- Pruebas unitarias.
-- Pruebas de integración.
-- Pruebas end-to-end.
-- CI/CD para Angular y .NET.
-- Seguridad, CORS y rate limiting.
-- Variables de entorno y secretos.
-- Optimización SEO.
-- Accesibilidad.
-- Docker.
-- Publicación del frontend, API y base de datos.
-
----
-
-# 🎯 Próximo objetivo
-
-El siguiente entregable técnico es reforzar la seguridad y la robustez transversal de la plataforma:
+Antes de fusionar cambios hacia la rama principal, GitHub Actions valida:
 
 ```text
-Firebase Authentication
-          │
-          ▼
-Angular Interceptors
-          │
-          ▼
-ASP.NET Core Authorization
-          │
-          ▼
-Application Services
-          │
-          ▼
-SQL Server
+Frontend
+├── npm ci --legacy-peer-deps
+├── npm run build
+├── npm test -- --watch=false
+└── npm audit --omit=dev --audit-level=high
+
+Backend
+├── dotnet restore
+└── dotnet build --configuration Release
 ```
 
-Este bloque incluirá:
+Pruebas manuales recomendadas para el motor de reservas:
 
-- Validación de tokens de Firebase en la API.
-- Protección de endpoints administrativos.
-- Manejo global de excepciones.
-- Respuestas HTTP consistentes.
-- Validaciones de entrada.
-- Auditoría básica.
-- Preparación para pruebas automatizadas.
+1. Consultar fechas válidas y comprobar el total.
+2. Registrar una reserva pública.
+3. Confirmar que el cliente aparece en administración.
+4. Confirmar que la reserva aparece como `Pending`.
+5. Intentar reservar de nuevo el mismo apartamento en fechas superpuestas.
+6. Confirmar que la segunda operación es rechazada.
+7. Confirmar la reserva desde administración y registrar el pago cuando corresponda.
+
+---
+
+# 🗺️ Después de v1.0
+
+La rama v1 queda cerrada funcionalmente con reservas directas y administración. Las siguientes mejoras son evolución de producto, no requisitos pendientes de v1.0:
+
+## v1.1 — Pagos y comunicación
+
+- Integración con una pasarela de pago real.
+- Webhooks e idempotencia de cobro.
+- Confirmaciones automáticas por correo.
+- Notificaciones de entrada/salida.
+- Recibos/comprobantes.
+
+## v1.2 — Operación y analítica
+
+- Ocupación por período.
+- Ingresos por apartamento.
+- Reportes PDF/Excel.
+- Auditoría ampliada.
+- Registro de actividad.
+- Exportación de calendarios / integración iCal.
+
+## Futuro
+
+Una eventual versión SaaS para terceros requeriría multi-tenancy, propietarios, planes, facturación, branding por negocio y aislamiento de datos. Ese producto no forma parte de Edificios Oliva v1.0.
 
 ---
 
