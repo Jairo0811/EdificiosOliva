@@ -3,89 +3,250 @@
 
   <div class="hero-content">
     <span>Edificios Oliva</span>
-
     <h1>Reserva tu estadía</h1>
-
-    <p>Completa la información para comenzar tu reserva.</p>
+    <p>Consulta disponibilidad real y registra tu solicitud en pocos pasos.</p>
   </div>
 </section>
 
 <section class="booking-section">
   <div class="container">
-    <div class="booking-grid">
+    @if (confirmation) {
+      <div class="confirmation-card" role="status" aria-live="polite">
+        <div class="confirmation-icon" aria-hidden="true">✓</div>
+        <div>
+          <span class="eyebrow">Solicitud registrada</span>
+          <h2>Reserva {{ confirmation.confirmationCode }}</h2>
+          <p>
+            Recibimos tu solicitud para <strong>{{ confirmation.apartmentName }}</strong>.
+            La reserva quedó pendiente de confirmación y pago.
+          </p>
+          <div class="confirmation-meta">
+            <span>{{ confirmation.checkInDate }} → {{ confirmation.checkOutDate }}</span>
+            <span>{{ confirmation.nights }} noche(s)</span>
+            <strong>{{ confirmation.totalAmount | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+          </div>
+          <a
+            class="whatsapp-btn inline"
+            [href]="whatsappConfirmationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Coordinar confirmación y pago por WhatsApp
+          </a>
+        </div>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="booking-alert" role="alert">{{ errorMessage }}</div>
+    }
+
+    <form class="booking-grid" #bookingForm="ngForm" (ngSubmit)="submit()">
       <div class="booking-form">
-        <h2>Información del huésped</h2>
-
-        <input type="text" placeholder="Nombre completo" />
-
-        <input type="email" placeholder="Correo electrónico" />
-
-        <input type="tel" placeholder="Teléfono" />
-
-        <hr />
-
-        <h2>Información de la reserva</h2>
-
-        <select>
-          @for (apartment of apartments; track apartment) {
-            <option>
-              {{ apartment }}
-            </option>
-          }
-        </select>
-
-        <div class="dates">
-          <input type="date" />
-
-          <input type="date" />
+        <div class="section-heading">
+          <span class="step">01</span>
+          <div>
+            <h2>Información del huésped</h2>
+            <p>Usaremos estos datos para identificar y confirmar tu reserva.</p>
+          </div>
         </div>
 
-        <select>
-          <option>1 huésped</option>
+        <div class="field-grid">
+          <label class="field field-wide">
+            <span>Nombre completo</span>
+            <input
+              type="text"
+              name="fullName"
+              [(ngModel)]="form.fullName"
+              autocomplete="name"
+              maxlength="150"
+              required
+            />
+          </label>
 
-          <option>2 huéspedes</option>
+          <label class="field">
+            <span>Correo electrónico</span>
+            <input
+              type="email"
+              name="email"
+              [(ngModel)]="form.email"
+              autocomplete="email"
+              maxlength="254"
+              required
+              email
+            />
+          </label>
 
-          <option>3 huéspedes</option>
+          <label class="field">
+            <span>Teléfono</span>
+            <input
+              type="tel"
+              name="phone"
+              [(ngModel)]="form.phone"
+              autocomplete="tel"
+              maxlength="40"
+              required
+            />
+          </label>
+        </div>
 
-          <option>4 huéspedes</option>
+        <div class="section-heading stay-heading">
+          <span class="step">02</span>
+          <div>
+            <h2>Información de la estadía</h2>
+            <p>El precio y la disponibilidad se consultan directamente en el sistema.</p>
+          </div>
+        </div>
 
-          <option>5 huéspedes</option>
+        <div class="field-grid">
+          <label class="field field-wide">
+            <span>Apartamento</span>
+            <select
+              name="apartmentId"
+              [(ngModel)]="form.apartmentId"
+              (change)="refreshAvailability()"
+              [disabled]="loadingApartments"
+              required
+            >
+              <option value="" disabled>
+                {{ loadingApartments ? 'Cargando apartamentos…' : 'Selecciona un apartamento' }}
+              </option>
+              @for (apartment of apartments; track apartment.id) {
+                <option [value]="apartment.id">
+                  {{ apartment.name }} · {{ apartment.price | currency: 'USD' : 'symbol' : '1.0-0' }}/noche
+                </option>
+              }
+            </select>
+          </label>
 
-          <option>6 huéspedes</option>
-        </select>
+          <label class="field">
+            <span>Entrada</span>
+            <input
+              type="date"
+              name="checkInDate"
+              [(ngModel)]="form.checkInDate"
+              [min]="minDate"
+              (change)="refreshAvailability()"
+              required
+            />
+          </label>
 
-        <textarea rows="5" placeholder="Observaciones (opcional)"> </textarea>
+          <label class="field">
+            <span>Salida</span>
+            <input
+              type="date"
+              name="checkOutDate"
+              [(ngModel)]="form.checkOutDate"
+              [min]="form.checkInDate || minDate"
+              (change)="refreshAvailability()"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span>Huéspedes</span>
+            <input
+              type="number"
+              name="guestCount"
+              [(ngModel)]="form.guestCount"
+              min="1"
+              [max]="selectedApartment?.guests || 100"
+              (change)="refreshAvailability()"
+              required
+            />
+          </label>
+
+          <label class="field field-wide">
+            <span>Observaciones <small>(opcional)</small></span>
+            <textarea
+              name="notes"
+              [(ngModel)]="form.notes"
+              rows="4"
+              maxlength="1000"
+              placeholder="Hora estimada de llegada, solicitud especial, etc."
+            ></textarea>
+          </label>
+        </div>
       </div>
 
       <aside class="summary-card">
-        <h2>Resumen</h2>
+        <span class="eyebrow">Resumen</span>
+        <h2>Tu estadía</h2>
 
         <div class="summary-row">
           <span>Apartamento</span>
-          <strong>Ejecutivo</strong>
+          <strong>{{ selectedApartment?.name || 'Por seleccionar' }}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Capacidad</span>
+          <strong>
+            {{ selectedApartment ? selectedApartment!.guests + ' huésped(es)' : '—' }}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Tarifa por noche</span>
+          <strong>
+            @if (availability) {
+              {{ availability.nightlyRate | currency: 'USD' : 'symbol' : '1.2-2' }}
+            } @else if (selectedApartment) {
+              {{ selectedApartment!.price | currency: 'USD' : 'symbol' : '1.2-2' }}
+            } @else {
+              —
+            }
+          </strong>
         </div>
 
         <div class="summary-row">
           <span>Noches</span>
-          <strong>3</strong>
+          <strong>{{ availability?.nights ?? '—' }}</strong>
         </div>
 
-        <div class="summary-row">
-          <span>Subtotal</span>
-          <strong>US$240</strong>
+        <div class="availability-line" [class.available]="availability?.available">
+          @if (checkingAvailability) {
+            Comprobando disponibilidad…
+          } @else if (availability?.available) {
+            ✓ Disponible para estas fechas
+          } @else if (canCheckAvailability) {
+            Selecciona fechas válidas para consultar
+          } @else {
+            Completa apartamento, fechas y huéspedes
+          }
         </div>
 
         <div class="summary-row total">
-          <span>Total</span>
-          <strong>US$240</strong>
+          <span>Total estimado</span>
+          <strong>
+            {{
+              availability
+                ? (availability.totalAmount | currency: 'USD' : 'symbol' : '1.2-2')
+                : '—'
+            }}
+          </strong>
         </div>
 
-        <button class="paypal-btn">Continuar al pago</button>
+        <button
+          class="primary-booking-btn"
+          type="submit"
+          [disabled]="bookingForm.invalid || submitting || checkingAvailability || !availability?.available"
+        >
+          {{ submitting ? 'Registrando reserva…' : 'Confirmar solicitud de reserva' }}
+        </button>
 
-        <a class="whatsapp-btn" href="https://wa.me/18296196970" target="_blank">
-          Reservar por WhatsApp
+        <p class="payment-note">
+          No se realiza ningún cargo al enviar esta solicitud. El pago se coordina después de validar la reserva.
+        </p>
+
+        <a
+          class="whatsapp-btn"
+          [href]="'https://wa.me/' + whatsappNumber"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Consultar por WhatsApp
         </a>
       </aside>
-    </div>
+    </form>
   </div>
 </section>
