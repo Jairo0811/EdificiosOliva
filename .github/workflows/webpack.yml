@@ -71,9 +71,28 @@ jobs:
         run: npm run build
 
       - name: Run frontend tests
+        id: frontend-tests
+        shell: bash
         working-directory: ${{ steps.frontend.outputs.dir }}
-        run: npm test -- --watch=false
+        run: |
+          set +e
+          npm test -- --watch=false 2>&1 | tee test-output.txt
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload frontend test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-output
+          path: ${{ steps.frontend.outputs.dir }}/test-output.txt
+          retention-days: 3
 
       - name: Audit production dependencies
         working-directory: ${{ steps.frontend.outputs.dir }}
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Enforce frontend test result
+        if: steps.frontend-tests.outputs.exit_code != '0'
+        run: exit 1
