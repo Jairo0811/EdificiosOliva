@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Angular application
+    name: Build, test and audit Angular application
     runs-on: ubuntu-latest
 
     steps:
@@ -55,20 +55,56 @@ jobs:
         shell: bash
         working-directory: ${{ steps.frontend.outputs.dir }}
         run: |
-          echo "Directorio del frontend:"
           pwd
-
-          echo "Contenido:"
           ls -la
-
           test -f angular.json
           test -f package.json
           test -f package-lock.json
 
       - name: Install dependencies
         working-directory: ${{ steps.frontend.outputs.dir }}
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Build Angular application
         working-directory: ${{ steps.frontend.outputs.dir }}
         run: npm run build
+
+      - name: Run frontend tests
+        id: frontend-tests
+        shell: bash
+        working-directory: ${{ steps.frontend.outputs.dir }}
+        run: |
+          set +e
+          npm test -- --watch=false 2>&1 | tee test-output.txt
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Audit production dependencies
+        id: frontend-audit
+        shell: bash
+        working-directory: ${{ steps.frontend.outputs.dir }}
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high 2>&1 | tee audit-output.txt
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload frontend diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-ci-output
+          path: |
+            ${{ steps.frontend.outputs.dir }}/test-output.txt
+            ${{ steps.frontend.outputs.dir }}/audit-output.txt
+          retention-days: 3
+
+      - name: Enforce frontend tests
+        if: steps.frontend-tests.outputs.exit_code != '0'
+        run: exit 1
+
+      - name: Enforce production dependency audit
+        if: steps.frontend-audit.outputs.exit_code != '0'
+        run: exit 1
