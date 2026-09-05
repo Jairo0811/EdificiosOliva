@@ -1,12 +1,15 @@
+using System.Threading.RateLimiting;
 using EdificiosOliva.Api.Middlewares;
 using EdificiosOliva.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 const string FrontendCorsPolicy = "Frontend";
+const string PublicBookingRatePolicy = "PublicBooking";
 
 builder.Services.AddControllers();
 
@@ -110,6 +113,19 @@ builder.Services.AddAuthorization(options =>
             .RequireClaim("role", "admin"));
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter(PublicBookingRatePolicy, limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 30;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueLimit = 0;
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.AutoReplenishment = true;
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -154,9 +170,18 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseRouting();
 app.UseCors(FrontendCorsPolicy);
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "ok",
+    service = "EdificiosOliva.Api"
+})).AllowAnonymous();
+
 app.MapControllers();
 
 app.Run();
