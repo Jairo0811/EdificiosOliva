@@ -113,12 +113,24 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var configuredOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .GetChildren()
+    .Select(item => item.Value)
+    .Where(value => !string.IsNullOrWhiteSpace(value))
+    .Cast<string>()
+    .ToArray();
+
+var allowedOrigins = configuredOrigins.Length > 0
+    ? configuredOrigins
+    : ["http://localhost:4200"];
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
         policy
-            .WithOrigins("http://localhost:4200")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
