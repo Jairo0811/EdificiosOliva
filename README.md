@@ -19,7 +19,7 @@
 
 El proyecto nació en **2019** a partir de una iniciativa familiar relacionada con Residencial Oliva y fue reconstruido en 2026 con una arquitectura moderna. La versión **v1.0** consolida el proyecto como una aplicación funcional: el visitante consulta apartamentos y disponibilidad real, registra una solicitud de reserva y recibe un código de confirmación; el personal autorizado administra apartamentos, clientes, reservas, pagos, galería y operación desde un panel privado.
 
-La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication**.
+La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication mediante el SDK modular oficial**.
 
 > **Alcance comercial de v1.0:** la reserva se registra realmente en SQL Server y queda pendiente de confirmación/pago. El cobro se coordina fuera del checkout —por ejemplo mediante WhatsApp— y posteriormente se registra en el módulo administrativo de pagos. La integración con una pasarela de pago online queda explícitamente fuera del alcance de v1.0 para no simular transacciones inexistentes.
 
@@ -57,18 +57,19 @@ La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **E
 
 ## 🔐 Autenticación y seguridad
 
-- Firebase Authentication por correo/contraseña.
+- Firebase Authentication por correo/contraseña mediante SDK modular.
 - Google Sign-In.
 - Firebase ID Tokens validados en ASP.NET Core.
 - Autenticación obligatoria por defecto en la API.
 - Policy `Admin` mediante custom claim `role=admin`.
-- Endpoints públicos limitados a catálogo, galería y motor público de reservas.
+- Endpoints públicos limitados a catálogo, galería, health check y motor público de reservas.
 - Guards e interceptor de autenticación en Angular.
 - Respuestas 400/401/403/404/500 mediante Problem Details.
 - `traceId` para diagnóstico.
 - HSTS fuera de desarrollo.
 - Validación y recodificación de imágenes a WebP.
 - Protección frente a path traversal en eliminación de archivos.
+- Rate limiting para el motor público de reservas.
 - CORS configurable por entorno.
 
 ## 📅 Motor de reservas
@@ -106,14 +107,14 @@ La creación pública vuelve a validar la disponibilidad dentro de una **transac
 
 ## Frontend
 
-- **Angular 21**
+- **Angular 21.2.x**
 - **TypeScript 5.9**
 - **Angular Material / CDK**
 - **Bootstrap 5**
 - **AOS**
 - **Swiper**
 - **Leaflet**
-- **Firebase / AngularFire**
+- **Firebase modular SDK**
 - **Vitest**
 
 ## Backend
@@ -209,6 +210,7 @@ EdificiosOliva
 │
 ├── .github/workflows
 ├── SECURITY_SETUP.md
+├── CHANGELOG.md
 └── README.md
 ```
 
@@ -229,7 +231,7 @@ EdificiosOliva
 
 ```bash
 cd EdificiosOlivaFrontend
-npm install --legacy-peer-deps
+npm ci
 npm start
 ```
 
@@ -239,7 +241,7 @@ Disponible por defecto en:
 http://localhost:4200
 ```
 
-> El uso de `--legacy-peer-deps` se mantiene en v1.0 por la combinación actual Angular 21 / AngularFire 20. El proyecto compila con esta instalación en CI; eliminar esta compatibilidad es mantenimiento posterior y no bloquea el alcance funcional de v1.0.
+La v1.0 utiliza directamente el **SDK modular de Firebase**, por lo que ya no depende de la capa AngularFire ni requiere `--legacy-peer-deps` para instalar las dependencias.
 
 ## Backend
 
@@ -256,6 +258,12 @@ cd EdificiosOlivaBackend
 dotnet restore
 dotnet ef database update --project EdificiosOliva.Infrastructure --startup-project EdificiosOliva.Api
 dotnet run --project EdificiosOliva.Api
+```
+
+El health check público queda disponible en:
+
+```text
+GET /health
 ```
 
 ---
@@ -354,9 +362,13 @@ Reglas de negocio relevantes de v1.0:
 | Gestión administrativa de pagos | ✅ |
 | Carga segura de imágenes | ✅ |
 | CORS configurable | ✅ |
+| Rate limiting de reservas públicas | ✅ |
+| Health check | ✅ |
+| Firebase modular sin AngularFire | ✅ |
 | CI Angular | ✅ |
 | CI .NET | ✅ |
 | Pruebas frontend en CI | ✅ |
+| Auditoría npm en CI | ✅ |
 | Pasarela de pago online | ➡️ v1.1 |
 | Reportes avanzados | ➡️ v1.1+ |
 | Notificaciones automáticas | ➡️ v1.1+ |
@@ -371,7 +383,7 @@ Antes de fusionar cambios hacia la rama principal, GitHub Actions valida:
 
 ```text
 Frontend
-├── npm ci --legacy-peer-deps
+├── npm ci
 ├── npm run build
 ├── npm test -- --watch=false
 └── npm audit --omit=dev --audit-level=high
