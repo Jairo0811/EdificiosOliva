@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Angular application
+    name: Build and test Angular application
     runs-on: ubuntu-latest
 
     steps:
@@ -57,10 +57,7 @@ jobs:
         run: |
           echo "Directorio del frontend:"
           pwd
-
-          echo "Contenido:"
           ls -la
-
           test -f angular.json
           test -f package.json
           test -f package-lock.json
@@ -72,3 +69,11 @@ jobs:
       - name: Build Angular application
         working-directory: ${{ steps.frontend.outputs.dir }}
         run: npm run build
+
+      - name: Run frontend tests
+        working-directory: ${{ steps.frontend.outputs.dir }}
+        run: npm test -- --watch=false
+
+      - name: Audit production dependencies
+        working-directory: ${{ steps.frontend.outputs.dir }}
+        run: npm audit --omit=dev --audit-level=high
