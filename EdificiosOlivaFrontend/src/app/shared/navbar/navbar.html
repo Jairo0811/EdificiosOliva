@@ -1,7 +1,12 @@
 @if (!isAdminRoute) {
   <nav class="navbar" aria-label="Navegación principal">
     <div class="container-custom">
-      <a class="logo" routerLink="/" (click)="closeMenus()" aria-label="Ir al inicio">
+      <a
+        class="logo"
+        routerLink="/"
+        (click)="handleNavClick('/')"
+        aria-label="Ir al inicio"
+      >
         <img src="/images/logo-residencial-oliva.png" alt="Logo de Edificios Oliva" />
       </a>
 
@@ -23,26 +28,44 @@
               routerLink="/"
               routerLinkActive="active"
               [routerLinkActiveOptions]="{ exact: true }"
-              (click)="closeMenus()"
+              (click)="handleNavClick('/')"
             >
               Inicio
             </a>
           </li>
           <li>
-            <a routerLink="/departamentos" routerLinkActive="active" (click)="closeMenus()">
+            <a
+              routerLink="/departamentos"
+              routerLinkActive="active"
+              (click)="handleNavClick('/departamentos')"
+            >
               Departamentos
             </a>
           </li>
           <li>
-            <a routerLink="/galeria" routerLinkActive="active" (click)="closeMenus()"> Galería </a>
+            <a
+              routerLink="/galeria"
+              routerLinkActive="active"
+              (click)="handleNavClick('/galeria')"
+            >
+              Galería
+            </a>
           </li>
           <li>
-            <a routerLink="/nosotros" routerLinkActive="active" (click)="closeMenus()">
+            <a
+              routerLink="/nosotros"
+              routerLinkActive="active"
+              (click)="handleNavClick('/nosotros')"
+            >
               Nosotros
             </a>
           </li>
           <li>
-            <a routerLink="/contacto" routerLinkActive="active" (click)="closeMenus()">
+            <a
+              routerLink="/contacto"
+              routerLinkActive="active"
+              (click)="handleNavClick('/contacto')"
+            >
               Contacto
             </a>
           </li>
@@ -56,6 +79,7 @@
                 type="button"
                 (click)="toggleUserMenu()"
                 [attr.aria-expanded]="userMenuOpen"
+                aria-controls="user-dropdown"
                 aria-haspopup="menu"
               >
                 <i class="bi bi-person-circle" aria-hidden="true"></i>
@@ -85,10 +109,14 @@
               }
             </div>
           } @else {
-            <a routerLink="/login" class="btn-login" (click)="closeMenus()"> Iniciar sesión </a>
+            <a routerLink="/login" class="btn-login" (click)="handleNavClick('/login')">
+              Iniciar sesión
+            </a>
           }
 
-          <a routerLink="/reservar" class="btn-book" (click)="closeMenus()"> Reservar </a>
+          <a routerLink="/reservar" class="btn-book" (click)="handleNavClick('/reservar')">
+            Reservar
+          </a>
         </div>
       </div>
     </div>
