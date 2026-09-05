@@ -41,7 +41,6 @@ export class Navbar implements OnInit {
 
     this.authService.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (user) => {
       this.firebaseUser = user;
-
       this.profile = user ? await this.authService.getUserProfile(user.uid) : null;
     });
   }
@@ -70,6 +69,24 @@ export class Navbar implements OnInit {
   closeMenus(): void {
     this.menuOpen = false;
     this.userMenuOpen = false;
+  }
+
+  handleNavClick(targetUrl: string): void {
+    this.closeMenus();
+
+    const currentUrl = this.router.url.split('?')[0].split('#')[0];
+    if (currentUrl !== targetUrl) {
+      return;
+    }
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
   }
 
   async logout(): Promise<void> {
