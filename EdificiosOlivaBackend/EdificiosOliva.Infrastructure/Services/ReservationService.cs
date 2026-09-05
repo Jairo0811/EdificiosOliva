@@ -203,14 +203,14 @@ public sealed class ReservationService(
             TotalAmount = availability.TotalAmount,
             Status = ReservationStatus.Pending,
             Notes = NormalizeOptional(request.Notes),
-            Customer = customer,
-            Apartment = apartment,
         };
 
         await dbContext.Reservations.AddAsync(reservation, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        reservation.Customer = customer;
+        reservation.Apartment = apartment;
         return MapPublicResponse(reservation, normalizedEmail);
     }
 
