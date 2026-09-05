@@ -11,90 +11,100 @@
   --light: #ffffff;
 }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-html{
-    scroll-behavior:smooth;
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 112px;
 }
 
 html,
-body{
-    width:100%;
-    min-height:100%;
-    overflow-x:hidden;
-    font-family:Arial, Helvetica, sans-serif;
-    background:#f7f9fb;
-    color:var(--dark);
+body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f7f9fb;
+  color: var(--dark);
 }
 
-img{
-    max-width:100%;
-    height:auto;
-    display:block;
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
-video{
-    max-width:100%;
+video {
+  max-width: 100%;
 }
 
-a{
-    text-decoration:none;
+a {
+  text-decoration: none;
 }
 
 button,
 input,
 select,
-textarea{
-    font:inherit;
+textarea {
+  font: inherit;
 }
 
-.container-custom{
-    width:min(1200px,92%);
-    margin:auto;
+.container-custom {
+  width: min(1200px, 92%);
+  margin: auto;
 }
 
-section{
-    width:100%;
+section {
+  width: 100%;
+  scroll-margin-top: 112px;
 }
 
-table{
-    width:100%;
+table {
+  width: 100%;
 }
 
-@media (max-width:1200px){
-
-.container-custom{
-    width:94%;
+@media (max-width: 1200px) {
+  .container-custom {
+    width: 94%;
+  }
 }
 
+@media (max-width: 992px) {
+  html {
+    scroll-padding-top: 92px;
+  }
+
+  section {
+    scroll-margin-top: 92px;
+  }
+
+  .container-custom {
+    width: 95%;
+  }
 }
 
-@media (max-width:992px){
-
-.container-custom{
-    width:95%;
+@media (max-width: 768px) {
+  .container-custom {
+    width: 95%;
+  }
 }
 
-}
+@media (max-width: 576px) {
+  html {
+    scroll-padding-top: 82px;
+  }
 
-@media (max-width:768px){
+  section {
+    scroll-margin-top: 82px;
+  }
 
-.container-custom{
-    width:95%;
-}
-
-}
-
-@media (max-width:576px){
-
-.container-custom{
-    width:94%;
-}
-
+  .container-custom {
+    width: 94%;
+  }
 }
 
 /* Accesibilidad global */
