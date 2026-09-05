@@ -47,10 +47,10 @@ public sealed class PublicBookingRequest
     [Required, StringLength(150, MinimumLength = 2)]
     public string FullName { get; init; } = string.Empty;
 
-    [Required, EmailAddress, StringLength(254)]
+    [Required, EmailAddress, StringLength(200)]
     public string Email { get; init; } = string.Empty;
 
-    [Required, Phone, StringLength(40, MinimumLength = 7)]
+    [Required, Phone, StringLength(30, MinimumLength = 7)]
     public string Phone { get; init; } = string.Empty;
 
     [Required]
