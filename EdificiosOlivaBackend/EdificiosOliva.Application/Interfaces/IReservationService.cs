@@ -17,6 +17,17 @@ public interface IReservationService
         CreateReservationRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<BookingAvailabilityResponse> CheckAvailabilityAsync(
+        Guid apartmentId,
+        DateOnly checkInDate,
+        DateOnly checkOutDate,
+        int guestCount,
+        CancellationToken cancellationToken = default);
+
+    Task<PublicBookingResponse> CreatePublicAsync(
+        PublicBookingRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<bool> UpdateAsync(
         Guid id,
         UpdateReservationRequest request,
