@@ -16,7 +16,7 @@
 
     <div class="hero-buttons">
       <a routerLink="/departamentos" class="btn-primary">Ver departamentos</a>
-      <a routerLink="/contacto" class="btn-secondary">Contactar por disponibilidad</a>
+      <a routerLink="/reservar" class="btn-secondary">Reservar ahora</a>
     </div>
   </div>
 </section>
@@ -25,32 +25,62 @@
   <div class="container">
     <h2 id="busqueda-disponibilidad" class="sr-only">Buscar disponibilidad</h2>
 
-    <div class="search-grid">
+    <form class="search-grid" #availabilityForm="ngForm" (ngSubmit)="searchAvailability()">
       <div>
         <label for="home-checkin">Entrada</label>
-        <input id="home-checkin" name="checkin" type="date" />
+        <input
+          id="home-checkin"
+          name="checkInDate"
+          type="date"
+          [(ngModel)]="availabilitySearch.checkInDate"
+          [min]="minDate"
+          required
+        />
       </div>
 
       <div>
         <label for="home-checkout">Salida</label>
-        <input id="home-checkout" name="checkout" type="date" />
+        <input
+          id="home-checkout"
+          name="checkOutDate"
+          type="date"
+          [(ngModel)]="availabilitySearch.checkOutDate"
+          [min]="availabilitySearch.checkInDate || minDate"
+          required
+        />
       </div>
 
       <div>
         <label for="home-guests">Huéspedes</label>
-        <select id="home-guests" name="guests">
-          <option>1 Persona</option>
-          <option>2 Personas</option>
-          <option>3 Personas</option>
-          <option>4 Personas</option>
-          <option>5+</option>
+        <select
+          id="home-guests"
+          name="guestCount"
+          [(ngModel)]="availabilitySearch.guestCount"
+          required
+        >
+          <option [ngValue]="1">1 persona</option>
+          <option [ngValue]="2">2 personas</option>
+          <option [ngValue]="3">3 personas</option>
+          <option [ngValue]="4">4 personas</option>
+          <option [ngValue]="5">5 personas</option>
+          <option [ngValue]="6">6 personas</option>
+          <option [ngValue]="7">7 personas</option>
+          <option [ngValue]="8">8 personas</option>
         </select>
       </div>
 
-      <button type="button" aria-label="Consultar disponibilidad de apartamentos">
+      <button
+        type="submit"
+        [disabled]="availabilityForm.invalid"
+        aria-label="Continuar a la consulta de disponibilidad"
+      >
         Consultar disponibilidad
       </button>
-    </div>
+    </form>
+
+    @if (searchError) {
+      <p class="status-message error" role="alert">{{ searchError }}</p>
+    }
   </div>
 </section>
 
@@ -80,6 +110,7 @@
             <img
               [src]="getApartmentImage(apartment)"
               [alt]="'Imagen principal de ' + apartment.name"
+              (error)="handleImageError($event)"
             />
 
             <div class="card-body">
@@ -288,10 +319,10 @@
   <div class="container cta-content">
     <span>Edificios Oliva 2026</span>
     <h2 id="final-cta-title">Reserva con tranquilidad y disfruta Punta Cana a tu ritmo.</h2>
-    <p>Contáctanos para confirmar disponibilidad, tarifas y condiciones de estadía.</p>
+    <p>Consulta fechas, selecciona tu apartamento y registra tu solicitud directamente en línea.</p>
 
     <div class="cta-actions">
-      <a routerLink="/reservar">Consultar disponibilidad</a>
+      <a routerLink="/reservar">Reservar estadía</a>
       <a routerLink="/contacto" class="outline">Contactar</a>
     </div>
   </div>
