@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { Apartment } from '../../core/models/apartment.model';
 import { Apartments } from '../../core/services/apartments';
@@ -30,8 +31,9 @@ interface BookingFormModel {
 export class Booking implements OnInit {
   private readonly apartmentsService = inject(Apartments);
   private readonly bookingService = inject(PublicBookingService);
+  private readonly route = inject(ActivatedRoute);
 
-  readonly minDate = new Date().toISOString().slice(0, 10);
+  readonly minDate = this.toDateInputValue(new Date());
   readonly whatsappNumber = '18296196970';
 
   apartments: Apartment[] = [];
@@ -41,6 +43,9 @@ export class Booking implements OnInit {
   checkingAvailability = false;
   submitting = false;
   errorMessage = '';
+  prefilledFromSearch = false;
+
+  private requestedApartmentId = '';
 
   form: BookingFormModel = {
     fullName: '',
@@ -54,13 +59,29 @@ export class Booking implements OnInit {
   };
 
   ngOnInit(): void {
+    this.applyQueryPrefill();
+
     this.apartmentsService.getAvailableApartments().subscribe({
       next: (apartments) => {
         this.apartments = apartments.filter((apartment) => Boolean(apartment.id));
         this.loadingApartments = false;
 
+        if (this.requestedApartmentId) {
+          const requestedApartment = this.apartments.find(
+            (apartment) => apartment.id === this.requestedApartmentId,
+          );
+
+          if (requestedApartment?.id) {
+            this.form.apartmentId = requestedApartment.id;
+          }
+        }
+
         if (!this.form.apartmentId && this.apartments.length === 1) {
           this.form.apartmentId = this.apartments[0].id ?? '';
+        }
+
+        if (this.canCheckAvailability) {
+          this.refreshAvailability();
         }
       },
       error: () => {
@@ -89,6 +110,11 @@ export class Booking implements OnInit {
     this.errorMessage = '';
 
     if (!this.canCheckAvailability) {
+      return;
+    }
+
+    if (this.form.checkInDate < this.minDate) {
+      this.errorMessage = 'La fecha de entrada no puede estar en el pasado.';
       return;
     }
 
@@ -144,13 +170,18 @@ export class Booking implements OnInit {
       return;
     }
 
+    if (this.form.checkInDate < this.minDate) {
+      this.errorMessage = 'La fecha de entrada no puede estar en el pasado.';
+      return;
+    }
+
     if (this.form.checkOutDate <= this.form.checkInDate) {
       this.errorMessage = 'La fecha de salida debe ser posterior a la fecha de entrada.';
       return;
     }
 
-    if (this.availability && !this.availability.available) {
-      this.errorMessage = 'Selecciona fechas disponibles antes de confirmar.';
+    if (!this.availability?.available) {
+      this.errorMessage = 'Comprueba la disponibilidad antes de confirmar la reserva.';
       return;
     }
 
@@ -204,6 +235,47 @@ export class Booking implements OnInit {
     ].join('\n');
 
     return `https://wa.me/${this.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }
+
+  private applyQueryPrefill(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const checkIn = params.get('checkIn')?.trim() ?? '';
+    const checkOut = params.get('checkOut')?.trim() ?? '';
+    const guests = Number(params.get('guests'));
+    const apartmentId = params.get('apartmentId')?.trim() ?? '';
+    let applied = false;
+
+    if (
+      this.isDateInputValue(checkIn) &&
+      this.isDateInputValue(checkOut) &&
+      checkIn >= this.minDate &&
+      checkOut > checkIn
+    ) {
+      this.form.checkInDate = checkIn;
+      this.form.checkOutDate = checkOut;
+      applied = true;
+    }
+
+    if (Number.isInteger(guests) && guests >= 1 && guests <= 100) {
+      this.form.guestCount = guests;
+      applied = true;
+    }
+
+    if (apartmentId) {
+      this.requestedApartmentId = apartmentId;
+      applied = true;
+    }
+
+    this.prefilledFromSearch = applied;
+  }
+
+  private isDateInputValue(value: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
+  private toDateInputValue(date: Date): string {
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+    return localDate.toISOString().slice(0, 10);
   }
 
   private readProblemDetail(error: unknown, fallback: string): string {

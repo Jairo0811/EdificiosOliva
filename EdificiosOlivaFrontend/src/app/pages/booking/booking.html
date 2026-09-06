@@ -37,6 +37,16 @@
       </div>
     }
 
+    @if (prefilledFromSearch && !confirmation) {
+      <div class="booking-alert info" role="status" aria-live="polite">
+        <i class="bi bi-check2-circle" aria-hidden="true"></i>
+        <span>
+          Cargamos los datos de tu búsqueda inicial. Selecciona un apartamento para comprobar la
+          disponibilidad exacta y continuar con la reserva.
+        </span>
+      </div>
+    }
+
     @if (errorMessage) {
       <div class="booking-alert" role="alert">{{ errorMessage }}</div>
     }
