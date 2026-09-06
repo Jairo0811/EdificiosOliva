@@ -271,6 +271,22 @@
   font-weight: 700;
 }
 
+.booking-alert.info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-color: #c8dced;
+  background: #f3f8fc;
+  color: #234b6e;
+}
+
+.booking-alert.info i {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #0f4c81;
+  font-size: 1.15rem;
+}
+
 .confirmation-card {
   display: grid;
   grid-template-columns: auto 1fr;
