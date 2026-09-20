@@ -95,6 +95,20 @@ export class Booking implements OnInit {
     return this.apartments.find((apartment) => apartment.id === this.form.apartmentId);
   }
 
+  get bookingHeroImageUrl(): string | null {
+    const selectedImage = this.selectedApartment?.images?.find((url) => Boolean(url?.trim()));
+
+    if (selectedImage) {
+      return selectedImage;
+    }
+
+    return (
+      this.apartments
+        .flatMap((apartment) => apartment.images || [])
+        .find((url) => Boolean(url?.trim())) ?? null
+    );
+  }
+
   get canCheckAvailability(): boolean {
     return Boolean(
       this.form.apartmentId &&
