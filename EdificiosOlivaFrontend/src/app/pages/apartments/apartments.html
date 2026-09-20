@@ -1,4 +1,8 @@
-<section class="apartments-hero" aria-labelledby="apartments-page-title">
+<section
+  class="apartments-hero"
+  aria-labelledby="apartments-page-title"
+  [style.background-image]="heroImageUrl ? 'url(' + heroImageUrl + ')' : null"
+>
   <div class="hero-overlay"></div>
 
   <div class="container hero-content">
@@ -10,32 +14,64 @@
 
 <section class="filters-section" aria-labelledby="filtros-apartamentos">
   <div class="container">
-    <h2 id="filtros-apartamentos" class="sr-only">Filtrar apartamentos</h2>
+    <h2 id="filtros-apartamentos" class="sr-only">Consultar disponibilidad</h2>
 
-    <div class="filters-card">
+    <form class="filters-card" #availabilityForm="ngForm" (ngSubmit)="searchAvailability()">
       <div>
         <label for="apartments-checkin">Entrada</label>
-        <input id="apartments-checkin" name="checkin" type="date" />
+        <input
+          id="apartments-checkin"
+          name="checkInDate"
+          type="date"
+          [(ngModel)]="search.checkInDate"
+          [min]="minDate"
+          required
+        />
       </div>
 
       <div>
         <label for="apartments-checkout">Salida</label>
-        <input id="apartments-checkout" name="checkout" type="date" />
+        <input
+          id="apartments-checkout"
+          name="checkOutDate"
+          type="date"
+          [(ngModel)]="search.checkOutDate"
+          [min]="search.checkInDate || minDate"
+          required
+        />
       </div>
 
       <div>
         <label for="apartments-guests">Huéspedes</label>
-        <select id="apartments-guests" name="guests">
-          <option value="1">1 persona</option>
-          <option value="2">2 personas</option>
-          <option value="3">3 personas</option>
-          <option value="4">4 personas</option>
-          <option value="5">5+</option>
+        <select
+          id="apartments-guests"
+          name="guestCount"
+          [(ngModel)]="search.guestCount"
+          required
+        >
+          <option [ngValue]="1">1 persona</option>
+          <option [ngValue]="2">2 personas</option>
+          <option [ngValue]="3">3 personas</option>
+          <option [ngValue]="4">4 personas</option>
+          <option [ngValue]="5">5 personas</option>
+          <option [ngValue]="6">6 personas</option>
+          <option [ngValue]="7">7 personas</option>
+          <option [ngValue]="8">8 personas</option>
         </select>
       </div>
 
-      <button type="button" aria-label="Aplicar filtros de búsqueda">Filtrar</button>
-    </div>
+      <button
+        type="submit"
+        [disabled]="availabilityForm.invalid"
+        aria-label="Consultar disponibilidad con las fechas seleccionadas"
+      >
+        Consultar disponibilidad
+      </button>
+    </form>
+
+    @if (searchError) {
+      <p class="status-message error" role="alert">{{ searchError }}</p>
+    }
   </div>
 </section>
 
@@ -48,54 +84,62 @@
     </div>
 
     @if (loading) {
-    <p class="status-message" role="status" aria-live="polite">Cargando apartamentos...</p>
+      <p class="status-message" role="status" aria-live="polite">Cargando apartamentos...</p>
     } @else if (errorMessage) {
-    <p class="status-message error" role="alert">{{ errorMessage }}</p>
+      <p class="status-message error" role="alert">{{ errorMessage }}</p>
     } @else if (apartments.length === 0) {
-    <p class="status-message">No hay apartamentos disponibles en este momento.</p>
+      <p class="status-message">No hay apartamentos disponibles en este momento.</p>
     } @else {
-    <div class="apartments-grid">
-      @for (apartment of apartments; track apartment.id) {
-      <article class="apartment-card">
-        <div class="image-wrapper">
-          <img [src]="getApartmentImage(apartment)" [alt]="'Imagen principal de ' + apartment.name"
-            (error)="handleImageError($event)" loading="lazy" decoding="async" />
-        </div>
-
-        <div class="card-body">
-          <div class="card-top">
-            <div>
-              <h3>{{ apartment.name }}</h3>
-              <p class="location">
-                <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
-                {{ apartment.location }}
-              </p>
+      <div class="apartments-grid">
+        @for (apartment of apartments; track apartment.id) {
+          <article class="apartment-card">
+            <div class="image-wrapper">
+              <img
+                [src]="getApartmentImage(apartment)"
+                [alt]="'Imagen principal de ' + apartment.name"
+                (error)="handleImageError($event)"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
 
-            <span class="price">US${{ apartment.price }}/noche</span>
-          </div>
+            <div class="card-body">
+              <div class="card-top">
+                <div>
+                  <h3>{{ apartment.name }}</h3>
+                  <p class="location">
+                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                    {{ apartment.location }}
+                  </p>
+                </div>
 
-          <p class="description">{{ apartment.description }}</p>
+                <span class="price">US${{ apartment.price }}/noche</span>
+              </div>
 
-          <div class="features" [attr.aria-label]="'Características de ' + apartment.name">
-            <span><i class="bi bi-people" aria-hidden="true"></i>
-              {{ apartment.guests }} huéspedes</span>
-            <span><i class="bi bi-door-open" aria-hidden="true"></i>
-              {{ apartment.bedrooms }} hab.</span>
-            <span><i class="bi bi-droplet" aria-hidden="true"></i>
-              {{ apartment.bathrooms }} baños</span>
-            @for (amenity of (apartment.amenities || []).slice(0, 2); track amenity) {
-            <span>{{ amenity }}</span>
-            }
-          </div>
+              <p class="description">{{ apartment.description }}</p>
 
-          <a [routerLink]="['/departamentos', apartment.id]" [attr.aria-label]="'Ver detalles de ' + apartment.name">
-            Ver detalles
-          </a>
-        </div>
-      </article>
-      }
-    </div>
+              <div class="features" [attr.aria-label]="'Características de ' + apartment.name">
+                <span><i class="bi bi-people" aria-hidden="true"></i>
+                  {{ apartment.guests }} huéspedes</span>
+                <span><i class="bi bi-door-open" aria-hidden="true"></i>
+                  {{ apartment.bedrooms }} hab.</span>
+                <span><i class="bi bi-droplet" aria-hidden="true"></i>
+                  {{ apartment.bathrooms }} baños</span>
+                @for (amenity of (apartment.amenities || []).slice(0, 2); track amenity) {
+                  <span>{{ amenity }}</span>
+                }
+              </div>
+
+              <a
+                [routerLink]="['/departamentos', apartment.id]"
+                [attr.aria-label]="'Ver detalles de ' + apartment.name"
+              >
+                Ver detalles
+              </a>
+            </div>
+          </article>
+        }
+      </div>
     }
   </div>
 </section>
