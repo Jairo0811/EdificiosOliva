@@ -4,12 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { Apartment } from '../../core/models/apartment.model';
+import { GalleryImage } from '../../core/models/gallery-image.model';
 import { Apartments as ApartmentsService } from '../../core/services/apartments';
+import { GalleryImages } from '../../core/services/gallery-images';
 
 interface AvailabilitySearchModel {
   checkInDate: string;
   checkOutDate: string;
   guestCount: number;
+}
+
+interface PublicVisual {
+  url: string;
+  alt: string;
 }
 
 @Component({
@@ -20,14 +27,18 @@ interface AvailabilitySearchModel {
 })
 export class Home implements OnInit {
   private readonly apartmentsService = inject(ApartmentsService);
+  private readonly galleryService = inject(GalleryImages);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly minDate = this.toDateInputValue(new Date());
 
   featuredApartments: Apartment[] = [];
+  galleryPreview: GalleryImage[] = [];
   loadingApartments = true;
+  loadingGallery = true;
   apartmentsError = '';
+  galleryError = '';
   searchError = '';
 
   availabilitySearch: AvailabilitySearchModel = {
@@ -37,20 +48,36 @@ export class Home implements OnInit {
   };
 
   ngOnInit(): void {
-    this.apartmentsService
-      .getAvailableApartments()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (apartments) => {
-          this.featuredApartments = apartments.slice(0, 3);
-          this.loadingApartments = false;
-        },
-        error: (error) => {
-          console.error('Error loading featured apartments:', error);
-          this.apartmentsError = 'No fue posible cargar los apartamentos destacados.';
-          this.loadingApartments = false;
-        },
-      });
+    this.loadApartments();
+    this.loadGallery();
+  }
+
+  get publicVisuals(): PublicVisual[] {
+    if (this.galleryPreview.length > 0) {
+      return this.galleryPreview.map((image) => ({
+        url: image.url,
+        alt: image.altText || image.title,
+      }));
+    }
+
+    return this.featuredApartments
+      .flatMap((apartment) =>
+        (apartment.images || [])
+          .filter((url) => Boolean(url?.trim()))
+          .map((url) => ({
+            url,
+            alt: `Imagen de ${apartment.name}`,
+          })),
+      )
+      .slice(0, 5);
+  }
+
+  get heroImageUrl(): string | null {
+    return this.publicVisuals[0]?.url ?? null;
+  }
+
+  get ctaImageUrl(): string | null {
+    return this.publicVisuals[1]?.url ?? this.heroImageUrl;
   }
 
   searchAvailability(): void {
@@ -98,6 +125,40 @@ export class Home implements OnInit {
     if (!image.src.endsWith('apartment-placeholder.webp')) {
       image.src = '/images/apartment-placeholder.webp';
     }
+  }
+
+  private loadApartments(): void {
+    this.apartmentsService
+      .getAvailableApartments()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (apartments) => {
+          this.featuredApartments = apartments.slice(0, 3);
+          this.loadingApartments = false;
+        },
+        error: (error) => {
+          console.error('Error loading featured apartments:', error);
+          this.apartmentsError = 'No fue posible cargar los apartamentos destacados.';
+          this.loadingApartments = false;
+        },
+      });
+  }
+
+  private loadGallery(): void {
+    this.galleryService
+      .getAll('', '', true)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.galleryPreview = result.items.slice(0, 5);
+          this.loadingGallery = false;
+        },
+        error: (error) => {
+          console.error('Error loading gallery preview:', error);
+          this.galleryError = 'No fue posible cargar las fotos publicadas.';
+          this.loadingGallery = false;
+        },
+      });
   }
 
   private toDateInputValue(date: Date): string {

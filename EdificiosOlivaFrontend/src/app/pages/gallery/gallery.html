@@ -1,4 +1,8 @@
-<section class="gallery-hero" aria-labelledby="gallery-title">
+<section
+  class="gallery-hero"
+  aria-labelledby="gallery-title"
+  [style.background-image]="heroImageUrl ? 'url(' + heroImageUrl + ')' : null"
+>
   <div class="overlay"></div>
 
   <div class="hero-content">

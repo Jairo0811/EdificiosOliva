@@ -10,8 +10,9 @@
   padding: 100px 20px;
 
   background:
-    linear-gradient(rgba(5, 20, 35, 0.55), rgba(5, 20, 35, 0.55)),
-    url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') center center/cover;
+    radial-gradient(circle at 18% 16%, rgba(0, 180, 216, 0.25), transparent 32%),
+    radial-gradient(circle at 82% 84%, rgba(245, 230, 200, 0.14), transparent 28%),
+    linear-gradient(145deg, #061a2c, #0f4c81);
 }
 
 .login-card {

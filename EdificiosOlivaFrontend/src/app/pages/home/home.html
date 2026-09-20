@@ -1,4 +1,8 @@
-<section class="hero" aria-labelledby="home-title">
+<section
+  class="hero"
+  aria-labelledby="home-title"
+  [style.background-image]="heroImageUrl ? 'url(' + heroImageUrl + ')' : null"
+>
   <div class="hero-overlay"></div>
 
   <div class="container hero-content">
@@ -111,6 +115,8 @@
               [src]="getApartmentImage(apartment)"
               [alt]="'Imagen principal de ' + apartment.name"
               (error)="handleImageError($event)"
+              loading="lazy"
+              decoding="async"
             />
 
             <div class="card-body">
@@ -269,51 +275,85 @@
 <section class="gallery-preview" aria-labelledby="gallery-preview-title">
   <div class="container">
     <div class="section-header">
-      <span>Galería</span>
-      <h2 id="gallery-preview-title">Un vistazo a la experiencia</h2>
-      <p>Imágenes de referencia para transmitir la comodidad y estilo que buscamos en la versión 2026.</p>
+      <span>Galería real</span>
+      <h2 id="gallery-preview-title">Conoce los espacios publicados de Edificios Oliva</h2>
+      <p>Las fotografías de esta sección provienen directamente de la galería administrada del alojamiento.</p>
     </div>
 
-    <div class="gallery-grid">
-      <img class="large" src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c" alt="Interior moderno de apartamento" />
-      <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3" alt="Sala de apartamento moderno" />
-      <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c" alt="Exterior de residencial moderno" />
-      <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d" alt="Habitación moderna de apartamento" />
-      <img src="https://images.unsplash.com/photo-1600566752355-35792bedcfea" alt="Cocina equipada moderna" />
-    </div>
+    @if (loadingGallery) {
+      <p class="status-message" role="status" aria-live="polite">Cargando fotografías...</p>
+    } @else if (publicVisuals.length === 0) {
+      <div class="gallery-empty">
+        <i class="bi bi-images" aria-hidden="true"></i>
+        <h3>Galería en preparación</h3>
+        <p>
+          Todavía no hay fotografías publicadas. Cuando el administrador agregue imágenes reales,
+          aparecerán aquí automáticamente.
+        </p>
+      </div>
+    } @else {
+      <div class="gallery-grid">
+        @for (visual of publicVisuals; track visual.url; let first = $first) {
+          <img
+            [class.large]="first"
+            [src]="visual.url"
+            [alt]="visual.alt"
+            (error)="handleImageError($event)"
+            loading="lazy"
+            decoding="async"
+          />
+        }
+      </div>
+
+      @if (galleryError) {
+        <p class="gallery-source-note">{{ galleryError }} Se muestran imágenes disponibles de los apartamentos.</p>
+      }
+
+      <div class="gallery-actions">
+        <a routerLink="/galeria">Ver galería completa</a>
+      </div>
+    }
   </div>
 </section>
 
-<section class="testimonials" aria-labelledby="testimonials-title">
+<section class="trust-section" aria-labelledby="trust-title">
   <div class="container">
     <div class="section-header">
-      <span>Opiniones</span>
-      <h2 id="testimonials-title">Experiencias memorables</h2>
+      <span>Reserva directa</span>
+      <h2 id="trust-title">Información real antes de enviar tu solicitud</h2>
+      <p>
+        El flujo de reserva consulta datos del sistema y te muestra la información esencial de la
+        estadía antes de confirmar.
+      </p>
     </div>
 
-    <div class="testimonials-grid">
-      <article class="testimonial-card">
-        <div class="stars" aria-label="Calificación de cinco estrellas">★★★★★</div>
-        <p>“Un lugar tranquilo, limpio y perfecto para descansar en familia.”</p>
-        <strong>María G.</strong>
+    <div class="trust-grid">
+      <article class="trust-card">
+        <i class="bi bi-calendar2-check" aria-hidden="true"></i>
+        <h3>Disponibilidad</h3>
+        <p>Las fechas se comprueban contra las reservas existentes del apartamento seleccionado.</p>
       </article>
 
-      <article class="testimonial-card">
-        <div class="stars" aria-label="Calificación de cinco estrellas">★★★★★</div>
-        <p>“Muy buena ubicación y el apartamento tenía todo lo necesario.”</p>
-        <strong>Carlos R.</strong>
+      <article class="trust-card">
+        <i class="bi bi-receipt" aria-hidden="true"></i>
+        <h3>Total estimado</h3>
+        <p>El sistema calcula noches, tarifa y total antes de registrar la solicitud.</p>
       </article>
 
-      <article class="testimonial-card">
-        <div class="stars" aria-label="Calificación de cinco estrellas">★★★★★</div>
-        <p>“Excelente opción para pasar unos días en Punta Cana sin complicaciones.”</p>
-        <strong>Laura M.</strong>
+      <article class="trust-card">
+        <i class="bi bi-chat-dots" aria-hidden="true"></i>
+        <h3>Confirmación clara</h3>
+        <p>Recibes un código de reserva y luego puedes coordinar la confirmación y el pago.</p>
       </article>
     </div>
   </div>
 </section>
 
-<section class="final-cta" aria-labelledby="final-cta-title">
+<section
+  class="final-cta"
+  aria-labelledby="final-cta-title"
+  [style.background-image]="ctaImageUrl ? 'url(' + ctaImageUrl + ')' : null"
+>
   <div class="cta-overlay"></div>
 
   <div class="container cta-content">
