@@ -5,7 +5,7 @@
   place-items: center;
   color: white;
   text-align: center;
-  background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e');
+  background-color: #0b2740;
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -89,9 +89,14 @@
   transition: 0.3s ease;
 }
 
-.filters-card button:hover {
+.filters-card button:hover:not(:disabled) {
   background: #0077b6;
   transform: translateY(-2px);
+}
+
+.filters-card button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .apartments-list {
