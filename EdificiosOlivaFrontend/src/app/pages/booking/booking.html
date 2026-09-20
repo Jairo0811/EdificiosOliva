@@ -1,4 +1,7 @@
-<section class="booking-hero">
+<section
+  class="booking-hero"
+  [style.background-image]="bookingHeroImageUrl ? 'url(' + bookingHeroImageUrl + ')' : null"
+>
   <div class="overlay"></div>
 
   <div class="hero-content">
