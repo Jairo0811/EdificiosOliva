@@ -42,6 +42,10 @@ export class Gallery implements OnInit {
     this.loadImages();
   }
 
+  get heroImageUrl(): string | null {
+    return this.images[0]?.url ?? null;
+  }
+
   loadImages(): void {
     this.loading = true;
     this.errorMessage = '';
