@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   GoogleAuthProvider,
+  OAuthProvider,
   User,
   UserCredential,
   getAuth,
@@ -47,6 +48,21 @@ export class AuthService {
 
   async loginWithGoogle() {
     const provider = new GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+
+    return this.loginWithProvider(provider);
+  }
+
+  async loginWithApple() {
+    const provider = new OAuthProvider('apple.com');
+    provider.addScope('email');
+    provider.addScope('name');
+
+    return this.loginWithProvider(provider);
+  }
+
+  private async loginWithProvider(provider: GoogleAuthProvider | OAuthProvider) {
 
     const credential = await signInWithPopup(this.firebaseAuth, provider);
 

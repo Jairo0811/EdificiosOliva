@@ -58,7 +58,7 @@ La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **E
 ## 🔐 Autenticación y seguridad
 
 - Firebase Authentication por correo/contraseña mediante SDK modular.
-- Google Sign-In.
+- Google Sign-In y Sign in with Apple mediante Firebase Authentication.
 - Firebase ID Tokens validados en ASP.NET Core.
 - Autenticación obligatoria por defecto en la API.
 - Policy `Admin` mediante custom claim `role=admin`.
