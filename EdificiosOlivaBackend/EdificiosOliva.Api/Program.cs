@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 const string FrontendCorsPolicy = "Frontend";
 const string PublicBookingRatePolicy = "PublicBooking";
+const string PaymentWebhookRatePolicy = "PaymentWebhook";
 
 builder.Services.AddControllers();
 
@@ -116,9 +117,19 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
     options.AddFixedWindowLimiter(PublicBookingRatePolicy, limiterOptions =>
     {
         limiterOptions.PermitLimit = 30;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueLimit = 0;
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.AutoReplenishment = true;
+    });
+
+    options.AddFixedWindowLimiter(PaymentWebhookRatePolicy, limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 120;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.QueueLimit = 0;
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
