@@ -18,6 +18,7 @@ public sealed class PaymentIntentService(
     ILogger<PaymentIntentService> logger) : IPaymentIntentService
 {
     private const string DefaultCurrency = "USD";
+    private static readonly TimeSpan DefaultIntentLifetime = TimeSpan.FromMinutes(30);
 
     public async Task<PagedResult<PaymentIntentResponse>> GetPagedAsync(
         PaymentIntentQueryParameters parameters,
@@ -94,7 +95,9 @@ public sealed class PaymentIntentService(
     public IReadOnlyCollection<PaymentProviderResponse> GetProviders()
     {
         return gateways
-            .GroupBy(gateway => CanonicalizeProvider(gateway.Provider), StringComparer.OrdinalIgnoreCase)
+            .GroupBy(
+                gateway => CanonicalizeProvider(gateway.Provider),
+                StringComparer.OrdinalIgnoreCase)
             .Select(group => new PaymentProviderResponse(
                 group.Key,
                 group.First().Method))
@@ -110,131 +113,124 @@ public sealed class PaymentIntentService(
         var idempotencyKey = request.IdempotencyKey.Trim();
         var gateway = GetGateway(provider);
 
-        var existing = await FindByIdempotencyKeyAsync(idempotencyKey, cancellationToken);
-        if (existing is not null)
+        PaymentIntent intent;
+        Reservation reservation;
+
+        await using (var transaction = await dbContext.Database.BeginTransactionAsync(
+                         IsolationLevel.Serializable,
+                         cancellationToken))
         {
-            EnsureIdempotencyScope(existing, request.ReservationId, provider);
-            return MapResponse(existing);
-        }
-
-        var reservation = await dbContext.Reservations
-            .Include(item => item.Customer)
-            .Include(item => item.Apartment)
-            .SingleOrDefaultAsync(
-                item => item.Id == request.ReservationId && !item.IsDeleted,
-                cancellationToken)
-            ?? throw new KeyNotFoundException("La reserva indicada no existe.");
-
-        if (reservation.Status == ReservationStatus.Cancelled)
-        {
-            throw new InvalidOperationException(
-                "No se puede iniciar un pago para una reserva cancelada.");
-        }
-
-        var paidAmount = await dbContext.Payments
-            .Where(payment =>
-                !payment.IsDeleted &&
-                payment.ReservationId == reservation.Id &&
-                payment.Status == PaymentStatus.Paid)
-            .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
-
-        var outstandingAmount = reservation.TotalAmount - paidAmount;
-        if (outstandingAmount <= 0m)
-        {
-            throw new InvalidOperationException(
-                "La reserva no tiene un saldo pendiente de pago.");
-        }
-
-        var intent = new PaymentIntent
-        {
-            ReservationId = reservation.Id,
-            Reservation = reservation,
-            Amount = outstandingAmount,
-            Currency = DefaultCurrency,
-            Provider = provider,
-            Method = gateway.Method,
-            Status = PaymentIntentStatus.Created,
-            IdempotencyKey = idempotencyKey,
-        };
-
-        dbContext.PaymentIntents.Add(intent);
-
-        try
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            dbContext.Entry(intent).State = EntityState.Detached;
-            var concurrent = await FindByIdempotencyKeyAsync(idempotencyKey, cancellationToken);
-            if (concurrent is not null)
+            try
             {
-                EnsureIdempotencyScope(concurrent, request.ReservationId, provider);
-                return MapResponse(concurrent);
-            }
+                var existing = await FindByIdempotencyKeyAsync(
+                    idempotencyKey,
+                    cancellationToken);
 
-            throw;
+                if (existing is not null)
+                {
+                    EnsureIdempotencyScope(existing, request.ReservationId, provider);
+                    await transaction.CommitAsync(cancellationToken);
+
+                    return CanResumeGatewayCreation(existing)
+                        ? await InitializeGatewayIntentAsync(existing, existing.Reservation, gateway, cancellationToken)
+                        : MapResponse(existing);
+                }
+
+                reservation = await dbContext.Reservations
+                    .Include(item => item.Customer)
+                    .Include(item => item.Apartment)
+                    .SingleOrDefaultAsync(
+                        item => item.Id == request.ReservationId && !item.IsDeleted,
+                        cancellationToken)
+                    ?? throw new KeyNotFoundException("La reserva indicada no existe.");
+
+                if (reservation.Status == ReservationStatus.Cancelled)
+                {
+                    throw new InvalidOperationException(
+                        "No se puede iniciar un pago para una reserva cancelada.");
+                }
+
+                var paidAmount = await dbContext.Payments
+                    .Where(payment =>
+                        !payment.IsDeleted &&
+                        payment.ReservationId == reservation.Id &&
+                        payment.Status == PaymentStatus.Paid)
+                    .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+
+                var outstandingAmount = reservation.TotalAmount - paidAmount;
+                if (outstandingAmount <= 0m)
+                {
+                    throw new InvalidOperationException(
+                        "La reserva no tiene un saldo pendiente de pago.");
+                }
+
+                var now = DateTime.UtcNow;
+                var hasActiveIntent = await dbContext.PaymentIntents
+                    .AsNoTracking()
+                    .AnyAsync(
+                        item =>
+                            !item.IsDeleted &&
+                            item.ReservationId == reservation.Id &&
+                            item.ExpiresAtUtc > now &&
+                            (item.Status == PaymentIntentStatus.Created ||
+                             item.Status == PaymentIntentStatus.Processing ||
+                             item.Status == PaymentIntentStatus.RequiresAction),
+                        cancellationToken);
+
+                if (hasActiveIntent)
+                {
+                    throw new InvalidOperationException(
+                        "Ya existe un intento de pago activo para esta reserva.");
+                }
+
+                intent = new PaymentIntent
+                {
+                    ReservationId = reservation.Id,
+                    Reservation = reservation,
+                    Amount = outstandingAmount,
+                    Currency = DefaultCurrency,
+                    Provider = provider,
+                    Method = gateway.Method,
+                    Status = PaymentIntentStatus.Created,
+                    IdempotencyKey = idempotencyKey,
+                    ExpiresAtUtc = now.Add(DefaultIntentLifetime),
+                };
+
+                dbContext.PaymentIntents.Add(intent);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                dbContext.ChangeTracker.Clear();
+
+                var concurrent = await FindByIdempotencyKeyAsync(
+                    idempotencyKey,
+                    cancellationToken);
+
+                if (concurrent is not null)
+                {
+                    EnsureIdempotencyScope(concurrent, request.ReservationId, provider);
+
+                    return CanResumeGatewayCreation(concurrent)
+                        ? await InitializeGatewayIntentAsync(
+                            concurrent,
+                            concurrent.Reservation,
+                            gateway,
+                            cancellationToken)
+                        : MapResponse(concurrent);
+                }
+
+                throw;
+            }
         }
 
-        try
-        {
-            var gatewayResult = await gateway.CreateIntentAsync(
-                new PaymentGatewayCreateCommand(
-                    intent.Id,
-                    reservation.Id,
-                    intent.Amount,
-                    intent.Currency,
-                    intent.IdempotencyKey,
-                    $"Reserva Edificios Oliva {reservation.Id:N}"),
-                cancellationToken);
-
-            if (string.IsNullOrWhiteSpace(gatewayResult.ProviderReference))
-            {
-                throw new InvalidOperationException(
-                    "El proveedor de pagos no devolvió una referencia de transacción válida.");
-            }
-
-            if (gatewayResult.Status == PaymentIntentStatus.Refunded)
-            {
-                throw new InvalidOperationException(
-                    "El proveedor devolvió un estado inválido al crear el intento de pago.");
-            }
-
-            intent.ProviderReference = TrimTo(gatewayResult.ProviderReference, 200);
-            intent.CheckoutUrl = TrimToOptional(gatewayResult.CheckoutUrl, 1000);
-            intent.ExpiresAtUtc = gatewayResult.ExpiresAtUtc;
-            intent.FailureCode = TrimToOptional(gatewayResult.FailureCode, 100);
-            intent.FailureMessage = TrimToOptional(gatewayResult.FailureMessage, 500);
-            intent.Status = gatewayResult.Status;
-            intent.UpdatedAtUtc = DateTime.UtcNow;
-            ApplyStatusTimestamps(intent, gatewayResult.Status);
-
-            if (gatewayResult.Status == PaymentIntentStatus.Succeeded)
-            {
-                FinalizeSucceededIntent(intent, reservation);
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return MapResponse(intent);
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            logger.LogError(
-                exception,
-                "El proveedor {Provider} falló al crear el intento {PaymentIntentId}.",
-                provider,
-                intent.Id);
-
-            intent.Status = PaymentIntentStatus.Failed;
-            intent.FailureCode = "gateway_create_error";
-            intent.FailureMessage = TrimTo(exception.Message, 500);
-            intent.FailedAtUtc = DateTime.UtcNow;
-            intent.UpdatedAtUtc = DateTime.UtcNow;
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            throw new InvalidOperationException(
-                "No fue posible iniciar el pago con el proveedor seleccionado.");
-        }
+        return await InitializeGatewayIntentAsync(
+            intent,
+            reservation,
+            gateway,
+            cancellationToken);
     }
 
     public async Task<PaymentWebhookProcessResponse> ProcessWebhookAsync(
@@ -274,16 +270,18 @@ public sealed class PaymentIntentService(
         {
             var duplicate = await dbContext.PaymentWebhookEvents
                 .AsNoTracking()
-                .AnyAsync(
-                    item => item.Provider == canonicalProvider && item.EventId == eventId,
-                    cancellationToken);
+                .Where(item =>
+                    item.Provider == canonicalProvider &&
+                    item.EventId == eventId)
+                .Select(item => new { item.PaymentIntentId })
+                .SingleOrDefaultAsync(cancellationToken);
 
-            if (duplicate)
+            if (duplicate is not null)
             {
                 await transaction.RollbackAsync(cancellationToken);
                 return new PaymentWebhookProcessResponse(
                     PaymentWebhookOutcome.Duplicate,
-                    null);
+                    duplicate.PaymentIntentId);
             }
 
             var webhook = new PaymentWebhookEvent
@@ -379,18 +377,128 @@ public sealed class PaymentIntentService(
 
             var duplicate = await dbContext.PaymentWebhookEvents
                 .AsNoTracking()
-                .AnyAsync(
-                    item => item.Provider == canonicalProvider && item.EventId == eventId,
-                    cancellationToken);
+                .Where(item =>
+                    item.Provider == canonicalProvider &&
+                    item.EventId == eventId)
+                .Select(item => new { item.PaymentIntentId })
+                .SingleOrDefaultAsync(cancellationToken);
 
-            if (duplicate)
+            if (duplicate is not null)
             {
                 return new PaymentWebhookProcessResponse(
                     PaymentWebhookOutcome.Duplicate,
-                    null);
+                    duplicate.PaymentIntentId);
             }
 
             throw;
+        }
+    }
+
+    private async Task<PaymentIntentResponse> InitializeGatewayIntentAsync(
+        PaymentIntent intent,
+        Reservation reservation,
+        IPaymentGateway gateway,
+        CancellationToken cancellationToken)
+    {
+        PaymentGatewayCreateResult gatewayResult;
+
+        try
+        {
+            gatewayResult = await gateway.CreateIntentAsync(
+                new PaymentGatewayCreateCommand(
+                    intent.Id,
+                    reservation.Id,
+                    intent.Amount,
+                    intent.Currency,
+                    intent.IdempotencyKey,
+                    $"Reserva Edificios Oliva {reservation.Id:N}"),
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "No se pudo confirmar la creación del intento {PaymentIntentId} con {Provider}.",
+                intent.Id,
+                intent.Provider);
+
+            await MarkGatewayOutcomeUnknownAsync(
+                intent,
+                "gateway_create_transport_error",
+                exception.Message,
+                cancellationToken);
+
+            throw new InvalidOperationException(
+                "No fue posible confirmar el estado del pago. Reintenta con la misma clave de idempotencia.");
+        }
+
+        if (string.IsNullOrWhiteSpace(gatewayResult.ProviderReference))
+        {
+            await MarkGatewayOutcomeUnknownAsync(
+                intent,
+                "gateway_reference_missing",
+                "El proveedor no devolvió una referencia de pago.",
+                cancellationToken);
+
+            throw new InvalidOperationException(
+                "El proveedor de pagos no devolvió una referencia válida. Reintenta con la misma clave de idempotencia.");
+        }
+
+        if (gatewayResult.Status == PaymentIntentStatus.Refunded)
+        {
+            await MarkGatewayOutcomeUnknownAsync(
+                intent,
+                "gateway_invalid_initial_status",
+                "El proveedor devolvió Refunded al crear el intento.",
+                cancellationToken);
+
+            throw new InvalidOperationException(
+                "El proveedor devolvió un estado inválido al crear el intento de pago.");
+        }
+
+        intent.ProviderReference = TrimTo(gatewayResult.ProviderReference, 200);
+        intent.CheckoutUrl = TrimToOptional(gatewayResult.CheckoutUrl, 1000);
+        intent.ExpiresAtUtc = gatewayResult.ExpiresAtUtc ?? intent.ExpiresAtUtc;
+        intent.FailureCode = TrimToOptional(gatewayResult.FailureCode, 100);
+        intent.FailureMessage = TrimToOptional(gatewayResult.FailureMessage, 500);
+        intent.Status = gatewayResult.Status;
+        intent.UpdatedAtUtc = DateTime.UtcNow;
+        ApplyStatusTimestamps(intent, gatewayResult.Status);
+
+        if (gatewayResult.Status == PaymentIntentStatus.Succeeded)
+        {
+            FinalizeSucceededIntent(intent, reservation);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return MapResponse(intent);
+    }
+
+    private async Task MarkGatewayOutcomeUnknownAsync(
+        PaymentIntent intent,
+        string failureCode,
+        string failureMessage,
+        CancellationToken cancellationToken)
+    {
+        intent.Status = PaymentIntentStatus.Processing;
+        intent.FailureCode = TrimTo(failureCode, 100);
+        intent.FailureMessage = TrimTo(failureMessage, 500);
+        intent.UpdatedAtUtc = DateTime.UtcNow;
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception persistenceException) when (persistenceException is not OperationCanceledException)
+        {
+            logger.LogError(
+                persistenceException,
+                "No se pudo persistir el estado incierto del intento {PaymentIntentId}.",
+                intent.Id);
         }
     }
 
@@ -486,7 +594,6 @@ public sealed class PaymentIntentService(
         CancellationToken cancellationToken)
     {
         return await dbContext.PaymentIntents
-            .AsNoTracking()
             .Include(intent => intent.Reservation)
                 .ThenInclude(reservation => reservation.Customer)
             .Include(intent => intent.Reservation)
@@ -506,6 +613,12 @@ public sealed class PaymentIntentService(
 
         return gateway ?? throw new KeyNotFoundException(
             $"El proveedor de pagos '{provider}' no está configurado.");
+    }
+
+    private static bool CanResumeGatewayCreation(PaymentIntent intent)
+    {
+        return intent.ProviderReference is null &&
+               intent.Status is PaymentIntentStatus.Created or PaymentIntentStatus.Processing;
     }
 
     private static void EnsureIdempotencyScope(
