@@ -28,7 +28,9 @@ jobs:
 
       - name: Regenerate dependency tree and lockfile
         working-directory: EdificiosOlivaFrontend
-        run: npm install
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: Commit refreshed lockfile
         run: |
