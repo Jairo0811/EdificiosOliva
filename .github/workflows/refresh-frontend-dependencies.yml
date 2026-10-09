@@ -1,0 +1,62 @@
+name: Refresh frontend dependencies
+
+on:
+  push:
+    branches:
+      - feature/payment-foundation-v1.1
+    paths:
+      - .github/workflows/refresh-frontend-dependencies.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/payment-foundation-v1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: EdificiosOlivaFrontend/package-lock.json
+
+      - name: Refresh patched dependencies and lockfile
+        working-directory: EdificiosOlivaFrontend
+        run: |
+          npm pkg set 'overrides.@grpc/grpc-js=1.14.6'
+          npm install \
+            @angular/common@^21.2.25 \
+            @angular/compiler@^21.2.25 \
+            @angular/core@^21.2.25 \
+            @angular/forms@^21.2.25 \
+            @angular/platform-browser@^21.2.25 \
+            @angular/router@^21.2.25 \
+            firebase@^12.19.0 \
+            --save
+          npm install \
+            @angular/build@^21.2.25 \
+            @angular/cli@^21.2.25 \
+            @angular/compiler-cli@^21.2.25 \
+            --save-dev
+
+      - name: Commit refreshed lockfile
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add EdificiosOlivaFrontend/package.json EdificiosOlivaFrontend/package-lock.json
+          if git diff --cached --quiet; then
+            echo 'No dependency changes to commit.'
+          else
+            git commit -m 'security: refresh patched frontend dependencies'
+            git push origin HEAD:feature/payment-foundation-v1.1
+          fi
+
+      - name: Verify production audit
+        working-directory: EdificiosOlivaFrontend
+        run: npm audit --omit=dev --audit-level=high
