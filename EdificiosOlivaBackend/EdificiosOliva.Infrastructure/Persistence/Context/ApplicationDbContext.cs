@@ -14,6 +14,8 @@ public sealed class ApplicationDbContext(
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<PaymentIntent> PaymentIntents => Set<PaymentIntent>();
+    public DbSet<PaymentWebhookEvent> PaymentWebhookEvents => Set<PaymentWebhookEvent>();
     public DbSet<GalleryImage> GalleryImages => Set<GalleryImage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
