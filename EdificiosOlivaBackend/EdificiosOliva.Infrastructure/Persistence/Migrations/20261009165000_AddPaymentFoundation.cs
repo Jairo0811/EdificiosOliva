@@ -1,14 +1,10 @@
 using System;
-using EdificiosOliva.Infrastructure.Persistence.Context;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace EdificiosOliva.Infrastructure.Persistence.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261009165000_AddPaymentFoundation")]
     public partial class AddPaymentFoundation : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
