@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IReservationService, ReservationService>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<IPaymentIntentService, PaymentIntentService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IGalleryImageRepository, GalleryImageRepository>();
         services.AddScoped<IGalleryImageService, GalleryImageService>();
