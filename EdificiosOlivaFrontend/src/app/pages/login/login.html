@@ -74,7 +74,7 @@
       </div>
 
       <button
-        class="google-btn"
+        class="social-btn google-btn"
         type="button"
         (click)="loginGoogle()"
         [disabled]="loading"
@@ -83,6 +83,18 @@
         <i class="bi bi-google" aria-hidden="true"> </i>
 
         Iniciar sesión con Google
+      </button>
+
+      <button
+        class="social-btn apple-btn"
+        type="button"
+        (click)="loginApple()"
+        [disabled]="loading"
+        aria-label="Iniciar sesión con Apple"
+      >
+        <i class="bi bi-apple" aria-hidden="true"> </i>
+
+        Iniciar sesión con Apple
       </button>
     </form>
 

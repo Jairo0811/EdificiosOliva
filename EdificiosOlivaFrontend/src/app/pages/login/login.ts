@@ -11,8 +11,8 @@ import { AuthService } from '../../core/services/auth';
   styleUrl: './login.css',
 })
 export class Login {
-  private authService = inject(AuthService);
-  private router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   email = '';
   password = '';
@@ -20,80 +20,57 @@ export class Login {
   loading = false;
   errorMessage = '';
 
-async login(): Promise<void> {
-  this.errorMessage = '';
-  this.loading = true;
-
-  try {
-    console.log('1. Antes del login');
-
-    const credential = await this.authService.login(
-      this.email.trim(),
-      this.password
-    );
-
-    console.log('2. Login terminado');
-    console.log(credential);
-
-    console.log('3. Antes de getUserProfile');
-
-    const profile = await this.authService.getUserProfile(
-      credential.user.uid
-    );
-
-    console.log('4. Después de getUserProfile');
-    console.log(profile);
-
-    if (!profile) {
-      this.errorMessage = 'No existe perfil.';
+  async login(): Promise<void> {
+    if (!this.isValidEmail(this.email)) {
+      this.errorMessage = 'Introduce un correo electrónico válido.';
       return;
     }
 
-    if (profile.role !== 'admin') {
-      this.errorMessage = 'No eres administrador.';
-      return;
-    }
-
-    console.log('5. Navegando...');
-
-    await this.router.navigate(['/admin']);
-
-    console.log('6. Navegación completada');
-  } catch (e) {
-    console.error(e);
-  } finally {
-    this.loading = false;
+    await this.runLogin(async () =>
+      this.authService.login(this.email.trim(), this.password),
+    );
   }
-}
-
-private isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
-async loginGoogle(): Promise<void> {
-  this.errorMessage = '';
+  loginGoogle(): Promise<void> {
+    return this.runLogin(() => this.authService.loginWithGoogle(), 'Google');
+  }
 
-  try {
+  loginApple(): Promise<void> {
+    return this.runLogin(() => this.authService.loginWithApple(), 'Apple');
+  }
+
+  private async runLogin(
+    authenticate: () => ReturnType<AuthService['login']>,
+    provider?: 'Google' | 'Apple',
+  ): Promise<void> {
+    this.errorMessage = '';
     this.loading = true;
 
-    const credential = await this.authService.loginWithGoogle();
-    const profile = await this.authService.getUserProfile(credential.user.uid);
+    try {
+      const credential = await authenticate();
+      const profile = await this.authService.getUserProfile(credential.user.uid);
 
-    if (profile?.role === 'admin') {
-      window.location.href = '/admin';
-      return;
+      if (!profile) {
+        this.errorMessage = 'No se pudo cargar el perfil de usuario.';
+        await this.authService.logout();
+        return;
+      }
+
+      await this.router.navigate([profile.role === 'admin' ? '/admin' : '/']);
+    } catch {
+      this.errorMessage = provider
+        ? `No se pudo iniciar sesión con ${provider}. Inténtalo nuevamente.`
+        : 'Correo o contraseña incorrectos.';
+    } finally {
+      this.loading = false;
     }
-
-    window.location.href = '/mi-cuenta';
-  } catch (error) {
-    console.error('ERROR GOOGLE LOGIN:', error);
-    this.errorMessage = 'No se pudo iniciar sesión con Google.';
-  } finally {
-    this.loading = false;
   }
-}
+
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }
 }

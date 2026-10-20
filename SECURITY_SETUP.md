@@ -19,4 +19,10 @@ Después de asignarlo, el usuario debe cerrar sesión e iniciar nuevamente para 
 
 La creación directa de reservas queda temporalmente limitada a administradores porque el modelo actual no relaciona cada cliente con un Firebase UID. Abrirla a usuarios sin añadir esa propiedad permitiría reservar en nombre de cualquier cliente cambiando `CustomerId`.
 
+## Proveedores externos
+
+El frontend admite correo/contraseña, Google y Apple mediante Firebase Authentication. En Firebase Console habilita `Google` y `Apple` en **Authentication > Sign-in method** y registra todos los dominios usados por el frontend en **Authorized domains**.
+
+Para Apple también debes crear un Services ID en Apple Developer, asociarlo al App ID correspondiente y configurar como Return URL la URL de callback que muestra Firebase para el proveedor Apple. La clave privada, Team ID, Key ID y secreto de Apple se configuran únicamente en Firebase Console; nunca deben almacenarse en este repositorio.
+
 Las imágenes se decodifican, validan hasta 20 megapíxeles y se recodifican como WebP. El nombre suministrado por el cliente nunca se usa como nombre físico.
