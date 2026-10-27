@@ -18,6 +18,7 @@ import { ApartmentsAdmin } from './pages/admin/apartments-admin/apartments-admin
 import { BookingsAdmin } from './pages/admin/bookings-admin/bookings-admin';
 import { Customers } from './pages/admin/customers/customers';
 import { Payments } from './pages/admin/payments/payments';
+import { PaymentIntentsAdmin } from './pages/admin/payment-intents-admin/payment-intents-admin';
 import { GalleryAdmin } from './pages/admin/gallery-admin/gallery-admin';
 
 export const routes: Routes = [
@@ -41,6 +42,7 @@ export const routes: Routes = [
       { path: 'reservas', component: BookingsAdmin },
       { path: 'clientes', component: Customers },
       { path: 'pagos', component: Payments },
+      { path: 'intentos-pago', component: PaymentIntentsAdmin },
       { path: 'galeria', component: GalleryAdmin },
     ],
   },
