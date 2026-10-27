@@ -1,0 +1,14 @@
+.git
+.github
+**/node_modules
+**/dist
+**/bin
+**/obj
+**/.angular
+**/.vs
+**/.vscode
+**/wwwroot/uploads
+*.user
+*.suo
+.env
+.env.*
