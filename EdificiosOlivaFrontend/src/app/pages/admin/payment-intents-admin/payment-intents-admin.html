@@ -1,0 +1,204 @@
+<div class="admin-page">
+  <div class="page-header">
+    <div>
+      <span class="kicker">Operación de cobros</span>
+      <h1>Intentos de pago</h1>
+      <p>Supervisa el checkout online y concilia únicamente contra evidencia verificada del proveedor.</p>
+    </div>
+
+    <div class="review-card" [class.attention]="needsReviewCount > 0">
+      <strong>{{ needsReviewCount }}</strong>
+      <span>requieren revisión</span>
+    </div>
+  </div>
+
+  @if (successMessage) {
+    <div class="feedback success" role="status">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage && !selected) {
+    <div class="feedback error" role="alert">{{ errorMessage }}</div>
+  }
+
+  <div class="filters">
+    <label>
+      <span>Buscar</span>
+      <input
+        type="search"
+        [(ngModel)]="search"
+        placeholder="Cliente, apartamento, orden..."
+        (keyup.enter)="load()"
+      />
+    </label>
+
+    <label>
+      <span>Proveedor</span>
+      <select [(ngModel)]="provider">
+        <option value="">Todos</option>
+        <option value="AZUL">AZUL</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Estado</span>
+      <select [(ngModel)]="status">
+        <option [ngValue]="0">Todos</option>
+        <option [ngValue]="1">Creado</option>
+        <option [ngValue]="2">Procesando</option>
+        <option [ngValue]="3">Esperando pago</option>
+        <option [ngValue]="4">Pagado</option>
+        <option [ngValue]="5">Fallido</option>
+        <option [ngValue]="6">Cancelado</option>
+        <option [ngValue]="7">Reembolsado</option>
+      </select>
+    </label>
+
+    <button type="button" class="filter-btn" (click)="load()">
+      <i class="bi bi-funnel" aria-hidden="true"></i>
+      Aplicar
+    </button>
+  </div>
+
+  <div class="table-card">
+    @if (loading) {
+      <div class="empty-state">Cargando intentos de pago…</div>
+    } @else if (intents.length === 0) {
+      <div class="empty-state">No hay intentos de pago con estos filtros.</div>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Intento</th>
+            <th>Cliente / apartamento</th>
+            <th>Proveedor</th>
+            <th>Orden</th>
+            <th>Monto</th>
+            <th>Estado</th>
+            <th>Expira</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (intent of intents; track intent.id) {
+            <tr [class.needs-review]="intent.needsReview">
+              <td>
+                <strong>#{{ shortId(intent.id) }}</strong>
+                @if (intent.needsReview) {
+                  <span class="review-badge">Revisar</span>
+                }
+              </td>
+              <td>
+                <strong>{{ intent.customerName }}</strong>
+                <small>{{ intent.apartmentName }}</small>
+              </td>
+              <td>{{ intent.provider }}</td>
+              <td><code>{{ intent.providerReference || '—' }}</code></td>
+              <td>{{ intent.amount | currency: intent.currency : 'symbol' : '1.2-2' }}</td>
+              <td>
+                <span class="status status-{{ intent.status }}">
+                  {{ statusLabel(intent.status) }}
+                </span>
+                @if (intent.failureMessage) {
+                  <small class="failure">{{ intent.failureMessage }}</small>
+                }
+              </td>
+              <td>{{ intent.expiresAtUtc ? (intent.expiresAtUtc | date: 'short') : '—' }}</td>
+              <td>
+                @if (intent.status !== 4 && intent.status !== 7) {
+                  <button
+                    type="button"
+                    class="reconcile-btn"
+                    (click)="openReconciliation(intent)"
+                  >
+                    Conciliar
+                  </button>
+                } @else {
+                  <span class="final-state">Final</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <div class="operational-note">
+    <i class="bi bi-shield-check" aria-hidden="true"></i>
+    <div>
+      <strong>Regla de conciliación</strong>
+      <p>
+        No marques un intento como pagado por una captura de pantalla del huésped. Verifica primero
+        la transacción en el portal/adquirente y registra su referencia real.
+      </p>
+    </div>
+  </div>
+
+  @if (selected) {
+    <div class="modal-backdrop">
+      <div class="reconcile-modal" role="dialog" aria-modal="true" aria-labelledby="reconcile-title">
+        <div class="modal-header">
+          <div>
+            <span>{{ selected.provider }} · {{ selected.providerReference || shortId(selected.id) }}</span>
+            <h2 id="reconcile-title">Conciliar intento de pago</h2>
+          </div>
+          <button type="button" class="close-btn" (click)="closeReconciliation()" [disabled]="saving">×</button>
+        </div>
+
+        @if (errorMessage) {
+          <div class="feedback error" role="alert">{{ errorMessage }}</div>
+        }
+
+        <div class="intent-summary">
+          <span>{{ selected.customerName }}</span>
+          <strong>{{ selected.amount | currency: selected.currency : 'symbol' : '1.2-2' }}</strong>
+        </div>
+
+        <form (ngSubmit)="reconcile()">
+          <label>
+            <span>Resultado verificado</span>
+            <select name="outcome" [(ngModel)]="reconciliation.outcome" [disabled]="saving">
+              <option [ngValue]="1">Pago aprobado</option>
+              <option [ngValue]="2">Pago fallido / declinado</option>
+              <option [ngValue]="3">Cancelado</option>
+            </select>
+          </label>
+
+          @if (reconciliation.outcome === 1) {
+            <label>
+              <span>Referencia de transacción del proveedor</span>
+              <input
+                name="providerTransactionId"
+                [(ngModel)]="reconciliation.providerTransactionId"
+                maxlength="200"
+                required
+                [disabled]="saving"
+                placeholder="Referencia verificada en AZUL"
+              />
+            </label>
+          }
+
+          <label>
+            <span>Evidencia / observación de conciliación</span>
+            <textarea
+              name="notes"
+              [(ngModel)]="reconciliation.notes"
+              maxlength="500"
+              rows="4"
+              required
+              [disabled]="saving"
+              placeholder="Ej.: verificado en Portal AZUL, fecha/hora y resultado..."
+            ></textarea>
+          </label>
+
+          <div class="modal-actions">
+            <button type="button" class="secondary-btn" (click)="closeReconciliation()" [disabled]="saving">Cancelar</button>
+            <button type="submit" class="primary-btn" [disabled]="saving">
+              {{ saving ? 'Guardando…' : 'Registrar conciliación' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
