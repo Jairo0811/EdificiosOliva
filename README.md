@@ -483,7 +483,8 @@ Frontend
 
 Backend
 ├── dotnet restore
-└── dotnet build --configuration Release
+├── dotnet build --configuration Release
+└── xUnit v3: pruebas del gateway AZUL
 ```
 
 Pruebas manuales recomendadas para el motor de reservas:
