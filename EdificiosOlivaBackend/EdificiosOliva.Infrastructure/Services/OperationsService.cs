@@ -328,8 +328,8 @@ public sealed class OperationsService(
 
     private static string Csv(string value)
     {
-        var escaped = value.Replace(""", """", StringComparison.Ordinal);
-        return $""{escaped}"";
+        var escaped = value.Replace("\"", "\"\"", StringComparison.Ordinal);
+        return $"\"{escaped}\"";
     }
 
     private static byte[] WithUtf8Bom(string value)
