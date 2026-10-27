@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, switchMap } from 'rxjs';
 
 import { Apartment } from '../../core/models/apartment.model';
@@ -14,11 +14,21 @@ import { Apartments as ApartmentsService } from '../../core/services/apartments'
 })
 export class ApartmentDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly apartmentsService = inject(ApartmentsService);
   private readonly destroyRef = inject(DestroyRef);
 
   apartment: Apartment | null = null;
   loading = true;
+  checkInDate = '';
+  checkOutDate = '';
+  guestCount = 1;
+  get minDate(): string { const d = new Date(); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'); }
+  reserve(): void {
+    if (!this.apartment || !this.checkInDate || !this.checkOutDate || this.checkOutDate <= this.checkInDate) return;
+    void this.router.navigate(['/reservar'], { queryParams: { apartmentId: this.apartment.id, checkInDate: this.checkInDate, checkOutDate: this.checkOutDate, guestCount: this.guestCount } });
+  }
+
   errorMessage = '';
 
   ngOnInit(): void {

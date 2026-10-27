@@ -93,13 +93,13 @@
           </h2>
 
           <label for="detail-checkin">Entrada</label>
-          <input id="detail-checkin" name="checkin" type="date" />
+          <input id="detail-checkin" name="checkin" type="date" [value]="checkInDate" [min]="minDate" (change)="checkInDate = $any($event.target).value" />
 
           <label for="detail-checkout">Salida</label>
-          <input id="detail-checkout" name="checkout" type="date" />
+          <input id="detail-checkout" name="checkout" type="date" [value]="checkOutDate" [min]="checkInDate || minDate" (change)="checkOutDate = $any($event.target).value" />
 
           <label for="detail-guests">Huéspedes</label>
-          <select id="detail-guests" name="guests">
+          <select id="detail-guests" name="guests" [value]="guestCount" (change)="guestCount = +$any($event.target).value">
             @for (guest of getGuestOptions(apartment); track guest) {
               <option [value]="guest">
                 {{ guest }} {{ guest === 1 ? 'huésped' : 'huéspedes' }}
@@ -107,7 +107,7 @@
             }
           </select>
 
-          <button type="button" aria-label="Reservar este apartamento">
+          <button type="button" (click)="reserve()" [disabled]="!checkInDate || !checkOutDate || checkOutDate <= checkInDate" aria-label="Reservar este apartamento">
             Reservar ahora
           </button>
 
