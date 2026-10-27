@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "Frontend";
 const string PublicBookingRatePolicy = "PublicBooking";
 const string PaymentWebhookRatePolicy = "PaymentWebhook";
+const string PublicPaymentRatePolicy = "PublicPayment";
 
 builder.Services.AddControllers();
 
@@ -130,6 +131,15 @@ builder.Services.AddRateLimiter(options =>
     options.AddFixedWindowLimiter(PaymentWebhookRatePolicy, limiterOptions =>
     {
         limiterOptions.PermitLimit = 120;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueLimit = 0;
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.AutoReplenishment = true;
+    });
+
+    options.AddFixedWindowLimiter(PublicPaymentRatePolicy, limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 20;
         limiterOptions.Window = TimeSpan.FromMinutes(1);
         limiterOptions.QueueLimit = 0;
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
