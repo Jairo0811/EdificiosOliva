@@ -43,6 +43,29 @@ public sealed class PaymentIntentsController(
         return intent is null ? NotFound() : Ok(intent);
     }
 
+    [HttpPost("{id:guid}/reconcile")]
+    [ProducesResponseType<PaymentIntentResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PaymentIntentResponse>> Reconcile(
+        Guid id,
+        [FromBody] ManualPaymentReconciliationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var performedBy =
+            User.FindFirst("email")?.Value ??
+            User.Identity?.Name ??
+            "admin";
+
+        var intent = await paymentIntentService.ReconcileManuallyAsync(
+            id,
+            request,
+            performedBy,
+            cancellationToken);
+
+        return Ok(intent);
+    }
+
     [HttpPost]
     [ProducesResponseType<PaymentIntentResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

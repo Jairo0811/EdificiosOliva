@@ -25,6 +25,7 @@ public sealed record PaymentIntentResponse(
     string? FailureCode,
     string? FailureMessage,
     DateTime? ExpiresAtUtc,
+    bool NeedsReview,
     DateTime? SucceededAtUtc,
     DateTime? FailedAtUtc,
     DateTime? CancelledAtUtc,
@@ -48,6 +49,25 @@ public sealed class PaymentIntentQueryParameters
 
     public PaymentIntentStatus? Status { get; init; }
     public Guid? ReservationId { get; init; }
+}
+
+public enum ManualReconciliationOutcome
+{
+    Succeeded = 1,
+    Failed = 2,
+    Cancelled = 3
+}
+
+public sealed class ManualPaymentReconciliationRequest
+{
+    [Required]
+    public ManualReconciliationOutcome Outcome { get; init; }
+
+    [StringLength(200)]
+    public string? ProviderTransactionId { get; init; }
+
+    [Required, StringLength(500, MinimumLength = 8)]
+    public string Notes { get; init; } = string.Empty;
 }
 
 public sealed class CreatePaymentIntentRequest
