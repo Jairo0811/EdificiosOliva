@@ -1,5 +1,6 @@
 using System.Data;
 using EdificiosOliva.Application.Common.Models;
+using EdificiosOliva.Application.DTOs.Notifications;
 using EdificiosOliva.Application.DTOs.Reservations;
 using EdificiosOliva.Application.Interfaces;
 using EdificiosOliva.Domain.Entities;
@@ -7,12 +8,15 @@ using EdificiosOliva.Domain.Enums;
 using EdificiosOliva.Domain.Interfaces;
 using EdificiosOliva.Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace EdificiosOliva.Infrastructure.Services;
 
 public sealed class ReservationService(
     IReservationRepository reservationRepository,
-    ApplicationDbContext dbContext) : IReservationService
+    ApplicationDbContext dbContext,
+    IBookingNotificationService notificationService,
+    ILogger<ReservationService> logger) : IReservationService
 {
     private static readonly ReservationStatus[] BlockingStatuses =
     [
@@ -211,7 +215,38 @@ public sealed class ReservationService(
 
         reservation.Customer = customer;
         reservation.Apartment = apartment;
-        return MapPublicResponse(reservation, normalizedEmail);
+        var response = MapPublicResponse(reservation, normalizedEmail);
+
+        try
+        {
+            await notificationService.SendBookingCreatedAsync(
+                new BookingCreatedNotification(
+                    response.ReservationId,
+                    response.ConfirmationCode,
+                    response.CustomerName,
+                    response.Email,
+                    response.ApartmentName,
+                    response.CheckInDate,
+                    response.CheckOutDate,
+                    response.Nights,
+                    response.TotalAmount,
+                    "USD"),
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "No se pudo enviar la confirmación de la reserva {ReservationId} a {Email}.",
+                response.ReservationId,
+                response.Email);
+        }
+
+        return response;
     }
 
     public async Task<bool> UpdateAsync(
