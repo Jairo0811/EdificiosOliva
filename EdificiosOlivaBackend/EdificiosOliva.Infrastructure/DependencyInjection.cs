@@ -1,5 +1,6 @@
 using EdificiosOliva.Application.Interfaces;
 using EdificiosOliva.Domain.Interfaces;
+using EdificiosOliva.Infrastructure.Payments.Azul;
 using EdificiosOliva.Infrastructure.Persistence.Context;
 using EdificiosOliva.Infrastructure.Repositories;
 using EdificiosOliva.Infrastructure.Services;
@@ -34,6 +35,15 @@ public static class DependencyInjection
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IPaymentIntentService, PaymentIntentService>();
+
+        var azulOptions = AzulOptions.FromConfiguration(configuration);
+        if (azulOptions.Enabled)
+        {
+            azulOptions.Validate();
+            services.AddSingleton(azulOptions);
+            services.AddScoped<IPaymentGateway, AzulPaymentGateway>();
+        }
+
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IGalleryImageRepository, GalleryImageRepository>();
         services.AddScoped<IGalleryImageService, GalleryImageService>();
