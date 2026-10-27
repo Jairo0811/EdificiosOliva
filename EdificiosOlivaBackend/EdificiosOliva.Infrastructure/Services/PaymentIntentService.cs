@@ -2,6 +2,7 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using EdificiosOliva.Application.Common.Models;
+using EdificiosOliva.Application.DTOs.Notifications;
 using EdificiosOliva.Application.DTOs.Payments;
 using EdificiosOliva.Application.Interfaces;
 using EdificiosOliva.Domain.Entities;
@@ -15,6 +16,7 @@ namespace EdificiosOliva.Infrastructure.Services;
 public sealed class PaymentIntentService(
     ApplicationDbContext dbContext,
     IEnumerable<IPaymentGateway> gateways,
+    IBookingNotificationService notificationService,
     ILogger<PaymentIntentService> logger) : IPaymentIntentService
 {
     private const string DefaultCurrency = "USD";
@@ -354,6 +356,11 @@ public sealed class PaymentIntentService(
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        if (request.Outcome == ManualReconciliationOutcome.Succeeded)
+        {
+            await SafeNotifyPaymentConfirmedAsync(intent, cancellationToken);
+        }
+
         return MapResponse(intent);
     }
 
@@ -541,6 +548,9 @@ public sealed class PaymentIntentService(
 
             var intent = await dbContext.PaymentIntents
                 .Include(item => item.Reservation)
+                    .ThenInclude(reservation => reservation.Customer)
+                .Include(item => item.Reservation)
+                    .ThenInclude(reservation => reservation.Apartment)
                 .Include(item => item.Payment)
                 .SingleOrDefaultAsync(
                     item =>
@@ -594,6 +604,11 @@ public sealed class PaymentIntentService(
 
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+
+            if (applied && intent.Status == PaymentIntentStatus.Succeeded)
+            {
+                await SafeNotifyPaymentConfirmedAsync(intent, cancellationToken);
+            }
 
             return new PaymentWebhookProcessResponse(
                 applied ? PaymentWebhookOutcome.Processed : PaymentWebhookOutcome.Ignored,
@@ -704,6 +719,12 @@ public sealed class PaymentIntentService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (intent.Status == PaymentIntentStatus.Succeeded)
+        {
+            await SafeNotifyPaymentConfirmedAsync(intent, cancellationToken);
+        }
+
         return MapResponse(intent);
     }
 
@@ -758,7 +779,11 @@ public sealed class PaymentIntentService(
                 intent.FailureCode = null;
                 intent.FailureMessage = null;
                 ApplyStatusTimestamps(intent, PaymentIntentStatus.Succeeded);
-                FinalizeSucceededIntent(intent, intent.Reservation, null, null);
+                FinalizeSucceededIntent(
+                    intent,
+                    intent.Reservation,
+                    gatewayResult.ProviderTransactionId,
+                    null);
                 return true;
 
             case PaymentIntentStatus.Refunded:
@@ -937,6 +962,49 @@ public sealed class PaymentIntentService(
             case PaymentIntentStatus.Refunded:
                 intent.RefundedAtUtc ??= now;
                 break;
+        }
+    }
+
+    private async Task SafeNotifyPaymentConfirmedAsync(
+        PaymentIntent intent,
+        CancellationToken cancellationToken)
+    {
+        if (intent.Payment is null)
+        {
+            return;
+        }
+
+        var reservation = intent.Reservation;
+        var confirmationCode =
+            $"EO-{reservation.Id.ToString("N")[..8].ToUpperInvariant()}";
+
+        try
+        {
+            await notificationService.SendPaymentConfirmedAsync(
+                new PaymentConfirmedNotification(
+                    reservation.Id,
+                    confirmationCode,
+                    reservation.Customer.Name,
+                    reservation.Customer.Email,
+                    reservation.Apartment.Name,
+                    reservation.CheckInDate,
+                    reservation.CheckOutDate,
+                    intent.Amount,
+                    intent.Currency,
+                    intent.Provider,
+                    intent.Payment.TransactionId ?? intent.ProviderReference ?? intent.Id.ToString("N")),
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "No se pudo enviar el comprobante de pago de la reserva {ReservationId}.",
+                reservation.Id);
         }
     }
 
