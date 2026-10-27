@@ -233,6 +233,94 @@ public sealed class PaymentIntentService(
             cancellationToken);
     }
 
+    public async Task<PublicPaymentCheckoutResponse> CreatePublicCheckoutAsync(
+        CreatePublicPaymentCheckoutRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var provider = CanonicalizeProvider(request.Provider);
+        var gateway = GetGateway(provider);
+        var reservation = await ValidatePublicReservationAsync(
+            request.ReservationId,
+            request.ConfirmationCode,
+            request.Email,
+            cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var activeIntent = await dbContext.PaymentIntents
+            .Include(item => item.Reservation)
+                .ThenInclude(item => item.Customer)
+            .Include(item => item.Reservation)
+                .ThenInclude(item => item.Apartment)
+            .Where(item =>
+                !item.IsDeleted &&
+                item.ReservationId == reservation.Id &&
+                item.Provider == provider &&
+                item.ExpiresAtUtc > now &&
+                (item.Status == PaymentIntentStatus.Created ||
+                 item.Status == PaymentIntentStatus.Processing ||
+                 item.Status == PaymentIntentStatus.RequiresAction))
+            .OrderByDescending(item => item.CreatedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        PaymentIntentResponse intentResponse;
+
+        if (activeIntent is not null)
+        {
+            intentResponse = CanResumeGatewayCreation(activeIntent)
+                ? await InitializeGatewayIntentAsync(
+                    activeIntent,
+                    activeIntent.Reservation,
+                    gateway,
+                    cancellationToken)
+                : MapResponse(activeIntent);
+        }
+        else
+        {
+            intentResponse = await CreateAsync(
+                new CreatePaymentIntentRequest
+                {
+                    ReservationId = reservation.Id,
+                    Provider = provider,
+                    IdempotencyKey = request.IdempotencyKey.Trim(),
+                },
+                cancellationToken);
+        }
+
+        if (string.IsNullOrWhiteSpace(intentResponse.ProviderReference))
+        {
+            throw new InvalidOperationException(
+                "El intento de pago no tiene una referencia válida del proveedor.");
+        }
+
+        var checkout = await gateway.BuildCheckoutAsync(
+            new PaymentGatewayCheckoutCommand(
+                intentResponse.Id,
+                intentResponse.ReservationId,
+                intentResponse.ProviderReference,
+                intentResponse.Amount,
+                intentResponse.Currency,
+                $"Reserva Edificios Oliva {reservation.Id:N}"),
+            cancellationToken);
+
+        if (!string.Equals(checkout.Method, "POST", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "El proveedor configurado no devolvió un método de checkout soportado.");
+        }
+
+        return new PublicPaymentCheckoutResponse(
+            intentResponse.Id,
+            intentResponse.Provider,
+            intentResponse.Status,
+            intentResponse.Amount,
+            intentResponse.Currency,
+            checkout.ActionUrl,
+            checkout.AlternateActionUrl,
+            checkout.Method.ToUpperInvariant(),
+            checkout.Fields,
+            intentResponse.ExpiresAtUtc);
+    }
+
     public async Task<PaymentWebhookProcessResponse> ProcessWebhookAsync(
         string provider,
         string payload,
@@ -354,6 +442,23 @@ public sealed class PaymentIntentService(
 
             webhook.PaymentIntentId = intent.Id;
             webhook.PaymentIntent = intent;
+
+            if (gatewayResult.Amount.HasValue &&
+                decimal.Round(gatewayResult.Amount.Value, 2, MidpointRounding.AwayFromZero) !=
+                decimal.Round(intent.Amount, 2, MidpointRounding.AwayFromZero))
+            {
+                webhook.Status = PaymentWebhookEventStatus.Ignored;
+                webhook.ErrorMessage = "El monto firmado por el proveedor no coincide con el intento de pago.";
+                webhook.ProcessedAtUtc = DateTime.UtcNow;
+                webhook.UpdatedAtUtc = DateTime.UtcNow;
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                return new PaymentWebhookProcessResponse(
+                    PaymentWebhookOutcome.Ignored,
+                    intent.Id);
+            }
 
             var applied = ApplyWebhookStatus(intent, gatewayResult);
 
@@ -557,6 +662,52 @@ public sealed class PaymentIntentService(
             default:
                 return false;
         }
+    }
+
+    private async Task<Reservation> ValidatePublicReservationAsync(
+        Guid reservationId,
+        string confirmationCode,
+        string email,
+        CancellationToken cancellationToken)
+    {
+        var reservation = await dbContext.Reservations
+            .AsNoTracking()
+            .Include(item => item.Customer)
+            .Include(item => item.Apartment)
+            .SingleOrDefaultAsync(
+                item => item.Id == reservationId && !item.IsDeleted,
+                cancellationToken);
+
+        if (reservation is null)
+        {
+            throw new KeyNotFoundException(
+                "No se pudo validar la reserva para iniciar el pago.");
+        }
+
+        var expectedConfirmationCode =
+            $"EO-{reservation.Id.ToString("N")[..8].ToUpperInvariant()}";
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        if (!string.Equals(
+                expectedConfirmationCode,
+                confirmationCode.Trim(),
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(
+                reservation.Customer.Email.Trim().ToLowerInvariant(),
+                normalizedEmail,
+                StringComparison.Ordinal))
+        {
+            throw new KeyNotFoundException(
+                "No se pudo validar la reserva para iniciar el pago.");
+        }
+
+        if (reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed)
+        {
+            throw new InvalidOperationException(
+                "Esta reserva ya no admite nuevos pagos en línea.");
+        }
+
+        return reservation;
     }
 
     private void FinalizeSucceededIntent(
