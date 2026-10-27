@@ -10,12 +10,12 @@ namespace EdificiosOliva.Api.Controllers;
 [ApiController]
 [Route("api/public/payments")]
 [AllowAnonymous]
-[EnableRateLimiting("PublicPayment")]
 public sealed class PublicPaymentsController(
     IPaymentIntentService paymentIntentService,
     IConfiguration configuration) : ControllerBase
 {
     [HttpGet("providers")]
+    [EnableRateLimiting("PublicPayment")]
     [ProducesResponseType<IReadOnlyCollection<PaymentProviderResponse>>(StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyCollection<PaymentProviderResponse>> GetProviders()
     {
@@ -23,6 +23,7 @@ public sealed class PublicPaymentsController(
     }
 
     [HttpPost("checkout")]
+    [EnableRateLimiting("PublicPayment")]
     [ProducesResponseType<PublicPaymentCheckoutResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -35,10 +36,14 @@ public sealed class PublicPaymentsController(
             request,
             cancellationToken);
 
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers.Pragma = "no-cache";
+
         return Ok(checkout);
     }
 
     [HttpGet("returns/{provider}/{outcome}")]
+    [EnableRateLimiting("PaymentWebhook")]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Return(
