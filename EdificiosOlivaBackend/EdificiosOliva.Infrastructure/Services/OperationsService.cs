@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using EdificiosOliva.Application.DTOs.Operations;
 using EdificiosOliva.Application.Interfaces;
+using EdificiosOliva.Domain.Entities;
 using EdificiosOliva.Domain.Enums;
 using EdificiosOliva.Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -289,7 +290,7 @@ public sealed class OperationsService(
     }
 
     private static OperationsReservationItem MapReservation(
-        Domain.Entities.Reservation reservation) =>
+        Reservation reservation) =>
         new(
             reservation.Id,
             reservation.ApartmentId,
