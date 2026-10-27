@@ -34,7 +34,12 @@ describe('ApartmentDetail', () => {
     component.reserve();
 
     expect(navigate).toHaveBeenCalledWith(['/reservar'], {
-      queryParams: { apartmentId: 'apt-1', checkIn: '2030-01-10', checkOut: '2030-01-15', guests: 3 },
+      queryParams: {
+        apartmentId: 'apt-1',
+        checkIn: '2030-01-10',
+        checkOut: '2030-01-15',
+        guests: 3,
+      },
     });
   });
 

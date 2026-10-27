@@ -14,6 +14,7 @@ import {
   PublicPaymentCheckout,
   PublicPaymentService,
 } from '../../core/services/public-payments';
+import { todayInPropertyZone } from '../../core/utils/property-date';
 
 interface BookingFormModel {
   fullName: string;
@@ -38,7 +39,7 @@ export class Booking implements OnInit {
   private readonly paymentService = inject(PublicPaymentService);
   private readonly route = inject(ActivatedRoute);
 
-  readonly minDate = this.toDateInputValue(new Date());
+  readonly minDate = todayInPropertyZone();
   readonly whatsappNumber = '18296196970';
 
   apartments: Apartment[] = [];
@@ -471,11 +472,6 @@ export class Booking implements OnInit {
 
   private isDateInputValue(value: string): boolean {
     return /^\d{4}-\d{2}-\d{2}$/.test(value);
-  }
-
-  private toDateInputValue(date: Date): string {
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-    return localDate.toISOString().slice(0, 10);
   }
 
   private readProblemDetail(error: unknown, fallback: string): string {

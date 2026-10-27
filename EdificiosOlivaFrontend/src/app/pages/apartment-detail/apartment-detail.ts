@@ -5,6 +5,7 @@ import { catchError, of, switchMap } from 'rxjs';
 
 import { Apartment } from '../../core/models/apartment.model';
 import { Apartments as ApartmentsService } from '../../core/services/apartments';
+import { todayInPropertyZone } from '../../core/utils/property-date';
 
 @Component({
   selector: 'app-apartment-detail',
@@ -23,10 +24,23 @@ export class ApartmentDetail implements OnInit {
   checkInDate = '';
   checkOutDate = '';
   guestCount = 1;
-  get minDate(): string { const d = new Date(); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'); }
+  readonly minDate = todayInPropertyZone();
   reserve(): void {
-    if (!this.apartment || !this.checkInDate || !this.checkOutDate || this.checkOutDate <= this.checkInDate) return;
-    void this.router.navigate(['/reservar'], { queryParams: { apartmentId: this.apartment.id, checkIn: this.checkInDate, checkOut: this.checkOutDate, guests: this.guestCount } });
+    if (
+      !this.apartment ||
+      !this.checkInDate ||
+      !this.checkOutDate ||
+      this.checkOutDate <= this.checkInDate
+    )
+      return;
+    void this.router.navigate(['/reservar'], {
+      queryParams: {
+        apartmentId: this.apartment.id,
+        checkIn: this.checkInDate,
+        checkOut: this.checkOutDate,
+        guests: this.guestCount,
+      },
+    });
   }
 
   errorMessage = '';
@@ -72,10 +86,10 @@ export class ApartmentDetail implements OnInit {
   }
 
   handleImageError(event: Event): void {
-  const image = event.target as HTMLImageElement;
+    const image = event.target as HTMLImageElement;
 
-  if (!image.src.endsWith('apartment-placeholder.webp')) {
-    image.src = '/images/apartment-placeholder.webp';
+    if (!image.src.endsWith('apartment-placeholder.webp')) {
+      image.src = '/images/apartment-placeholder.webp';
+    }
   }
-}
 }

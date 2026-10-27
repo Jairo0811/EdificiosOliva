@@ -7,6 +7,7 @@ import { Apartment } from '../../core/models/apartment.model';
 import { GalleryImage } from '../../core/models/gallery-image.model';
 import { Apartments as ApartmentsService } from '../../core/services/apartments';
 import { GalleryImages } from '../../core/services/gallery-images';
+import { todayInPropertyZone } from '../../core/utils/property-date';
 
 interface AvailabilitySearchModel {
   checkInDate: string;
@@ -31,7 +32,7 @@ export class Home implements OnInit {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly minDate = this.toDateInputValue(new Date());
+  readonly minDate = todayInPropertyZone();
 
   featuredApartments: Apartment[] = [];
   galleryPreview: GalleryImage[] = [];
@@ -159,10 +160,5 @@ export class Home implements OnInit {
           this.loadingGallery = false;
         },
       });
-  }
-
-  private toDateInputValue(date: Date): string {
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-    return localDate.toISOString().slice(0, 10);
   }
 }
