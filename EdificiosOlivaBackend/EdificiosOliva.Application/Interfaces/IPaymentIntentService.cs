@@ -19,6 +19,12 @@ public interface IPaymentIntentService
         CreatePaymentIntentRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<PaymentIntentResponse> ReconcileManuallyAsync(
+        Guid id,
+        ManualPaymentReconciliationRequest request,
+        string performedBy,
+        CancellationToken cancellationToken = default);
+
     Task<PublicPaymentCheckoutResponse> CreatePublicCheckoutAsync(
         CreatePublicPaymentCheckoutRequest request,
         CancellationToken cancellationToken = default);
