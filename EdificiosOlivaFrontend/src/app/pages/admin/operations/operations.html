@@ -140,8 +140,8 @@
           @for (reservation of analytics.reservations; track reservation.reservationId) {
             <article [class.cancelled]="reservation.status === 5">
               <div class="date-block">
-                <strong>{{ reservation.checkInDate | date: 'dd' }}</strong>
-                <span>{{ reservation.checkInDate | date: 'MMM' }}</span>
+                <strong>{{ dateDay(reservation.checkInDate) }}</strong>
+                <span>{{ dateMonth(reservation.checkInDate) }}</span>
               </div>
               <div class="reservation-main">
                 <strong>{{ reservation.apartmentName }}</strong>
