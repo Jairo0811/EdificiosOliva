@@ -102,6 +102,18 @@ export class Operations implements OnInit {
     );
   }
 
+  dateDay(value: string): string {
+    return value.slice(8, 10);
+  }
+
+  dateMonth(value: string): string {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Intl.DateTimeFormat('es-DO', { month: 'short' })
+      .format(new Date(year, month - 1, day))
+      .replace('.', '')
+      .toUpperCase();
+  }
+
   reservationNights(reservation: OperationsReservationItem): number {
     const start = new Date(`${reservation.checkInDate}T00:00:00`);
     const end = new Date(`${reservation.checkOutDate}T00:00:00`);
