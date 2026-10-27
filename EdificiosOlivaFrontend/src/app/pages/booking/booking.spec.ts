@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 
 import { Apartments } from '../../core/services/apartments';
 import { PublicBookingService } from '../../core/services/booking';
+import { PublicPaymentService } from '../../core/services/public-payments';
 import { Booking } from './booking';
 
 describe('Booking', () => {
@@ -19,6 +20,25 @@ describe('Booking', () => {
           provide: Apartments,
           useValue: {
             getAvailableApartments: () => of([]),
+          },
+        },
+        {
+          provide: PublicPaymentService,
+          useValue: {
+            getProviders: () => of([]),
+            createCheckout: () =>
+              of({
+                paymentIntentId: 'test-intent',
+                provider: 'AZUL',
+                status: 3,
+                amount: 160,
+                currency: 'USD',
+                actionUrl: 'https://pruebas.azul.com.do/PaymentPage/',
+                alternateActionUrl: null,
+                method: 'POST',
+                fields: {},
+                expiresAtUtc: null,
+              }),
           },
         },
         {
