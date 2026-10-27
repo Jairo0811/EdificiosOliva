@@ -26,7 +26,7 @@ export class ApartmentDetail implements OnInit {
   get minDate(): string { const d = new Date(); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'); }
   reserve(): void {
     if (!this.apartment || !this.checkInDate || !this.checkOutDate || this.checkOutDate <= this.checkInDate) return;
-    void this.router.navigate(['/reservar'], { queryParams: { apartmentId: this.apartment.id, checkInDate: this.checkInDate, checkOutDate: this.checkOutDate, guestCount: this.guestCount } });
+    void this.router.navigate(['/reservar'], { queryParams: { apartmentId: this.apartment.id, checkIn: this.checkInDate, checkOut: this.checkOutDate, guests: this.guestCount } });
   }
 
   errorMessage = '';
