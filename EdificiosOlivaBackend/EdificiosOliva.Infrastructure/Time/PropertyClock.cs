@@ -6,8 +6,7 @@ public sealed class PropertyClock(
     PropertyClockOptions options,
     TimeProvider timeProvider) : IPropertyClock
 {
-    private readonly TimeZoneInfo timeZone =
-        TimeZoneInfo.FindSystemTimeZoneById(options.TimeZoneId);
+    private readonly TimeZoneInfo timeZone = options.ResolveTimeZone();
 
     public DateOnly Today
     {
