@@ -77,7 +77,7 @@ public sealed class AzulPaymentGateway(AzulOptions options) : IPaymentGateway
 
         var fields = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["MerchantId"] = options.MerchantId,
+            ["MerchantID"] = options.MerchantId,
             ["MerchantName"] = options.MerchantName,
             ["MerchantType"] = options.MerchantType,
             ["CurrencyCode"] = options.CurrencyCode,
@@ -323,8 +323,13 @@ public sealed class AzulPaymentGateway(AzulOptions options) : IPaymentGateway
         }
     }
 
-    private static string BuildOrderNumber(Guid paymentIntentId) =>
-        $"EO{paymentIntentId:N}".ToUpperInvariant();
+    private static string BuildOrderNumber(Guid paymentIntentId)
+    {
+        // AZUL documenta OrderNumber como X(15) en sus especificaciones de transacción.
+        // 13 caracteres hexadecimales del GUID + prefijo EO mantienen la referencia compacta
+        // y la unicidad queda además protegida por el índice Provider + ProviderReference.
+        return $"EO{paymentIntentId:N}"[..15].ToUpperInvariant();
+    }
 
     private static string ToMinorUnits(decimal amount)
     {
