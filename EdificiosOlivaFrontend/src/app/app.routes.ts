@@ -11,6 +11,7 @@ import { About } from './pages/about/about';
 import { Booking } from './pages/booking/booking';
 import { Login } from './pages/login/login';
 import { Register } from './pages/register/register';
+import { Policies } from './pages/policies/policies';
 
 import { AdminLayout } from './layouts/admin-layout/admin-layout';
 import { Dashboard } from './pages/admin/dashboard/dashboard';
@@ -31,6 +32,7 @@ export const routes: Routes = [
   { path: 'contacto', component: Contact },
   { path: 'login', component: Login },
   { path: 'registro', component: Register },
+  { path: 'politicas', component: Policies },
 
   {
     path: 'admin',
