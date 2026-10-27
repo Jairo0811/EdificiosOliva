@@ -62,6 +62,36 @@ public sealed class CreatePaymentIntentRequest
     public string IdempotencyKey { get; init; } = string.Empty;
 }
 
+public sealed class CreatePublicPaymentCheckoutRequest
+{
+    [Required]
+    public Guid ReservationId { get; init; }
+
+    [Required, StringLength(32, MinimumLength = 5)]
+    public string ConfirmationCode { get; init; } = string.Empty;
+
+    [Required, EmailAddress, StringLength(200)]
+    public string Email { get; init; } = string.Empty;
+
+    [Required, StringLength(100, MinimumLength = 8)]
+    public string IdempotencyKey { get; init; } = string.Empty;
+
+    [Required, StringLength(50, MinimumLength = 2)]
+    public string Provider { get; init; } = "AZUL";
+}
+
+public sealed record PublicPaymentCheckoutResponse(
+    Guid PaymentIntentId,
+    string Provider,
+    PaymentIntentStatus Status,
+    decimal Amount,
+    string Currency,
+    string ActionUrl,
+    string? AlternateActionUrl,
+    string Method,
+    IReadOnlyDictionary<string, string> Fields,
+    DateTime? ExpiresAtUtc);
+
 public sealed record PaymentGatewayCreateCommand(
     Guid PaymentIntentId,
     Guid ReservationId,
@@ -78,6 +108,20 @@ public sealed record PaymentGatewayCreateResult(
     string? FailureCode = null,
     string? FailureMessage = null);
 
+public sealed record PaymentGatewayCheckoutCommand(
+    Guid PaymentIntentId,
+    Guid ReservationId,
+    string ProviderReference,
+    decimal Amount,
+    string Currency,
+    string Description);
+
+public sealed record PaymentGatewayCheckoutResult(
+    string ActionUrl,
+    string? AlternateActionUrl,
+    string Method,
+    IReadOnlyDictionary<string, string> Fields);
+
 public sealed record PaymentGatewayWebhookRequest(
     string Payload,
     IReadOnlyDictionary<string, string> Headers);
@@ -88,6 +132,7 @@ public sealed record PaymentGatewayWebhookResult(
     bool SignatureVerified,
     string? ProviderReference,
     PaymentIntentStatus Status,
+    decimal? Amount = null,
     string? FailureCode = null,
     string? FailureMessage = null);
 
