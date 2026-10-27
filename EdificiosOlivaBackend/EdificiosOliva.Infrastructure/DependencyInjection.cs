@@ -58,6 +58,7 @@ public static class DependencyInjection
         }
 
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IOperationsService, OperationsService>();
         services.AddScoped<IGalleryImageRepository, GalleryImageRepository>();
         services.AddScoped<IGalleryImageService, GalleryImageService>();
 
