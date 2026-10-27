@@ -16,6 +16,7 @@ public sealed class ReservationService(
     IReservationRepository reservationRepository,
     ApplicationDbContext dbContext,
     IBookingNotificationService notificationService,
+    IPropertyClock propertyClock,
     ILogger<ReservationService> logger) : IReservationService
 {
     private static readonly ReservationStatus[] BlockingStatuses =
@@ -365,14 +366,14 @@ public sealed class ReservationService(
                 checkOutDate > reservation.CheckInDate,
             cancellationToken);
 
-    private static void ValidateDates(DateOnly checkInDate, DateOnly checkOutDate)
+    private void ValidateDates(DateOnly checkInDate, DateOnly checkOutDate)
     {
         if (checkOutDate <= checkInDate)
         {
             throw new InvalidOperationException("La fecha de salida debe ser posterior a la fecha de entrada.");
         }
 
-        if (checkInDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        if (checkInDate < propertyClock.Today)
         {
             throw new InvalidOperationException("La fecha de entrada no puede estar en el pasado.");
         }
