@@ -154,7 +154,8 @@ public sealed record PaymentGatewayWebhookResult(
     PaymentIntentStatus Status,
     decimal? Amount = null,
     string? FailureCode = null,
-    string? FailureMessage = null);
+    string? FailureMessage = null,
+    string? ProviderTransactionId = null);
 
 public sealed record PaymentGatewayRefundCommand(
     string ProviderReference,
