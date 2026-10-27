@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <strong>Edificios Oliva v1.1.1</strong>
+  <strong>Edificios Oliva v1.2.0 · v1 code-complete</strong>
 </p>
 
 ---
@@ -17,15 +17,15 @@
 
 **Edificios Oliva** es una plataforma web Full Stack para la promoción, reserva y administración de apartamentos turísticos en **Bávaro, Punta Cana, República Dominicana**.
 
-El proyecto nació en **2019** a partir de una iniciativa familiar relacionada con Residencial Oliva y fue reconstruido en 2026 con una arquitectura moderna. La línea **v1.1** evoluciona el producto desde reservas directas hacia cobros online reales: el visitante consulta disponibilidad, registra su reserva y, cuando AZUL está configurado, puede continuar al Payment Page hospedado sin que Edificios Oliva capture datos de tarjeta.
+El proyecto nació en **2019** a partir de una iniciativa familiar relacionada con Residencial Oliva y fue reconstruido en 2026 con una arquitectura moderna. **v1.2.0 cierra la línea v1** como una plataforma de reservas directas y operación de propiedad: reservas, checkout hospedado con AZUL, conciliación de pagos, emails transaccionales, políticas públicas, calendario operativo, analítica, CSV, iCal y preparación reproducible para despliegue.
 
 La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication mediante el SDK modular oficial**.
 
-> **Alcance comercial de v1.1.1:** AZUL funciona como primer gateway real mediante su Payment Page hospedado. El backend genera el checkout firmado, valida criptográficamente el retorno y solo reconoce el pago cuando proveedor, referencia, firma y monto coinciden. WhatsApp permanece como canal alternativo.
+> **Estado v1.2.0:** el código de la línea v1 está completo. AZUL, SMTP y producción permanecen deshabilitados por defecto hasta suministrar credenciales, dominio, infraestructura y aprobaciones reales. El repositorio no simula esas dependencias externas.
 
 ---
 
-# ✅ Edificios Oliva v1.0
+# ✅ Edificios Oliva v1.2.0
 
 ## 🌐 Experiencia pública
 
@@ -148,7 +148,7 @@ Reglas relevantes:
 - SaveToDataVault=0 en v1.1.1: no se tokenizan tarjetas.
 - AZUL solo se registra como proveedor cuando Payments:Azul:Enabled=true y su configuración pasa validación.
 - La devolución automática (Refund) de AZUL todavía no forma parte de v1.1.1.
-- Si un pago se completa en AZUL pero el navegador nunca regresa al sitio, el intento puede permanecer pendiente de conciliación. La reconciliación server-to-server se reserva para v1.1.2.
+- Si un intento queda vencido o incierto, aparece en **Operación de pagos** para conciliación administrativa auditada. No se usa `VerifyPayment` de Webservices como si fuera una API de Payment Page: cualquier automatización adicional dependerá del mecanismo que AZUL habilite/documente para el comercio.
 
 ---
 
@@ -165,6 +165,7 @@ Reglas relevantes:
 - **Leaflet**
 - **Firebase modular SDK**
 - **Vitest**
+- **iCalendar (RFC 5545)** para feeds de disponibilidad
 
 ## Backend
 
@@ -176,6 +177,8 @@ Reglas relevantes:
 - **OpenAPI / Swagger**
 - **Clean Architecture**
 - **SkiaSharp** para validación y normalización de imágenes
+- **SMTP configurable** para emails transaccionales
+- **CSV UTF-8** para exportes operativos
 
 ## Infraestructura y calidad
 
@@ -186,6 +189,9 @@ Reglas relevantes:
 - Build de producción de Angular
 - Pruebas frontend en CI
 - Auditoría npm de dependencias de producción
+- **xUnit v3** para pruebas backend de pagos
+- **Docker** para builds reproducibles de API y frontend
+- Readiness de SQL Server en `/health/ready`
 
 ---
 
@@ -268,6 +274,8 @@ EdificiosOliva
 ├── .github/workflows
 ├── SECURITY_SETUP.md
 ├── CHANGELOG.md
+├── DEPLOYMENT.md
+├── .env.example
 └── README.md
 ```
 
@@ -317,10 +325,11 @@ dotnet ef database update --project EdificiosOliva.Infrastructure --startup-proj
 dotnet run --project EdificiosOliva.Api
 ```
 
-El health check público queda disponible en:
+Los health checks públicos quedan disponibles en:
 
 ```text
-GET /health
+GET /health        # liveness del proceso
+GET /health/ready  # readiness real contra SQL Server
 ```
 
 ---
@@ -361,6 +370,7 @@ Notifications__Email__Password
 Notifications__Email__FromAddress
 Notifications__Email__FromName
 Notifications__Email__PublicBaseUrl
+Property__TimeZoneId
 ```
 
 Ejemplo conceptual:
@@ -397,6 +407,7 @@ Notifications__Email__Password=<SMTP secret>
 Notifications__Email__FromAddress=reservas@edificiosoliva.com
 Notifications__Email__FromName=Edificios Oliva
 Notifications__Email__PublicBaseUrl=https://edificiosoliva.com
+Property__TimeZoneId=America/Santo_Domingo
 ```
 
 No deben versionarse contraseñas, service accounts, cadenas de conexión, Payments__Azul__AuthKey ni Notifications__Email__Password. El ReturnBaseUrl debe ser HTTPS público y corresponder a un host permitido/configurado para el comercio en AZUL. El valor fiscal de ItbisRate debe configurarse según el tratamiento real de la operación; el repositorio no asume una tasa por defecto.
@@ -435,10 +446,10 @@ GalleryImages
 __EFMigrationsHistory
 ```
 
-Reglas de negocio relevantes de v1.0:
+Reglas de negocio relevantes de v1:
 
 - `CheckOutDate` debe ser posterior a `CheckInDate`.
-- No se permiten reservas nuevas con fecha de entrada pasada.
+- No se permiten reservas nuevas con fecha de entrada pasada según la zona horaria configurada de la propiedad (`America/Santo_Domingo` por defecto).
 - Un apartamento en mantenimiento no puede reservarse.
 - La cantidad de huéspedes no puede superar la capacidad.
 - Reservas `Pending`, `Confirmed` o `InProgress` bloquean fechas superpuestas.
@@ -449,7 +460,7 @@ Reglas de negocio relevantes de v1.0:
 
 ---
 
-# 📊 Estado de v1.0
+# 📊 Estado final de la línea v1
 
 | Módulo | Estado |
 |---|:---:|
@@ -485,9 +496,15 @@ Reglas de negocio relevantes de v1.0:
 | Emails de reserva y pago | ✅ v1.1.3 |
 | Comprobante imprimible | ✅ v1.1.3 |
 | Políticas comerciales y privacidad | ✅ v1.1.4 |
-| Reportes avanzados | ➡️ v1.1+ |
-| Notificaciones automáticas | ➡️ v1.1+ |
-| Docker / despliegue empaquetado | ➡️ v1.1+ |
+| Operación y analítica por período | ✅ v1.2 |
+| Ingresos y ocupación por apartamento | ✅ v1.2 |
+| Exportes CSV de reservas y pagos | ✅ v1.2 |
+| Feed público iCal sin PII | ✅ v1.2 |
+| Zona horaria de propiedad configurable | ✅ v1.2 |
+| Readiness SQL Server | ✅ v1.2 |
+| Headers HTTP de hardening | ✅ v1.2 |
+| Docker API + Angular/Nginx | ✅ v1.2 |
+| Runbook de despliegue + `.env.example` | ✅ v1.2 |
 | Multi-tenant / SaaS | Fuera del alcance |
 
 ---
@@ -517,38 +534,64 @@ Pruebas manuales recomendadas para el motor de reservas:
 4. Confirmar que la reserva aparece como `Pending`.
 5. Intentar reservar de nuevo el mismo apartamento en fechas superpuestas.
 6. Confirmar que la segunda operación es rechazada.
-7. Confirmar la reserva desde administración y registrar el pago cuando corresponda.
+7. Validar checkout AZUL en sandbox cuando existan credenciales.
+8. Confirmar que un pago aprobado genera `Payment(Paid)` y `Reservation(Confirmed)`.
+9. Revisar `/admin/intentos-pago` y conciliar un caso incierto con referencia verificable.
+10. Validar `/admin/operacion`, CSV e iCal.
+11. Confirmar `/health/ready` contra la base de datos del entorno.
 
 ---
 
-# 🗺️ Después de v1.0
+# 🏁 Línea v1 completada
 
-La rama v1 queda cerrada funcionalmente con reservas directas y administración. Las siguientes mejoras son evolución de producto, no requisitos pendientes de v1.0:
+## v1.0 — Reservas y administración
+
+- ✅ Sitio público, apartamentos y galería.
+- ✅ Reserva directa persistida y disponibilidad real.
+- ✅ Administración de clientes, reservas, pagos e imágenes.
+- ✅ Firebase Authentication y policy administrativa.
 
 ## v1.1 — Pagos y comunicación
 
 - ✅ Payment Foundation provider-agnostic.
-- ✅ Idempotencia y trazabilidad de eventos.
-- ✅ Primer checkout real con AZUL Payment Page.
-- ✅ Validación criptográfica del retorno y del monto.
-- ✅ Revisión y conciliación administrativa de intents inciertos.
-- ✅ Confirmaciones automáticas de reserva y pago por SMTP configurable.
-- ✅ Comprobante imprimible tras pago aprobado.
-- ✅ Políticas públicas de reserva, pago, cancelación, privacidad y seguridad.
-- ➡️ Notificaciones operativas de entrada/salida.
+- ✅ Idempotencia, eventos y trazabilidad.
+- ✅ AZUL Payment Page hospedado.
+- ✅ Firma HMAC, validación de referencia y monto.
+- ✅ Detección y conciliación administrativa de intentos inciertos.
+- ✅ Emails de reserva y pago con SMTP configurable.
+- ✅ Comprobante imprimible.
+- ✅ Políticas públicas y aceptación antes del checkout.
 
-## v1.2 — Operación y analítica
+## v1.2 — Operación, analítica y despliegue
 
-- Ocupación por período.
-- Ingresos por apartamento.
-- Reportes PDF/Excel.
-- Auditoría ampliada.
-- Registro de actividad.
-- Exportación de calendarios / integración iCal.
+- ✅ Consola operativa por rango de fechas.
+- ✅ Ocupación y noches reservadas.
+- ✅ Ingresos reconocidos y rendimiento por apartamento.
+- ✅ Calendario de estadías.
+- ✅ CSV de reservas y pagos.
+- ✅ Feed iCal por apartamento sin información del huésped.
+- ✅ Reloj de negocio en zona horaria de la propiedad.
+- ✅ Liveness + readiness SQL.
+- ✅ Headers de seguridad.
+- ✅ Dockerfiles y configuración Nginx.
+- ✅ Runbook de despliegue y catálogo de variables/secretos.
 
-## Futuro
+### Activación externa pendiente
 
-Una eventual versión SaaS para terceros requeriría multi-tenancy, propietarios, planes, facturación, branding por negocio y aislamiento de datos. Ese producto no forma parte de Edificios Oliva v1.0.
+No son tareas de código y deliberadamente no se simulan:
+
+- afiliación/certificación y credenciales reales de AZUL;
+- decisión fiscal real para moneda/ITBIS;
+- proveedor y credenciales SMTP;
+- dominio, certificados TLS y hosting;
+- SQL Server/volúmenes/backups de producción;
+- prueba end-to-end final con el adquirente.
+
+El procedimiento está documentado en `DEPLOYMENT.md`.
+
+## Después de v1
+
+La evolución futura puede incluir object storage/CDN, automatizaciones operativas más profundas, integraciones de canales externos o una eventual plataforma SaaS multi-tenant. Ninguna de esas extensiones es requisito pendiente de la línea v1.
 
 ---
 
