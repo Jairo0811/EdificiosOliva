@@ -352,6 +352,15 @@ Payments__Azul__Locale
 Payments__Azul__ItbisRate
 Payments__Azul__PricesIncludeItbis
 Payments__Azul__UseGooglePay
+Notifications__Email__Enabled
+Notifications__Email__Host
+Notifications__Email__Port
+Notifications__Email__EnableSsl
+Notifications__Email__Username
+Notifications__Email__Password
+Notifications__Email__FromAddress
+Notifications__Email__FromName
+Notifications__Email__PublicBaseUrl
 ```
 
 Ejemplo conceptual:
@@ -378,9 +387,19 @@ Payments__Azul__Locale=ES
 Payments__Azul__ItbisRate=0
 Payments__Azul__PricesIncludeItbis=true
 Payments__Azul__UseGooglePay=false
+
+Notifications__Email__Enabled=true
+Notifications__Email__Host=<SMTP host>
+Notifications__Email__Port=587
+Notifications__Email__EnableSsl=true
+Notifications__Email__Username=<SMTP user>
+Notifications__Email__Password=<SMTP secret>
+Notifications__Email__FromAddress=reservas@edificiosoliva.com
+Notifications__Email__FromName=Edificios Oliva
+Notifications__Email__PublicBaseUrl=https://edificiosoliva.com
 ```
 
-No deben versionarse contraseñas, service accounts, cadenas de conexión ni Payments__Azul__AuthKey. El ReturnBaseUrl debe ser HTTPS público y corresponder a un host permitido/configurado para el comercio en AZUL. El valor fiscal de ItbisRate debe configurarse según el tratamiento real de la operación; el repositorio no asume una tasa por defecto.
+No deben versionarse contraseñas, service accounts, cadenas de conexión, Payments__Azul__AuthKey ni Notifications__Email__Password. El ReturnBaseUrl debe ser HTTPS público y corresponder a un host permitido/configurado para el comercio en AZUL. El valor fiscal de ItbisRate debe configurarse según el tratamiento real de la operación; el repositorio no asume una tasa por defecto.
 
 Para asignar acceso administrativo se debe utilizar un Firebase custom claim:
 
@@ -462,7 +481,10 @@ Reglas de negocio relevantes de v1.0:
 | Payment Foundation / idempotencia | ✅ v1.1 |
 | Checkout hospedado AZUL | ✅ v1.1.1 |
 | Validación HMAC y monto de retorno | ✅ v1.1.1 |
-| Reconciliación server-to-server AZUL | ➡️ v1.1.2 |
+| Operación y conciliación administrativa de pagos | ✅ v1.1.2 |
+| Emails de reserva y pago | ✅ v1.1.3 |
+| Comprobante imprimible | ✅ v1.1.3 |
+| Políticas comerciales y privacidad | ✅ v1.1.4 |
 | Reportes avanzados | ➡️ v1.1+ |
 | Notificaciones automáticas | ➡️ v1.1+ |
 | Docker / despliegue empaquetado | ➡️ v1.1+ |
@@ -509,10 +531,11 @@ La rama v1 queda cerrada funcionalmente con reservas directas y administración.
 - ✅ Idempotencia y trazabilidad de eventos.
 - ✅ Primer checkout real con AZUL Payment Page.
 - ✅ Validación criptográfica del retorno y del monto.
-- ➡️ Reconciliación server-to-server de transacciones AZUL.
-- ➡️ Confirmaciones automáticas por correo.
-- ➡️ Notificaciones de entrada/salida.
-- ➡️ Recibos/comprobantes.
+- ✅ Revisión y conciliación administrativa de intents inciertos.
+- ✅ Confirmaciones automáticas de reserva y pago por SMTP configurable.
+- ✅ Comprobante imprimible tras pago aprobado.
+- ✅ Políticas públicas de reserva, pago, cancelación, privacidad y seguridad.
+- ➡️ Notificaciones operativas de entrada/salida.
 
 ## v1.2 — Operación y analítica
 
