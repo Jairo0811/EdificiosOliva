@@ -371,6 +371,7 @@ Notifications__Email__FromAddress
 Notifications__Email__FromName
 Notifications__Email__PublicBaseUrl
 Property__TimeZoneId
+Security__UseHttpsRedirection
 ```
 
 Ejemplo conceptual:
@@ -408,6 +409,7 @@ Notifications__Email__FromAddress=reservas@edificiosoliva.com
 Notifications__Email__FromName=Edificios Oliva
 Notifications__Email__PublicBaseUrl=https://edificiosoliva.com
 Property__TimeZoneId=America/Santo_Domingo
+Security__UseHttpsRedirection=false
 ```
 
 No deben versionarse contraseñas, service accounts, cadenas de conexión, Payments__Azul__AuthKey ni Notifications__Email__Password. El ReturnBaseUrl debe ser HTTPS público y corresponder a un host permitido/configurado para el comercio en AZUL. El valor fiscal de ItbisRate debe configurarse según el tratamiento real de la operación; el repositorio no asume una tasa por defecto.
