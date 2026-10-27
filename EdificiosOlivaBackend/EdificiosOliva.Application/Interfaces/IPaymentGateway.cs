@@ -12,6 +12,10 @@ public interface IPaymentGateway
         PaymentGatewayCreateCommand command,
         CancellationToken cancellationToken = default);
 
+    Task<PaymentGatewayCheckoutResult> BuildCheckoutAsync(
+        PaymentGatewayCheckoutCommand command,
+        CancellationToken cancellationToken = default);
+
     Task<PaymentGatewayWebhookResult> ParseWebhookAsync(
         PaymentGatewayWebhookRequest request,
         CancellationToken cancellationToken = default);

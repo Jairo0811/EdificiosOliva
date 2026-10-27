@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <strong>Edificios Oliva v1.0</strong>
+  <strong>Edificios Oliva v1.1.1</strong>
 </p>
 
 ---
@@ -17,11 +17,11 @@
 
 **Edificios Oliva** es una plataforma web Full Stack para la promoción, reserva y administración de apartamentos turísticos en **Bávaro, Punta Cana, República Dominicana**.
 
-El proyecto nació en **2019** a partir de una iniciativa familiar relacionada con Residencial Oliva y fue reconstruido en 2026 con una arquitectura moderna. La versión **v1.0** consolida el proyecto como una aplicación funcional: el visitante consulta apartamentos y disponibilidad real, registra una solicitud de reserva y recibe un código de confirmación; el personal autorizado administra apartamentos, clientes, reservas, pagos, galería y operación desde un panel privado.
+El proyecto nació en **2019** a partir de una iniciativa familiar relacionada con Residencial Oliva y fue reconstruido en 2026 con una arquitectura moderna. La línea **v1.1** evoluciona el producto desde reservas directas hacia cobros online reales: el visitante consulta disponibilidad, registra su reserva y, cuando AZUL está configurado, puede continuar al Payment Page hospedado sin que Edificios Oliva capture datos de tarjeta.
 
 La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **Entity Framework Core 10**, **SQL Server** y **Firebase Authentication mediante el SDK modular oficial**.
 
-> **Alcance comercial de v1.0:** la reserva se registra realmente en SQL Server y queda pendiente de confirmación/pago. El cobro se coordina fuera del checkout —por ejemplo mediante WhatsApp— y posteriormente se registra en el módulo administrativo de pagos. La integración con una pasarela de pago online queda explícitamente fuera del alcance de v1.0 para no simular transacciones inexistentes.
+> **Alcance comercial de v1.1.1:** AZUL funciona como primer gateway real mediante su Payment Page hospedado. El backend genera el checkout firmado, valida criptográficamente el retorno y solo reconoce el pago cuando proveedor, referencia, firma y monto coinciden. WhatsApp permanece como canal alternativo.
 
 ---
 
@@ -101,6 +101,55 @@ Angular /booking
 
 La creación pública vuelve a validar la disponibilidad dentro de una **transacción serializable** para reducir el riesgo de dobles reservas concurrentes.
 
+## 💳 Pagos online — v1.1.1
+
+La capa de pagos mantiene separado el intento externo del pago reconocido:
+
+```text
+Reservation
+   │
+   ▼
+PaymentIntent
+   │
+   ├── idempotencia
+   ├── monto calculado por backend
+   ├── referencia del proveedor
+   └── estado del gateway
+   │
+   ▼
+AzulPaymentGateway
+   │
+   ▼
+AZUL Payment Page
+   │
+   ├── el huésped introduce tarjeta fuera de Edificios Oliva
+   └── AZUL devuelve resultado firmado
+   │
+   ▼
+GET /api/public/payments/returns/AZUL/{outcome}
+   │
+   ├── valida HMAC-SHA512
+   ├── valida referencia
+   ├── valida monto
+   ├── deduplica evento
+   └── aplica estado
+   │
+   ▼
+Payment(Paid) → Reservation(Confirmed)
+```
+
+Reglas relevantes:
+
+- Edificios Oliva **no recibe ni almacena PAN, fecha de expiración ni CVV**.
+- El monto del checkout no se acepta desde Angular; se deriva del saldo persistido de la reserva.
+- Los reintentos reutilizan la capa de idempotencia para evitar dobles cobros lógicos.
+- El retorno de AZUL se valida mediante el AuthHash firmado antes de registrar un pago.
+- El monto firmado por AZUL debe coincidir con el PaymentIntent.
+- SaveToDataVault=0 en v1.1.1: no se tokenizan tarjetas.
+- AZUL solo se registra como proveedor cuando Payments:Azul:Enabled=true y su configuración pasa validación.
+- La devolución automática (Refund) de AZUL todavía no forma parte de v1.1.1.
+- Si un pago se completa en AZUL pero el navegador nunca regresa al sitio, el intento puede permanecer pendiente de conciliación. La reconciliación server-to-server se reserva para v1.1.2.
+
 ---
 
 # 🛠️ Stack tecnológico
@@ -160,6 +209,12 @@ La creación pública vuelve a validar la disponibilidad dentro de una **transac
             ┌───────────────┼────────────────┐
             ▼               ▼                ▼
         Customers       Reservations       Payments
+                            │
+                            ▼
+                    PaymentIntents
+                            │
+                            ▼
+                   AZUL Payment Page
 ```
 
 El backend mantiene separación por capas:
@@ -181,6 +236,8 @@ ApartmentAmenity
 Customer
 Reservation
 Payment
+PaymentIntent
+PaymentWebhookEvent
 GalleryImage
 ```
 
@@ -280,6 +337,21 @@ Firebase__ProjectId
 AllowedHosts
 Cors__AllowedOrigins__0
 Cors__AllowedOrigins__1
+Payments__FrontendReturnUrl
+Payments__Azul__Enabled
+Payments__Azul__MerchantId
+Payments__Azul__MerchantName
+Payments__Azul__MerchantType
+Payments__Azul__SettlementCurrency
+Payments__Azul__CurrencyCode
+Payments__Azul__AuthKey
+Payments__Azul__PaymentPageUrl
+Payments__Azul__AlternatePaymentPageUrl
+Payments__Azul__ReturnBaseUrl
+Payments__Azul__Locale
+Payments__Azul__ItbisRate
+Payments__Azul__PricesIncludeItbis
+Payments__Azul__UseGooglePay
 ```
 
 Ejemplo conceptual:
@@ -290,9 +362,25 @@ Firebase__ProjectId=edificios-oliva
 AllowedHosts=api.edificiosoliva.com
 Cors__AllowedOrigins__0=https://edificiosoliva.com
 Cors__AllowedOrigins__1=https://www.edificiosoliva.com
+
+Payments__FrontendReturnUrl=https://edificiosoliva.com/reservar
+Payments__Azul__Enabled=true
+Payments__Azul__MerchantId=<AZUL merchant id>
+Payments__Azul__MerchantName=Edificios Oliva
+Payments__Azul__MerchantType=ECommerce
+Payments__Azul__SettlementCurrency=USD
+Payments__Azul__CurrencyCode=$
+Payments__Azul__AuthKey=<AZUL secret auth key>
+Payments__Azul__PaymentPageUrl=https://pagos.azul.com.do/PaymentPage/Default.aspx
+Payments__Azul__AlternatePaymentPageUrl=https://contpagos.azul.com.do/PaymentPage/Default.aspx
+Payments__Azul__ReturnBaseUrl=https://api.edificiosoliva.com
+Payments__Azul__Locale=ES
+Payments__Azul__ItbisRate=0
+Payments__Azul__PricesIncludeItbis=true
+Payments__Azul__UseGooglePay=false
 ```
 
-No deben versionarse contraseñas, service accounts ni cadenas de conexión de producción.
+No deben versionarse contraseñas, service accounts, cadenas de conexión ni Payments__Azul__AuthKey. El ReturnBaseUrl debe ser HTTPS público y corresponder a un host permitido/configurado para el comercio en AZUL. El valor fiscal de ItbisRate debe configurarse según el tratamiento real de la operación; el repositorio no asume una tasa por defecto.
 
 Para asignar acceso administrativo se debe utilizar un Firebase custom claim:
 
@@ -322,6 +410,8 @@ ApartmentAmenities
 Customers
 Reservations
 Payments
+PaymentIntents
+PaymentWebhookEvents
 GalleryImages
 __EFMigrationsHistory
 ```
@@ -369,7 +459,10 @@ Reglas de negocio relevantes de v1.0:
 | CI .NET | ✅ |
 | Pruebas frontend en CI | ✅ |
 | Auditoría npm en CI | ✅ |
-| Pasarela de pago online | ➡️ v1.1 |
+| Payment Foundation / idempotencia | ✅ v1.1 |
+| Checkout hospedado AZUL | ✅ v1.1.1 |
+| Validación HMAC y monto de retorno | ✅ v1.1.1 |
+| Reconciliación server-to-server AZUL | ➡️ v1.1.2 |
 | Reportes avanzados | ➡️ v1.1+ |
 | Notificaciones automáticas | ➡️ v1.1+ |
 | Docker / despliegue empaquetado | ➡️ v1.1+ |
@@ -390,7 +483,8 @@ Frontend
 
 Backend
 ├── dotnet restore
-└── dotnet build --configuration Release
+├── dotnet build --configuration Release
+└── xUnit v3: pruebas del gateway AZUL
 ```
 
 Pruebas manuales recomendadas para el motor de reservas:
@@ -411,11 +505,14 @@ La rama v1 queda cerrada funcionalmente con reservas directas y administración.
 
 ## v1.1 — Pagos y comunicación
 
-- Integración con una pasarela de pago real.
-- Webhooks e idempotencia de cobro.
-- Confirmaciones automáticas por correo.
-- Notificaciones de entrada/salida.
-- Recibos/comprobantes.
+- ✅ Payment Foundation provider-agnostic.
+- ✅ Idempotencia y trazabilidad de eventos.
+- ✅ Primer checkout real con AZUL Payment Page.
+- ✅ Validación criptográfica del retorno y del monto.
+- ➡️ Reconciliación server-to-server de transacciones AZUL.
+- ➡️ Confirmaciones automáticas por correo.
+- ➡️ Notificaciones de entrada/salida.
+- ➡️ Recibos/comprobantes.
 
 ## v1.2 — Operación y analítica
 

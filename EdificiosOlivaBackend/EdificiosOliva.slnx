@@ -4,4 +4,5 @@
   <Project Path="EdificiosOliva.Application/EdificiosOliva.Application.csproj" />
   <Project Path="EdificiosOliva.Domain/EdificiosOliva.Domain.csproj" />
   <Project Path="EdificiosOliva.Infrastructure/EdificiosOliva.Infrastructure.csproj" />
+  <Project Path="EdificiosOliva.Infrastructure.Tests/EdificiosOliva.Infrastructure.Tests.csproj" />
 </Solution>

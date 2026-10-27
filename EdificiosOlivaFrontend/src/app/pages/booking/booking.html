@@ -13,6 +13,24 @@
 
 <section class="booking-section">
   <div class="container">
+    @if (paymentOutcomeMessage) {
+      <div
+        class="booking-alert payment-result"
+        [class.success]="paymentOutcome === 'approved'"
+        [class.info]="paymentOutcome === 'cancelled'"
+        role="status"
+        aria-live="polite"
+      >
+        <i
+          class="bi"
+          [class.bi-check-circle-fill]="paymentOutcome === 'approved'"
+          [class.bi-info-circle-fill]="paymentOutcome !== 'approved'"
+          aria-hidden="true"
+        ></i>
+        <span>{{ paymentOutcomeMessage }}</span>
+      </div>
+    }
+
     @if (confirmation) {
       <div class="confirmation-card" role="status" aria-live="polite">
         <div class="confirmation-icon" aria-hidden="true">✓</div>
@@ -21,20 +39,67 @@
           <h2>Reserva {{ confirmation.confirmationCode }}</h2>
           <p>
             Recibimos tu solicitud para <strong>{{ confirmation.apartmentName }}</strong>.
-            La reserva quedó pendiente de confirmación y pago.
+            @if (paymentOutcome === 'approved') {
+              El pago fue validado y la reserva quedó confirmada.
+            } @else {
+              La reserva quedó registrada y conserva saldo pendiente hasta completar el pago.
+            }
           </p>
           <div class="confirmation-meta">
             <span>{{ confirmation.checkInDate }} → {{ confirmation.checkOutDate }}</span>
             <span>{{ confirmation.nights }} noche(s)</span>
             <strong>{{ confirmation.totalAmount | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
           </div>
+          @if (loadingPaymentOptions) {
+            <p class="payment-option-status">Consultando opciones de pago en línea…</p>
+          } @else if (paymentAvailable && paymentOutcome !== 'approved') {
+            <div class="online-payment-card">
+              <div class="online-payment-heading">
+                <i class="bi bi-credit-card-2-front" aria-hidden="true"></i>
+                <div>
+                  <strong>Pagar en línea con AZUL</strong>
+                  <span>Serás enviado al portal seguro de AZUL para introducir los datos de pago.</span>
+                </div>
+              </div>
+
+              <label class="payment-consent">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="paymentTermsAccepted"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+                <span>
+                  Confirmo que revisé el apartamento, las fechas y el total de esta reserva.
+                </span>
+              </label>
+
+              <button
+                type="button"
+                class="azul-payment-btn"
+                (click)="startOnlinePayment()"
+                [disabled]="startingPayment || !paymentTermsAccepted"
+              >
+                <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                {{ startingPayment ? 'Abriendo AZUL…' : 'Pagar ahora de forma segura' }}
+              </button>
+
+              @if (paymentError) {
+                <p class="payment-error" role="alert">{{ paymentError }}</p>
+              }
+
+              <p class="payment-security-note">
+                Edificios Oliva no captura ni almacena el número de tarjeta, fecha de expiración o CVV.
+              </p>
+            </div>
+          }
+
           <a
             class="whatsapp-btn inline"
             [href]="whatsappConfirmationUrl"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Coordinar confirmación y pago por WhatsApp
+            {{ paymentAvailable ? '¿Necesitas ayuda? Escribir por WhatsApp' : 'Coordinar confirmación y pago por WhatsApp' }}
           </a>
         </div>
       </div>
@@ -54,7 +119,8 @@
       <div class="booking-alert" role="alert">{{ errorMessage }}</div>
     }
 
-    <form class="booking-grid" #bookingForm="ngForm" (ngSubmit)="submit()">
+    @if (!confirmation) {
+      <form class="booking-grid" #bookingForm="ngForm" (ngSubmit)="submit()">
       <div class="booking-form">
         <div class="section-heading">
           <span class="step">01</span>
@@ -248,7 +314,8 @@
         </button>
 
         <p class="payment-note">
-          No se realiza ningún cargo al enviar esta solicitud. El pago se coordina después de validar la reserva.
+          No se realiza ningún cargo al enviar la solicitud. Una vez registrada, podrás usar el
+          checkout seguro de AZUL si está habilitado o contactar por WhatsApp.
         </p>
 
         <a
@@ -260,6 +327,7 @@
           Consultar por WhatsApp
         </a>
       </aside>
-    </form>
+      </form>
+    }
   </div>
 </section>

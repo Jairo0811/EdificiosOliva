@@ -32,3 +32,6 @@ jobs:
 
       - name: Build backend
         run: dotnet build EdificiosOlivaBackend/EdificiosOliva.slnx --configuration Release --no-restore
+
+      - name: Run backend payment tests
+        run: dotnet run --project EdificiosOlivaBackend/EdificiosOliva.Infrastructure.Tests/EdificiosOliva.Infrastructure.Tests.csproj --configuration Release --no-build
