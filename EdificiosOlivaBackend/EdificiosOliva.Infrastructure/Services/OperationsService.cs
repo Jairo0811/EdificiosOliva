@@ -286,7 +286,7 @@ public sealed class OperationsService(
         }
 
         calendar.AppendLine("END:VCALENDAR");
-        return calendar.ToString().Replace("\n", "\r\n", StringComparison.Ordinal);
+        return calendar.ToString().ReplaceLineEndings("\r\n");
     }
 
     private static OperationsReservationItem MapReservation(
