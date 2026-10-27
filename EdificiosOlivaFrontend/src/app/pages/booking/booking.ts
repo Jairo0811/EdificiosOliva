@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { Apartment } from '../../core/models/apartment.model';
 import { Apartments } from '../../core/services/apartments';
@@ -28,7 +28,7 @@ interface BookingFormModel {
 
 @Component({
   selector: 'app-booking',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './booking.html',
   styleUrl: './booking.css',
 })
@@ -316,6 +316,12 @@ export class Booking implements OnInit {
           );
         },
       });
+  }
+
+  printReceipt(): void {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
   }
 
   get whatsappConfirmationUrl(): string {

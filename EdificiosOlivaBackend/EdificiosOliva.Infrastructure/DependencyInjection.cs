@@ -1,5 +1,6 @@
 using EdificiosOliva.Application.Interfaces;
 using EdificiosOliva.Domain.Interfaces;
+using EdificiosOliva.Infrastructure.Notifications;
 using EdificiosOliva.Infrastructure.Payments.Azul;
 using EdificiosOliva.Infrastructure.Persistence.Context;
 using EdificiosOliva.Infrastructure.Repositories;
@@ -35,6 +36,11 @@ public static class DependencyInjection
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IPaymentIntentService, PaymentIntentService>();
+
+        var emailOptions = EmailNotificationOptions.FromConfiguration(configuration);
+        emailOptions.Validate();
+        services.AddSingleton(emailOptions);
+        services.AddScoped<IBookingNotificationService, SmtpBookingNotificationService>();
 
         var azulOptions = AzulOptions.FromConfiguration(configuration);
         if (azulOptions.Enabled)

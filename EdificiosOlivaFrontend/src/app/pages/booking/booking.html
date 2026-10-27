@@ -50,6 +50,19 @@
             <span>{{ confirmation.nights }} noche(s)</span>
             <strong>{{ confirmation.totalAmount | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
           </div>
+          @if (paymentOutcome === 'approved') {
+            <div class="receipt-data">
+              <span>Comprobante</span>
+              <strong>{{ confirmation.confirmationCode }}</strong>
+              @if (paymentIntentId) {
+                <small>Intento de pago: {{ paymentIntentId }}</small>
+              }
+            </div>
+            <button type="button" class="receipt-btn" (click)="printReceipt()">
+              <i class="bi bi-printer" aria-hidden="true"></i>
+              Imprimir comprobante
+            </button>
+          }
           @if (loadingPaymentOptions) {
             <p class="payment-option-status">Consultando opciones de pago en línea…</p>
           } @else if (paymentAvailable && paymentOutcome !== 'approved') {
@@ -69,7 +82,8 @@
                   [ngModelOptions]="{ standalone: true }"
                 />
                 <span>
-                  Confirmo que revisé el apartamento, las fechas y el total de esta reserva.
+                  Confirmo que revisé el apartamento, las fechas y el total, y acepto las
+                  <a routerLink="/politicas" target="_blank">políticas de reserva, cancelación, privacidad y pago</a>.
                 </span>
               </label>
 

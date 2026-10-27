@@ -2,6 +2,24 @@
 
 Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
+## [Unreleased] — v1.1.4
+
+### Añadido
+
+- Emails automáticos de solicitud de reserva y pago confirmado mediante SMTP configurable.
+- Comprobante imprimible para reservas con pago aprobado.
+- Página pública de políticas comerciales, cancelación, privacidad y seguridad de pagos.
+- Enlaces legales visibles desde el footer.
+- Aceptación explícita de políticas antes de iniciar el checkout AZUL.
+- Referencia real de transacción AZUL preservada cuando está disponible.
+
+### Seguridad y operación
+
+- SMTP deshabilitado por defecto hasta configurar secretos reales.
+- Los fallos de correo no revierten reservas ni pagos ya persistidos.
+- Credenciales SMTP permanecen fuera del repositorio.
+- Los datos de tarjeta continúan fuera de Edificios Oliva.
+
 ## [Unreleased] — v1.1.1
 
 ### Añadido

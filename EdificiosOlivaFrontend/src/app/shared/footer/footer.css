@@ -24,6 +24,25 @@ footer p {
   margin-bottom: 28px;
 }
 
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 20px;
+  margin-bottom: 28px;
+}
+
+.footer-links a {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
 footer small {
   font-size: 15px;
   color: #ffffff;
