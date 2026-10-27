@@ -10,6 +10,10 @@ import {
   PublicBookingConfirmation,
   PublicBookingService,
 } from '../../core/services/booking';
+import {
+  PublicPaymentCheckout,
+  PublicPaymentService,
+} from '../../core/services/public-payments';
 
 interface BookingFormModel {
   fullName: string;
@@ -31,6 +35,7 @@ interface BookingFormModel {
 export class Booking implements OnInit {
   private readonly apartmentsService = inject(Apartments);
   private readonly bookingService = inject(PublicBookingService);
+  private readonly paymentService = inject(PublicPaymentService);
   private readonly route = inject(ActivatedRoute);
 
   readonly minDate = this.toDateInputValue(new Date());
@@ -43,9 +48,18 @@ export class Booking implements OnInit {
   checkingAvailability = false;
   submitting = false;
   errorMessage = '';
+  paymentError = '';
   prefilledFromSearch = false;
+  paymentAvailable = false;
+  loadingPaymentOptions = true;
+  startingPayment = false;
+  paymentTermsAccepted = false;
+  paymentOutcome = '';
+  paymentIntentId = '';
 
   private requestedApartmentId = '';
+  private paymentIdempotencyKey = '';
+  private readonly pendingBookingStorageKey = 'edificiosOliva.pendingBooking';
 
   form: BookingFormModel = {
     fullName: '',
@@ -59,6 +73,9 @@ export class Booking implements OnInit {
   };
 
   ngOnInit(): void {
+    this.applyPaymentReturn();
+    this.restoreConfirmationAfterPaymentReturn();
+    this.loadPaymentProviders();
     this.applyQueryPrefill();
 
     this.apartmentsService.getAvailableApartments().subscribe({
@@ -222,6 +239,7 @@ export class Booking implements OnInit {
             nightlyRate: confirmation.nightlyRate,
             totalAmount: confirmation.totalAmount,
           };
+          this.persistPendingBooking(confirmation);
           this.submitting = false;
         },
         error: (error) => {
@@ -229,6 +247,72 @@ export class Booking implements OnInit {
           this.errorMessage = this.readProblemDetail(
             error,
             'No fue posible registrar la reserva. Revisa los datos e intenta nuevamente.',
+          );
+        },
+      });
+  }
+
+  get paymentOutcomeMessage(): string {
+    switch (this.paymentOutcome) {
+      case 'approved':
+        return 'Pago aprobado y validado. La reserva quedó confirmada en el sistema.';
+      case 'declined':
+        return 'AZUL declinó el pago. Puedes reintentar mientras la reserva conserve saldo pendiente.';
+      case 'cancelled':
+        return 'Cancelaste el proceso de pago. No se registró ningún cargo confirmado.';
+      case 'invalid':
+        return 'No fue posible validar la respuesta de la pasarela. No se registró el pago.';
+      case 'unverified':
+        return 'Recibimos el retorno de la pasarela, pero no pudo aplicarse automáticamente. Contacta a Edificios Oliva antes de volver a pagar.';
+      default:
+        return '';
+    }
+  }
+
+  startOnlinePayment(): void {
+    this.paymentError = '';
+
+    if (!this.confirmation) {
+      this.paymentError = 'Primero debes registrar la reserva.';
+      return;
+    }
+
+    if (!this.paymentAvailable) {
+      this.paymentError = 'El pago en línea no está habilitado en este momento.';
+      return;
+    }
+
+    if (!this.paymentTermsAccepted) {
+      this.paymentError = 'Confirma los datos de la reserva antes de continuar al portal de pago.';
+      return;
+    }
+
+    if (!this.paymentIdempotencyKey) {
+      this.paymentIdempotencyKey = this.createPaymentIdempotencyKey(
+        this.confirmation.reservationId,
+      );
+    }
+
+    this.startingPayment = true;
+    this.paymentService
+      .createCheckout({
+        reservationId: this.confirmation.reservationId,
+        confirmationCode: this.confirmation.confirmationCode,
+        email: this.confirmation.email,
+        idempotencyKey: this.paymentIdempotencyKey,
+        provider: 'AZUL',
+      })
+      .subscribe({
+        next: (checkout) => {
+          this.persistPendingBooking(this.confirmation!);
+          this.startingPayment = false;
+          this.submitHostedCheckout(checkout);
+        },
+        error: (error) => {
+          this.startingPayment = false;
+          this.paymentError = this.readProblemDetail(
+            error,
+            'No fue posible iniciar el pago en línea. Puedes reintentar sin crear un cobro duplicado.',
           );
         },
       });
@@ -249,6 +333,102 @@ export class Booking implements OnInit {
     ].join('\n');
 
     return `https://wa.me/${this.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }
+
+  private loadPaymentProviders(): void {
+    this.paymentService.getProviders().subscribe({
+      next: (providers) => {
+        this.paymentAvailable = providers.some(
+          (provider) => provider.provider.toUpperCase() === 'AZUL',
+        );
+        this.loadingPaymentOptions = false;
+      },
+      error: () => {
+        this.paymentAvailable = false;
+        this.loadingPaymentOptions = false;
+      },
+    });
+  }
+
+  private applyPaymentReturn(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const payment = params.get('payment')?.trim().toLowerCase() ?? '';
+    const allowed = new Set([
+      'approved',
+      'declined',
+      'cancelled',
+      'invalid',
+      'unverified',
+    ]);
+
+    if (allowed.has(payment)) {
+      this.paymentOutcome = payment;
+      this.paymentIntentId = params.get('intent')?.trim() ?? '';
+    }
+  }
+
+  private restoreConfirmationAfterPaymentReturn(): void {
+    if (!this.paymentOutcome || typeof window === 'undefined') {
+      return;
+    }
+
+    const stored = window.sessionStorage.getItem(this.pendingBookingStorageKey);
+    if (!stored) {
+      return;
+    }
+
+    try {
+      const confirmation = JSON.parse(stored) as PublicBookingConfirmation;
+      if (confirmation?.reservationId && confirmation?.confirmationCode) {
+        this.confirmation = confirmation;
+      }
+    } catch {
+      window.sessionStorage.removeItem(this.pendingBookingStorageKey);
+    }
+  }
+
+  private persistPendingBooking(confirmation: PublicBookingConfirmation): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      this.pendingBookingStorageKey,
+      JSON.stringify(confirmation),
+    );
+  }
+
+  private submitHostedCheckout(checkout: PublicPaymentCheckout): void {
+    if (typeof document === 'undefined') {
+      this.paymentError = 'El checkout hospedado solo puede abrirse desde el navegador.';
+      return;
+    }
+
+    const form = document.createElement('form');
+    form.method = checkout.method || 'POST';
+    form.action = checkout.actionUrl;
+    form.style.display = 'none';
+
+    Object.entries(checkout.fields).forEach(([name, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  private createPaymentIdempotencyKey(reservationId: string): string {
+    const suffix =
+      typeof globalThis.crypto !== 'undefined' &&
+      typeof globalThis.crypto.randomUUID === 'function'
+        ? globalThis.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    return `azul-${reservationId}-${suffix}`.slice(0, 100);
   }
 
   private applyQueryPrefill(): void {
