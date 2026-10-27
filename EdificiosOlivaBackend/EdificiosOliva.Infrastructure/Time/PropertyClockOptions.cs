@@ -13,28 +13,51 @@ public sealed class PropertyClockOptions
                 ?? "America/Santo_Domingo",
         };
 
-    public void Validate()
+    public void Validate() => _ = ResolveTimeZone();
+
+    public TimeZoneInfo ResolveTimeZone()
     {
         if (string.IsNullOrWhiteSpace(TimeZoneId))
         {
             throw new InvalidOperationException("Property:TimeZoneId es obligatorio.");
         }
 
+        if (TryFind(TimeZoneId, out var direct))
+        {
+            return direct;
+        }
+
+        if (TimeZoneInfo.TryConvertIanaIdToWindowsId(TimeZoneId, out var windowsId) &&
+            TryFind(windowsId, out var windowsZone))
+        {
+            return windowsZone;
+        }
+
+        if (TimeZoneInfo.TryConvertWindowsIdToIanaId(TimeZoneId, out var ianaId) &&
+            TryFind(ianaId, out var ianaZone))
+        {
+            return ianaZone;
+        }
+
+        throw new InvalidOperationException(
+            $"Property:TimeZoneId '{TimeZoneId}' no existe o no es válido en este entorno.");
+    }
+
+    private static bool TryFind(string id, out TimeZoneInfo timeZone)
+    {
         try
         {
-            _ = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+            timeZone = TimeZoneInfo.FindSystemTimeZoneById(id);
+            return true;
         }
-        catch (TimeZoneNotFoundException exception)
+        catch (TimeZoneNotFoundException)
         {
-            throw new InvalidOperationException(
-                $"Property:TimeZoneId '{TimeZoneId}' no existe en este entorno.",
-                exception);
         }
-        catch (InvalidTimeZoneException exception)
+        catch (InvalidTimeZoneException)
         {
-            throw new InvalidOperationException(
-                $"Property:TimeZoneId '{TimeZoneId}' no es válido.",
-                exception);
         }
+
+        timeZone = null!;
+        return false;
     }
 }
