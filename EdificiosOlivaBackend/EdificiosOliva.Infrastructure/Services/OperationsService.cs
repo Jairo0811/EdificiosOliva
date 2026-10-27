@@ -190,7 +190,7 @@ public sealed class OperationsService(
                 Csv(reservation.CheckInDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
                 Csv(reservation.CheckOutDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
                 reservation.GuestCount.ToString(CultureInfo.InvariantCulture),
-                reservation.Status.ToString(CultureInfo.InvariantCulture),
+                ((int)reservation.Status).ToString(CultureInfo.InvariantCulture),
                 reservation.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture)));
         }
 
