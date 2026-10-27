@@ -183,9 +183,9 @@ app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.XContentTypeOptions = "nosniff";
-    context.Response.Headers.XFrameOptions = "DENY";
-    context.Response.Headers.ReferrerPolicy = "strict-origin-when-cross-origin";
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers.Append(
         "Permissions-Policy",
         "camera=(), microphone=(), geolocation=()");
@@ -203,7 +203,14 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+var useHttpsRedirection =
+    builder.Configuration.GetValue("Security:UseHttpsRedirection", true);
+
+if (useHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors(FrontendCorsPolicy);
