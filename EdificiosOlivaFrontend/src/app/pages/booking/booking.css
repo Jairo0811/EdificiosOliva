@@ -326,6 +326,127 @@
   color: #0f4c81;
 }
 
+.payment-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.payment-result i {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  font-size: 1.15rem;
+}
+
+.payment-result.success {
+  border-color: #b9dfc8;
+  background: #f1fbf5;
+  color: #17633a;
+}
+
+.payment-option-status {
+  margin: 18px 0 8px;
+  color: #66788a;
+  font-size: 0.9rem;
+}
+
+.online-payment-card {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #cbddec;
+  border-radius: 18px;
+  background: #f6fbff;
+}
+
+.online-payment-heading {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.online-payment-heading > i {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: #0f4c81;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.online-payment-heading div {
+  display: grid;
+  gap: 4px;
+}
+
+.online-payment-heading strong {
+  color: #12314d;
+}
+
+.online-payment-heading span,
+.payment-security-note {
+  color: #66788a;
+  line-height: 1.5;
+  font-size: 0.86rem;
+}
+
+.payment-consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 18px 0;
+  color: #29445d;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.payment-consent input {
+  margin-top: 3px;
+  accent-color: #0f4c81;
+}
+
+.azul-payment-btn {
+  display: inline-flex;
+  width: 100%;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: none;
+  border-radius: 14px;
+  background: #0f4c81;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease, background 150ms ease;
+}
+
+.azul-payment-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #0c416e;
+}
+
+.azul-payment-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.payment-error {
+  margin: 12px 0 0;
+  color: #8a2d2d;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.payment-security-note {
+  margin: 12px 0 0;
+  text-align: center;
+}
+
 @media (max-width: 992px) {
   .booking-hero {
     background-attachment: scroll;
