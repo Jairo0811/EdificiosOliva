@@ -2,6 +2,36 @@
 
 Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
+## [Unreleased] — v1.1.1
+
+### Añadido
+
+- Integración provider-specific AzulPaymentGateway sobre la Payment Foundation de v1.1.
+- Checkout público hospedado mediante AZUL Payment Page.
+- Generación de formulario POST firmado con AuthHash HMAC-SHA512.
+- Endpoint público POST /api/public/payments/checkout.
+- Endpoint de retorno GET /api/public/payments/returns/AZUL/{outcome}.
+- Validación de retorno aprobado, declinado y cancelado.
+- Verificación del monto firmado contra el PaymentIntent.
+- Restauración de la confirmación de reserva al regresar desde AZUL.
+- Configuración por entorno para Merchant ID, AuthKey, URLs, moneda, locale e ITBIS.
+- Rate limiting dedicado para checkout público.
+
+### Seguridad
+
+- Los datos de tarjeta permanecen en el Payment Page de AZUL; Edificios Oliva no captura PAN/CVV.
+- SaveToDataVault=0 por defecto.
+- AuthKey únicamente por secreto/variable de entorno.
+- Checkout deshabilitado por defecto hasta completar configuración válida.
+- Reserva pública validada por ID, código de confirmación y correo antes de iniciar un pago.
+- Monto del pago calculado exclusivamente en backend.
+- Retornos con firma inválida o monto inconsistente no generan Payment(Paid).
+
+### Alcance conocido
+
+- v1.1.1 usa el retorno firmado del navegador como confirmación del Payment Page.
+- La conciliación server-to-server para pagos completados cuyo navegador no retorna queda para v1.1.2.
+- La devolución automática de AZUL no está habilitada todavía; el flujo administrativo existente permanece disponible.
 ## [1.0.0] - 2026-09-04
 
 ### Añadido
