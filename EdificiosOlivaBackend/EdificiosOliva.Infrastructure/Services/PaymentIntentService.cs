@@ -233,6 +233,130 @@ public sealed class PaymentIntentService(
             cancellationToken);
     }
 
+    public async Task<PaymentIntentResponse> ReconcileManuallyAsync(
+        Guid id,
+        ManualPaymentReconciliationRequest request,
+        string performedBy,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(performedBy))
+        {
+            performedBy = "admin";
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var intent = await dbContext.PaymentIntents
+            .Include(item => item.Reservation)
+                .ThenInclude(reservation => reservation.Customer)
+            .Include(item => item.Reservation)
+                .ThenInclude(reservation => reservation.Apartment)
+            .Include(item => item.Payment)
+            .SingleOrDefaultAsync(
+                item => item.Id == id && !item.IsDeleted,
+                cancellationToken)
+            ?? throw new KeyNotFoundException("El intento de pago indicado no existe.");
+
+        if (intent.Status is PaymentIntentStatus.Succeeded or PaymentIntentStatus.Refunded)
+        {
+            throw new InvalidOperationException(
+                "El intento ya tiene un estado financiero final y no puede conciliarse manualmente.");
+        }
+
+        var notes = TrimTo(request.Notes, 500);
+        var providerTransactionId = TrimToOptional(request.ProviderTransactionId, 200);
+        var now = DateTime.UtcNow;
+
+        switch (request.Outcome)
+        {
+            case ManualReconciliationOutcome.Succeeded:
+            {
+                if (providerTransactionId is null)
+                {
+                    throw new ArgumentException(
+                        "Para confirmar un pago manualmente debes indicar la referencia de transacción verificada en el portal del proveedor.");
+                }
+
+                var paidAmount = await dbContext.Payments
+                    .Where(payment =>
+                        !payment.IsDeleted &&
+                        payment.ReservationId == intent.ReservationId &&
+                        payment.Status == PaymentStatus.Paid)
+                    .SumAsync(payment => (decimal?)payment.Amount, cancellationToken) ?? 0m;
+
+                var outstanding = intent.Reservation.TotalAmount - paidAmount;
+                if (outstanding < intent.Amount)
+                {
+                    throw new InvalidOperationException(
+                        "El saldo pendiente de la reserva es menor que el monto de este intento. Revisa los pagos existentes antes de conciliar.");
+                }
+
+                intent.Status = PaymentIntentStatus.Succeeded;
+                intent.FailureCode = null;
+                intent.FailureMessage = null;
+                intent.UpdatedAtUtc = now;
+                ApplyStatusTimestamps(intent, PaymentIntentStatus.Succeeded);
+                FinalizeSucceededIntent(
+                    intent,
+                    intent.Reservation,
+                    providerTransactionId,
+                    $"Conciliación manual verificada por {performedBy}. {notes}");
+                break;
+            }
+
+            case ManualReconciliationOutcome.Failed:
+                intent.Status = PaymentIntentStatus.Failed;
+                intent.FailureCode = "manual_reconciliation_failed";
+                intent.FailureMessage = notes;
+                intent.UpdatedAtUtc = now;
+                ApplyStatusTimestamps(intent, PaymentIntentStatus.Failed);
+                break;
+
+            case ManualReconciliationOutcome.Cancelled:
+                intent.Status = PaymentIntentStatus.Cancelled;
+                intent.FailureCode = "manual_reconciliation_cancelled";
+                intent.FailureMessage = notes;
+                intent.UpdatedAtUtc = now;
+                ApplyStatusTimestamps(intent, PaymentIntentStatus.Cancelled);
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(request.Outcome),
+                    "El resultado de conciliación no es válido.");
+        }
+
+        var auditMaterial =
+            $"{intent.Id:N}|{request.Outcome}|{providerTransactionId}|{performedBy}|{notes}|{now:O}";
+        var auditHash = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(auditMaterial)))
+            .ToLowerInvariant();
+
+        dbContext.PaymentWebhookEvents.Add(new PaymentWebhookEvent
+        {
+            PaymentIntentId = intent.Id,
+            PaymentIntent = intent,
+            Provider = intent.Provider,
+            EventId = $"manual:{intent.Id:N}:{Guid.NewGuid():N}",
+            EventType = $"manual.reconciliation.{request.Outcome.ToString().ToLowerInvariant()}",
+            ProviderReference = intent.ProviderReference,
+            Status = PaymentWebhookEventStatus.Processed,
+            SignatureVerified = false,
+            PayloadHash = auditHash,
+            ErrorMessage = TrimTo(
+                $"Conciliación administrativa por {performedBy}. {notes}",
+                500),
+            ProcessedAtUtc = now,
+        });
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return MapResponse(intent);
+    }
+
     public async Task<PublicPaymentCheckoutResponse> CreatePublicCheckoutAsync(
         CreatePublicPaymentCheckoutRequest request,
         CancellationToken cancellationToken = default)
@@ -576,7 +700,7 @@ public sealed class PaymentIntentService(
 
         if (gatewayResult.Status == PaymentIntentStatus.Succeeded)
         {
-            FinalizeSucceededIntent(intent, reservation);
+            FinalizeSucceededIntent(intent, reservation, null, null);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -634,7 +758,7 @@ public sealed class PaymentIntentService(
                 intent.FailureCode = null;
                 intent.FailureMessage = null;
                 ApplyStatusTimestamps(intent, PaymentIntentStatus.Succeeded);
-                FinalizeSucceededIntent(intent, intent.Reservation);
+                FinalizeSucceededIntent(intent, intent.Reservation, null, null);
                 return true;
 
             case PaymentIntentStatus.Refunded:
@@ -712,7 +836,9 @@ public sealed class PaymentIntentService(
 
     private void FinalizeSucceededIntent(
         PaymentIntent intent,
-        Reservation reservation)
+        Reservation reservation,
+        string? providerTransactionId,
+        string? reconciliationNotes)
     {
         if (!intent.PaymentId.HasValue)
         {
@@ -723,8 +849,9 @@ public sealed class PaymentIntentService(
                 Amount = intent.Amount,
                 Method = intent.Method,
                 Status = PaymentStatus.Paid,
-                TransactionId = $"online:{intent.Id:N}",
-                Notes = $"Pago online confirmado por {intent.Provider}.",
+                TransactionId = providerTransactionId ?? $"online:{intent.Id:N}",
+                Notes = reconciliationNotes ??
+                    $"Pago online confirmado por {intent.Provider}.",
                 PaidAtUtc = DateTime.UtcNow,
             };
 
@@ -813,6 +940,29 @@ public sealed class PaymentIntentService(
         }
     }
 
+    private static bool NeedsAdministrativeReview(PaymentIntent intent)
+    {
+        var isActive = intent.Status is
+            PaymentIntentStatus.Created or
+            PaymentIntentStatus.Processing or
+            PaymentIntentStatus.RequiresAction;
+
+        var expired = intent.ExpiresAtUtc.HasValue &&
+                      intent.ExpiresAtUtc.Value <= DateTime.UtcNow;
+
+        var uncertainGatewayOutcome =
+            string.Equals(
+                intent.FailureCode,
+                "gateway_create_transport_error",
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(
+                intent.FailureCode,
+                "gateway_reference_missing",
+                StringComparison.OrdinalIgnoreCase);
+
+        return (isActive && expired) || uncertainGatewayOutcome;
+    }
+
     private static string CanonicalizeProvider(string provider)
     {
         if (string.IsNullOrWhiteSpace(provider))
@@ -856,6 +1006,7 @@ public sealed class PaymentIntentService(
             intent.FailureCode,
             intent.FailureMessage,
             intent.ExpiresAtUtc,
+            NeedsAdministrativeReview(intent),
             intent.SucceededAtUtc,
             intent.FailedAtUtc,
             intent.CancelledAtUtc,
