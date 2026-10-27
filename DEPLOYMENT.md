@@ -20,6 +20,8 @@ Reverse proxy / load balancer
 
 El frontend de producción utiliza `/api` como base URL, por lo que el proxy debe servir frontend y API bajo el mismo dominio o mantener una regla equivalente.
 
+Cuando TLS termina en un reverse proxy y la conexión interna proxy → API es HTTP, configura `Security__UseHttpsRedirection=false` **solo en la API interna**. El proxy/ingress debe seguir forzando HTTPS público. Si Kestrel recibe HTTPS directamente, conserva el valor `true`.
+
 ## Contenedores
 
 Desde la raíz:
