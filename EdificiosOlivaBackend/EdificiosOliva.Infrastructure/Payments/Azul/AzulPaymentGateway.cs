@@ -158,6 +158,10 @@ public sealed class AzulPaymentGateway(AzulOptions options) : IPaymentGateway
             outcome,
             request.Payload);
 
+        var providerTransactionId =
+            NullIfWhiteSpace(Get(values, "AzulOrderId")) ??
+            NullIfWhiteSpace(rrn);
+
         return Task.FromResult(new PaymentGatewayWebhookResult(
             eventId,
             succeeded ? "payment.succeeded" : "payment.failed",
@@ -168,7 +172,8 @@ public sealed class AzulPaymentGateway(AzulOptions options) : IPaymentGateway
             succeeded ? null : NullIfWhiteSpace(responseCode ?? isoCode),
             succeeded
                 ? null
-                : NullIfWhiteSpace(errorDescription ?? responseMessage ?? "Transacción declinada por AZUL.")));
+                : NullIfWhiteSpace(errorDescription ?? responseMessage ?? "Transacción declinada por AZUL."),
+            providerTransactionId));
     }
 
     public Task<PaymentGatewayRefundResult> RefundAsync(
