@@ -6,13 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EdificiosOliva.Infrastructure.Services;
 
-public sealed class DashboardService(ApplicationDbContext dbContext)
+public sealed class DashboardService(
+    ApplicationDbContext dbContext,
+    IPropertyClock propertyClock)
     : IDashboardService
 {
     public async Task<DashboardResponse> GetSummaryAsync(
         CancellationToken cancellationToken = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = propertyClock.Today;
         var monthStart = new DateOnly(today.Year, today.Month, 1);
         var nextMonth = monthStart.AddMonths(1);
 

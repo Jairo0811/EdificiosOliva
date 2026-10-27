@@ -1,0 +1,164 @@
+<div class="operations-page">
+  <header class="page-header">
+    <div>
+      <span class="kicker">PMS · v1.2</span>
+      <h1>Operación y analítica</h1>
+      <p>Ocupación, ingresos reconocidos, calendario de estadías y exportes operativos.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="secondary-btn" (click)="exportReservations()" [disabled]="downloading || loading">
+        <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+        Reservas CSV
+      </button>
+      <button type="button" class="secondary-btn" (click)="exportPayments()" [disabled]="downloading || loading">
+        <i class="bi bi-cash-coin" aria-hidden="true"></i>
+        Pagos CSV
+      </button>
+    </div>
+  </header>
+
+  <section class="filters" aria-label="Período de análisis">
+    <label>
+      <span>Desde</span>
+      <input type="date" [(ngModel)]="fromDate" />
+    </label>
+    <label>
+      <span>Hasta</span>
+      <input type="date" [(ngModel)]="toDate" [min]="fromDate" />
+    </label>
+    <button type="button" class="primary-btn" (click)="load()" [disabled]="loading">
+      {{ loading ? 'Calculando…' : 'Actualizar período' }}
+    </button>
+  </section>
+
+  @if (errorMessage) {
+    <div class="feedback error" role="alert">{{ errorMessage }}</div>
+  }
+
+  @if (copyMessage) {
+    <div class="feedback success" role="status">{{ copyMessage }}</div>
+  }
+
+  @if (loading && !analytics) {
+    <div class="loading-state">Calculando operación del período…</div>
+  } @else if (analytics) {
+    <section class="metrics" aria-label="Indicadores del período">
+      <article>
+        <i class="bi bi-calendar-check" aria-hidden="true"></i>
+        <span>Reservas</span>
+        <strong>{{ analytics.totalReservations }}</strong>
+      </article>
+      <article>
+        <i class="bi bi-moon-stars" aria-hidden="true"></i>
+        <span>Noches reservadas</span>
+        <strong>{{ analytics.bookedNights }}</strong>
+      </article>
+      <article>
+        <i class="bi bi-pie-chart" aria-hidden="true"></i>
+        <span>Ocupación</span>
+        <strong>{{ analytics.occupancyRate }}%</strong>
+      </article>
+      <article>
+        <i class="bi bi-cash-stack" aria-hidden="true"></i>
+        <span>Ingresos reconocidos</span>
+        <strong>{{ analytics.recognizedRevenue | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+      </article>
+      <article>
+        <i class="bi bi-tag" aria-hidden="true"></i>
+        <span>Tarifa media reservada</span>
+        <strong>{{ analytics.averageBookedNightlyRate | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+      </article>
+      <article>
+        <i class="bi bi-x-circle" aria-hidden="true"></i>
+        <span>Canceladas</span>
+        <strong>{{ analytics.cancelledReservations }}</strong>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <span class="kicker">Rendimiento</span>
+          <h2>Por apartamento</h2>
+        </div>
+        <small>El ingreso se reconoce por pagos con estado Pagado durante el período.</small>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Apartamento</th>
+              <th>Noches</th>
+              <th>Inventario</th>
+              <th>Ocupación</th>
+              <th>Ingresos</th>
+              <th>iCal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (apartment of analytics.apartments; track apartment.apartmentId) {
+              <tr>
+                <td><strong>{{ apartment.apartmentName }}</strong></td>
+                <td>{{ apartment.bookedNights }}</td>
+                <td>{{ apartment.inventoryNights }}</td>
+                <td>
+                  <div class="occupancy">
+                    <span>{{ apartment.occupancyRate }}%</span>
+                    <div class="meter">
+                      <span [style.width.%]="apartment.occupancyRate"></span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ apartment.recognizedRevenue | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+                <td>
+                  <button type="button" class="copy-btn" (click)="copyCalendar(apartment.apartmentId)">
+                    Copiar feed
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel calendar-panel">
+      <div class="panel-header">
+        <div>
+          <span class="kicker">Calendario operativo</span>
+          <h2>Estadías del período</h2>
+        </div>
+        <small>{{ analytics.fromDate }} → {{ analytics.toDate }}</small>
+      </div>
+
+      @if (analytics.reservations.length === 0) {
+        <p class="empty-state">No hay reservas que se crucen con este período.</p>
+      } @else {
+        <div class="reservation-list">
+          @for (reservation of analytics.reservations; track reservation.reservationId) {
+            <article [class.cancelled]="reservation.status === 5">
+              <div class="date-block">
+                <strong>{{ dateDay(reservation.checkInDate) }}</strong>
+                <span>{{ dateMonth(reservation.checkInDate) }}</span>
+              </div>
+              <div class="reservation-main">
+                <strong>{{ reservation.apartmentName }}</strong>
+                <span>{{ reservation.customerName }} · {{ reservation.guestCount }} huésped(es)</span>
+                <small>{{ reservation.checkInDate }} → {{ reservation.checkOutDate }} · {{ reservationNights(reservation) }} noche(s)</small>
+              </div>
+              <span class="status status-{{ reservation.status }}">{{ statusLabel(reservation.status) }}</span>
+              <strong class="reservation-total">{{ reservation.totalAmount | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <p class="method-note">
+      Ocupación = noches de reservas no canceladas que se cruzan con el período ÷ noches de inventario.
+      Como v1 no conserva historial de mantenimiento por fecha, el inventario usa los apartamentos actuales no eliminados.
+    </p>
+  }
+</div>

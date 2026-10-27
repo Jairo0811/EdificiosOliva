@@ -1,10 +1,12 @@
 using System.Threading.RateLimiting;
 using EdificiosOliva.Api.Middlewares;
 using EdificiosOliva.Infrastructure;
+using EdificiosOliva.Infrastructure.Persistence.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -179,6 +181,18 @@ var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers.Append(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=()");
+
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -189,7 +203,14 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+var useHttpsRedirection =
+    builder.Configuration.GetValue("Security:UseHttpsRedirection", true);
+
+if (useHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors(FrontendCorsPolicy);
@@ -202,6 +223,44 @@ app.MapGet("/health", () => Results.Ok(new
     status = "ok",
     service = "EdificiosOliva.Api"
 })).AllowAnonymous();
+
+app.MapGet(
+    "/health/ready",
+    async (ApplicationDbContext dbContext, CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            var databaseReady = await dbContext.Database.CanConnectAsync(cancellationToken);
+
+            return databaseReady
+                ? Results.Ok(new
+                {
+                    status = "ready",
+                    service = "EdificiosOliva.Api",
+                    database = "connected"
+                })
+                : Results.Json(
+                    new
+                    {
+                        status = "not-ready",
+                        service = "EdificiosOliva.Api",
+                        database = "unavailable"
+                    },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+        catch
+        {
+            return Results.Json(
+                new
+                {
+                    status = "not-ready",
+                    service = "EdificiosOliva.Api",
+                    database = "unavailable"
+                },
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+    })
+    .AllowAnonymous();
 
 app.MapControllers();
 

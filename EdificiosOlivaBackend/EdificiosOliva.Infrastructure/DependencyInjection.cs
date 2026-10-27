@@ -5,6 +5,7 @@ using EdificiosOliva.Infrastructure.Payments.Azul;
 using EdificiosOliva.Infrastructure.Persistence.Context;
 using EdificiosOliva.Infrastructure.Repositories;
 using EdificiosOliva.Infrastructure.Services;
+using EdificiosOliva.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,12 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(connectionString));
+
+        var propertyClockOptions = PropertyClockOptions.FromConfiguration(configuration);
+        propertyClockOptions.Validate();
+        services.AddSingleton(propertyClockOptions);
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IPropertyClock, PropertyClock>();
 
         services.AddScoped<IApartmentRepository, ApartmentRepository>();
         services.AddScoped<IApartmentService, ApartmentService>();
@@ -51,6 +58,7 @@ public static class DependencyInjection
         }
 
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IOperationsService, OperationsService>();
         services.AddScoped<IGalleryImageRepository, GalleryImageRepository>();
         services.AddScoped<IGalleryImageService, GalleryImageService>();
 

@@ -2,7 +2,57 @@
 
 Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
-## [Unreleased] — v1.1.4
+## [1.2.0] - 2026-10-27
+
+### Añadido
+
+- Consola administrativa de operación y analítica por rango de fechas.
+- Ocupación, noches reservadas, tarifa media reservada e ingresos reconocidos.
+- Rendimiento de ocupación e ingresos por apartamento.
+- Calendario operativo de estadías.
+- Exportes CSV UTF-8 de reservas y pagos.
+- Feed público iCalendar por apartamento sin datos personales de huéspedes.
+- Zona horaria de la propiedad configurable mediante `Property__TimeZoneId`.
+- Readiness endpoint `GET /health/ready` con conectividad real a SQL Server.
+- Dockerfile de ASP.NET Core 10.
+- Dockerfile de Angular/Nginx y configuración SPA/reverse proxy.
+- `.env.example` como catálogo de variables de entorno.
+- `DEPLOYMENT.md` con runbook de producción y checklists AZUL/SMTP.
+
+### Cambiado
+
+- Validación de fechas de reserva y dashboard usan la fecha local de la propiedad, no UTC.
+- README consolidado como v1.2.0 / línea v1 code-complete.
+- El roadmap separa el código terminado de afiliación, credenciales y despliegue externos.
+
+### Seguridad y operación
+
+- Headers `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`.
+- El feed iCal no expone nombre, correo ni teléfono del huésped.
+- SQL Server readiness puede devolver HTTP 503 cuando la base no está disponible.
+- Los uploads locales se documentan como volumen persistente obligatorio en producción.
+- Migraciones de producción permanecen como paso controlado de release; no se autoejecutan al arrancar.
+
+### Estado
+
+- La línea v1 queda **code-complete**.
+- AZUL, SMTP, dominio/TLS, infraestructura y decisiones fiscales reales siguen siendo activaciones externas deliberadamente no simuladas.
+
+## [1.1.2] - 2026-10-27
+
+### Añadido
+
+- Pantalla administrativa de intentos de pago y detección de casos que requieren revisión.
+- Conciliación administrativa auditada para intentos expirados o inciertos.
+- Referencia real del proveedor obligatoria para confirmar manualmente un pago.
+- Protección contra sobrepago durante conciliación.
+- Evento de auditoría para cada conciliación manual.
+
+### Decisión técnica
+
+- No se reutiliza `VerifyPayment` de AZUL Webservices como si fuera una API de Payment Page. La automatización adicional queda condicionada a un mecanismo documentado/habilitado por AZUL para el comercio.
+
+## [1.1.4] - 2026-10-27
 
 ### Añadido
 
@@ -20,7 +70,7 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 - Credenciales SMTP permanecen fuera del repositorio.
 - Los datos de tarjeta continúan fuera de Edificios Oliva.
 
-## [Unreleased] — v1.1.1
+## [1.1.1] - 2026-10-27
 
 ### Añadido
 
