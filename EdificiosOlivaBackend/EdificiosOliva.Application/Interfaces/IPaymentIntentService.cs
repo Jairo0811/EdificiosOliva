@@ -19,6 +19,10 @@ public interface IPaymentIntentService
         CreatePaymentIntentRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<PublicPaymentCheckoutResponse> CreatePublicCheckoutAsync(
+        CreatePublicPaymentCheckoutRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<PaymentWebhookProcessResponse> ProcessWebhookAsync(
         string provider,
         string payload,
