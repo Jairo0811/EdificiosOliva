@@ -93,13 +93,32 @@
           </h2>
 
           <label for="detail-checkin">Entrada</label>
-          <input id="detail-checkin" name="checkin" type="date" [value]="checkInDate" [min]="minDate" (change)="checkInDate = $any($event.target).value" />
+          <input
+            id="detail-checkin"
+            name="checkin"
+            type="date"
+            [value]="checkInDate"
+            [min]="minDate"
+            (change)="onCheckInChange($any($event.target).value)"
+          />
 
           <label for="detail-checkout">Salida</label>
-          <input id="detail-checkout" name="checkout" type="date" [value]="checkOutDate" [min]="checkInDate || minDate" (change)="checkOutDate = $any($event.target).value" />
+          <input
+            id="detail-checkout"
+            name="checkout"
+            type="date"
+            [value]="checkOutDate"
+            [min]="checkInDate || minDate"
+            (change)="onCheckOutChange($any($event.target).value)"
+          />
 
           <label for="detail-guests">Huéspedes</label>
-          <select id="detail-guests" name="guests" [value]="guestCount" (change)="guestCount = +$any($event.target).value">
+          <select
+            id="detail-guests"
+            name="guests"
+            [value]="guestCount"
+            (change)="onGuestsChange($any($event.target).value)"
+          >
             @for (guest of getGuestOptions(apartment); track guest) {
               <option [value]="guest">
                 {{ guest }} {{ guest === 1 ? 'huésped' : 'huéspedes' }}
@@ -107,7 +126,43 @@
             }
           </select>
 
-          <button type="button" (click)="reserve()" [disabled]="!checkInDate || !checkOutDate || checkOutDate <= checkInDate" aria-label="Reservar este apartamento">
+          <div class="booking-status" id="booking-status" aria-live="polite">
+            @if (validationMessage) {
+              <p class="booking-hint">{{ validationMessage }}</p>
+            } @else if (checking()) {
+              <p class="booking-hint">Comprobando disponibilidad…</p>
+            } @else if (availabilityError()) {
+              <p class="booking-hint booking-hint--error">{{ availabilityError() }}</p>
+            } @else if (availability(); as result) {
+              @if (result.available) {
+                <p class="booking-hint booking-hint--ok">
+                  Disponible: {{ result.nights }} noche(s) × US$
+                  {{ result.nightlyRate | number: '1.2-2' }} = US$
+                  {{ result.totalAmount | number: '1.2-2' }}
+                </p>
+              } @else {
+                <p class="booking-hint booking-hint--error">
+                  No disponible para esas fechas. Prueba con otras o consúltanos por WhatsApp.
+                </p>
+              }
+            }
+          </div>
+
+          <button
+            type="button"
+            class="secondary"
+            (click)="checkAvailability()"
+            [disabled]="!!validationMessage || checking()"
+          >
+            Comprobar disponibilidad
+          </button>
+
+          <button
+            type="button"
+            (click)="reserve()"
+            [disabled]="!canReserve"
+            aria-describedby="booking-status"
+          >
             Reservar ahora
           </button>
 
