@@ -30,6 +30,8 @@ export class ApartmentDetail implements OnInit {
   guestCount = 1;
   readonly minDate = todayInPropertyZone();
 
+  readonly showAllPhotos = signal(false);
+
   readonly availability = signal<BookingAvailability | null>(null);
   readonly checking = signal(false);
   readonly availabilityError = signal('');
@@ -153,6 +155,12 @@ export class ApartmentDetail implements OnInit {
         this.loading = false;
         this.cdr.markForCheck();
       });
+  }
+
+  /** Up to five photos for the mosaic, or the placeholder when there are none. */
+  mosaicImages(apartment: Apartment): string[] {
+    const images = (apartment.images || []).filter(Boolean).slice(0, 5);
+    return images.length > 0 ? images : ['/images/apartment-placeholder.webp'];
   }
 
   getMainImage(apartment: Apartment): string {
