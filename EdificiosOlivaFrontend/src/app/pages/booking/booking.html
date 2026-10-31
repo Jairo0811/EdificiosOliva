@@ -40,7 +40,7 @@
           <p>
             Recibimos tu solicitud para <strong>{{ confirmation.apartmentName }}</strong>.
             @if (paymentOutcome === 'approved') {
-              El pago fue validado y la reserva quedó confirmada.
+              AZUL informó el pago como aprobado. La confirmación final se registra al verificarlo en el servidor.
             } @else {
               La reserva quedó registrada y conserva saldo pendiente hasta completar el pago.
             }
@@ -52,7 +52,7 @@
           </div>
           @if (paymentOutcome === 'approved') {
             <div class="receipt-data">
-              <span>Comprobante</span>
+              <span>Código de reserva</span>
               <strong>{{ confirmation.confirmationCode }}</strong>
               @if (paymentIntentId) {
                 <small>Intento de pago: {{ paymentIntentId }}</small>
@@ -60,7 +60,7 @@
             </div>
             <button type="button" class="receipt-btn" (click)="printReceipt()">
               <i class="bi bi-printer" aria-hidden="true"></i>
-              Imprimir comprobante
+              Imprimir resumen
             </button>
           }
           @if (loadingPaymentOptions) {

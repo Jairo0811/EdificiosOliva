@@ -261,7 +261,7 @@ export class Booking implements OnInit {
   get paymentOutcomeMessage(): string {
     switch (this.paymentOutcome) {
       case 'approved':
-        return 'Pago aprobado y validado. La reserva quedó confirmada en el sistema.';
+        return 'Recibimos el retorno de AZUL con el pago aprobado. Edificios Oliva verifica la confirmación en su sistema; conserva tu código de reserva y revisa tu correo.';
       case 'declined':
         return 'AZUL declinó el pago. Puedes reintentar mientras la reserva conserve saldo pendiente.';
       case 'cancelled':

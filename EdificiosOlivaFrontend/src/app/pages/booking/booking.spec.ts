@@ -83,4 +83,13 @@ describe('Booking', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('does not claim the reservation is confirmed from the URL outcome alone', () => {
+    component.paymentOutcome = 'approved';
+
+    const message = component.paymentOutcomeMessage;
+
+    expect(message).toContain('verifica');
+    expect(message).not.toContain('quedó confirmada');
+  });
 });
