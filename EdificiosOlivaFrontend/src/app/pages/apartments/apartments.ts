@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Apartment } from '../../core/models/apartment.model';
 import { Apartments as ApartmentsService } from '../../core/services/apartments';
 import { todayInPropertyZone } from '../../core/utils/property-date';
+import { repaint } from '../../core/utils/repaint';
 
 interface ApartmentSearchModel {
   checkInDate: string;
@@ -23,6 +24,7 @@ export class Apartments implements OnInit {
   private readonly apartmentsService = inject(ApartmentsService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly minDate = todayInPropertyZone();
 
@@ -41,6 +43,7 @@ export class Apartments implements OnInit {
     this.apartmentsService
       .getAvailableApartments()
       .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (apartments) => {
           this.apartments = apartments;

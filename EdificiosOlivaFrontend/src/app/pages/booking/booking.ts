@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -15,6 +15,7 @@ import {
   PublicPaymentService,
 } from '../../core/services/public-payments';
 import { todayInPropertyZone } from '../../core/utils/property-date';
+import { repaint } from '../../core/utils/repaint';
 
 interface BookingFormModel {
   fullName: string;
@@ -38,6 +39,7 @@ export class Booking implements OnInit {
   private readonly bookingService = inject(PublicBookingService);
   private readonly paymentService = inject(PublicPaymentService);
   private readonly route = inject(ActivatedRoute);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly minDate = todayInPropertyZone();
   readonly whatsappNumber = '18296196970';
@@ -79,7 +81,8 @@ export class Booking implements OnInit {
     this.loadPaymentProviders();
     this.applyQueryPrefill();
 
-    this.apartmentsService.getAvailableApartments().subscribe({
+    this.apartmentsService.getAvailableApartments().pipe(repaint(this.cdr))
+      .subscribe({
       next: (apartments) => {
         this.apartments = apartments.filter((apartment) => Boolean(apartment.id));
         this.loadingApartments = false;
@@ -169,6 +172,7 @@ export class Booking implements OnInit {
         this.form.checkOutDate,
         this.form.guestCount,
       )
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (availability) => {
           this.availability = availability;
@@ -229,6 +233,7 @@ export class Booking implements OnInit {
         guestCount: this.form.guestCount,
         notes: this.form.notes.trim() || null,
       })
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (confirmation) => {
           this.confirmation = confirmation;
@@ -303,6 +308,7 @@ export class Booking implements OnInit {
         idempotencyKey: this.paymentIdempotencyKey,
         provider: 'AZUL',
       })
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (checkout) => {
           this.persistPendingBooking(this.confirmation!);
@@ -343,7 +349,8 @@ export class Booking implements OnInit {
   }
 
   private loadPaymentProviders(): void {
-    this.paymentService.getProviders().subscribe({
+    this.paymentService.getProviders().pipe(repaint(this.cdr))
+      .subscribe({
       next: (providers) => {
         this.paymentAvailable = providers.some(
           (provider) => provider.provider.toUpperCase() === 'AZUL',
