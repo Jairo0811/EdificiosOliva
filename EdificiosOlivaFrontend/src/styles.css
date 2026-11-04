@@ -207,3 +207,151 @@ textarea:focus {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Shared apartment card (home + listing), Airbnb-style */
+.apartments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 32px 24px;
+}
+
+.apartments-grid .apartment-card {
+  position: relative;
+}
+
+.apartments-grid .image-wrapper {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  aspect-ratio: 4 / 3;
+  background: #e5e7eb;
+}
+
+.apartments-grid .image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.apartments-grid .apartment-card:hover .image-wrapper img {
+  transform: scale(1.04);
+}
+
+.apartments-grid .card-body {
+  padding: 12px 2px 0;
+}
+
+.apartments-grid .card-body h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.apartments-grid .card-link {
+  color: inherit;
+}
+
+.apartments-grid .card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+}
+
+.apartments-grid .card-link:focus-visible {
+  outline: none;
+}
+
+.apartments-grid .card-link:focus-visible::after {
+  outline: 3px solid var(--secondary);
+  outline-offset: 3px;
+}
+
+.apartments-grid .location,
+.apartments-grid .specs {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.apartments-grid .price {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+/* Shared search pill (home + listing) */
+.search-grid,
+.filters-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  align-items: center;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-lg);
+}
+
+.search-grid > div,
+.filters-card > div {
+  padding: 8px 24px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.search-grid > div:focus-within,
+.filters-card > div:focus-within {
+  background: #f3f4f6;
+  border-radius: var(--radius-pill);
+}
+
+.search-grid label,
+.filters-card label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.search-grid input,
+.search-grid select,
+.filters-card input,
+.filters-card select {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  padding: 2px 0;
+}
+
+.search-grid button,
+.filters-card button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  padding: 16px 28px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.search-grid button:hover:not(:disabled),
+.filters-card button:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.search-grid button:disabled,
+.filters-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
