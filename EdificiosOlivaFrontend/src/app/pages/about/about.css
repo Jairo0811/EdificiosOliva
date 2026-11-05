@@ -1,37 +1,7 @@
-.about-hero{
-  position:relative;
-  height:430px;
-  display:grid;
-  place-items:center;
-  color:#fff;
-  text-align:center;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(0,180,216,.22), transparent 34%),
-    linear-gradient(135deg,#071f35,#0f4c81);
-}
 
-.overlay{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.45);
-}
 
-.hero-content{
-  position:relative;
-  z-index:2;
-}
 
-.hero-content span{
-  color:#f5e6c8;
-  text-transform:uppercase;
-  letter-spacing:2px;
-  font-weight:700;
-}
 
-.hero-content h1{
-  font-size:64px;
-  margin:15px 0;
-}
 
 .about-story{
   padding:100px 0;
@@ -194,9 +164,6 @@
 
 @media(max-width:992px){
 
-  .about-hero{
-    background-attachment:scroll;
-  }
 
   .story-grid,
   .values-grid,
@@ -214,8 +181,5 @@
     align-items:center;
   }
 
-  .hero-content h1{
-    font-size:42px;
-  }
 
 }

@@ -1,30 +1,6 @@
-.booking-hero {
-  position: relative;
-  min-height: 420px;
-  background-color: #0b2740;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  text-align: center;
-}
 
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(6, 28, 48, 0.78), rgba(15, 76, 129, 0.48));
-}
 
-.hero-content {
-  position: relative;
-  z-index: 2;
-  max-width: 760px;
-  padding: 40px 24px;
-}
 
-.hero-content span,
 .eyebrow {
   color: #c79b51;
   font-weight: 800;
@@ -33,17 +9,7 @@
   font-size: 0.78rem;
 }
 
-.hero-content h1 {
-  font-size: clamp(2.7rem, 6vw, 4rem);
-  margin: 15px 0;
-}
 
-.hero-content p {
-  max-width: 620px;
-  margin: 0 auto;
-  font-size: 1.08rem;
-  line-height: 1.7;
-}
 
 .booking-section {
   padding: 90px 0;
@@ -405,9 +371,6 @@
 }
 
 @media (max-width: 992px) {
-  .booking-hero {
-    background-attachment: scroll;
-  }
 
   .booking-grid {
     grid-template-columns: 1fr;
@@ -475,7 +438,7 @@
 }
 
 @media print {
-  .booking-hero,
+  .eo-hero,
   .booking-alert,
   .online-payment-card,
   .whatsapp-btn,

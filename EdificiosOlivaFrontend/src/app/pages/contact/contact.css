@@ -1,38 +1,7 @@
-.contact-hero {
-  position: relative;
-  height: 420px;
-  background:
-    radial-gradient(circle at 78% 24%, rgba(0, 180, 216, 0.24), transparent 30%),
-    linear-gradient(135deg, #071f35, #0f4c81);
-  background-attachment: fixed;
-  display: grid;
-  place-items: center;
-  color: white;
-  text-align: center;
-}
 
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-}
 
-.hero-content {
-  position: relative;
-  z-index: 2;
-}
 
-.hero-content span {
-  color: #f5e6c8;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-weight: 700;
-}
 
-.hero-content h1 {
-  font-size: 64px;
-  margin: 15px 0;
-}
 
 .contact-section {
   padding: 90px 0;
@@ -142,15 +111,9 @@
 }
 
 @media (max-width: 992px) {
-  .contact-hero {
-    background-attachment: scroll;
-  }
 
   .contact-grid {
     grid-template-columns: 1fr;
   }
 
-  .hero-content h1 {
-    font-size: 42px;
-  }
 }

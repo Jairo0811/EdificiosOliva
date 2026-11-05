@@ -439,3 +439,54 @@ textarea:focus {
     flex: 3 1 0;
   }
 }
+
+/* Design system: shared page hero (about, contact, gallery, policies, booking) */
+.eo-hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: clamp(280px, 40vh, 420px);
+  background-color: #0b2740;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0, 180, 216, 0.22), transparent 34%),
+    linear-gradient(135deg, #071f35, #0f4c81);
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  text-align: center;
+}
+
+.eo-hero .overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(6, 28, 48, 0.78), rgba(15, 76, 129, 0.48));
+}
+
+.eo-hero .hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  padding: 40px 24px;
+}
+
+.eo-hero .hero-content span {
+  color: #f5e6c8;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.eo-hero .hero-content h1 {
+  margin: 14px 0;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  line-height: 1.1;
+}
+
+.eo-hero .hero-content p {
+  max-width: 620px;
+  margin: 0 auto;
+  color: #e6eef5;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
