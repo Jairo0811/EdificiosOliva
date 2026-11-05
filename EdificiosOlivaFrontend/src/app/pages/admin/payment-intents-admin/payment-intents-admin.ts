@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -7,6 +7,7 @@ import {
   PaymentIntentAdmin,
   PaymentIntentsService,
 } from '../../../core/services/payment-intents';
+import { repaint } from '../../../core/utils/repaint';
 
 @Component({
   selector: 'app-payment-intents-admin',
@@ -16,6 +17,7 @@ import {
 })
 export class PaymentIntentsAdmin implements OnInit {
   private readonly service = inject(PaymentIntentsService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   intents: PaymentIntentAdmin[] = [];
   loading = true;
@@ -54,6 +56,7 @@ export class PaymentIntentsAdmin implements OnInit {
         provider: this.provider,
         status: this.status || undefined,
       })
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (result) => {
           this.intents = result.items;
@@ -108,6 +111,7 @@ export class PaymentIntentsAdmin implements OnInit {
           this.reconciliation.providerTransactionId?.trim() || null,
         notes: this.reconciliation.notes.trim(),
       })
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: () => {
           this.saving = false;

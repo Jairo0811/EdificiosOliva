@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -7,6 +7,7 @@ import {
   OperationsReservationItem,
   OperationsService,
 } from '../../../core/services/operations';
+import { repaint } from '../../../core/utils/repaint';
 
 @Component({
   selector: 'app-operations',
@@ -16,6 +17,7 @@ import {
 })
 export class Operations implements OnInit {
   private readonly operationsService = inject(OperationsService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   loading = true;
   downloading = false;
@@ -46,7 +48,10 @@ export class Operations implements OnInit {
     }
 
     this.loading = true;
-    this.operationsService.getAnalytics(this.fromDate, this.toDate).subscribe({
+    this.operationsService
+      .getAnalytics(this.fromDate, this.toDate)
+      .pipe(repaint(this.cdr))
+      .subscribe({
       next: (analytics) => {
         this.analytics = analytics;
         this.loading = false;
@@ -88,6 +93,8 @@ export class Operations implements OnInit {
     } catch {
       this.copyMessage = absoluteUrl;
     }
+
+    this.cdr.markForCheck();
   }
 
   statusLabel(status: number): string {
@@ -127,7 +134,7 @@ export class Operations implements OnInit {
     this.downloading = true;
     this.errorMessage = '';
 
-    request.subscribe({
+    request.pipe(repaint(this.cdr)).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
