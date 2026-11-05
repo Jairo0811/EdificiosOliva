@@ -2,6 +2,45 @@
 
 Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
+## [Unreleased] - v1.3.0 (en curso, PR #30)
+
+> Alcance parcial: ver "Pendiente" al final de esta sección. No es una release.
+
+### Añadido
+
+- `POST /api/public/payments/status`: consulta de **solo lectura** del estado de pago. Autoriza con
+  `reservationId` + código de reserva + correo (igual que el checkout), responde 404 uniforme ante
+  cualquier discrepancia, limita la consulta a reservas de los últimos 30 días, usa la política de
+  rate limit `PublicPayment` y `Cache-Control: no-store`. Se usa POST solo para no exponer correo ni
+  código en la URL. Estados: `NotStarted, Pending, Confirmed, Declined, Cancelled, Refunded,
+  RequiresReview` (numéricos). `Confirmed` exige intento `Succeeded` **y** reserva ya confirmada.
+- Idempotencia en `POST /api/public/bookings` mediante la cabecera opcional `Idempotency-Key`
+  (8-100 caracteres `[A-Za-z0-9._:-]`): reintento idéntico -> 200 con la reserva original y
+  `Idempotent-Replayed: true`; misma clave con datos distintos -> 409. Índice único filtrado en
+  `Reservations.IdempotencyKey`. Sin cabecera el comportamiento no cambia.
+- **Migración `AddReservationIdempotency`**: aplicar `dotnet ef database update` **antes** de desplegar
+  este backend (agrega dos columnas nulas y un índice).
+- Stepper de reserva de cinco pasos (Estadía, Huésped, Revisión, Pago, Resultado) accesible por teclado.
+- Verificación del pago en `/reservar` tras el retorno de AZUL con sondeo acotado (6 intentos / 4 s).
+- Pruebas: backend 32 (CI), frontend 83.
+
+### Corregido
+
+- Parámetros entre detalle y `/reservar`, fechas en zona horaria de la propiedad, repintado sin Zone.js,
+  textos que daban por confirmada una reserva solo por `?payment=approved`, `re2js` (GHSA-gg6h-894w-4m9c).
+
+### Seguridad
+
+- La UI nunca declara un pago aprobado sin confirmación del backend; un retorno manipulado no confirma.
+- No se inicia un segundo cobro mientras el pago esté pendiente, confirmado, en revisión o sin verificar.
+- Sin cambios en la verificación criptográfica de AZUL ni en la conciliación.
+
+### Pendiente en v1.3 (no implementado)
+
+Sistema de diseño en Nosotros/Contacto/Galería/Login/Registro/Políticas/navbar/footer, lightbox accesible,
+Administración 2.0, auditoría responsive/WCAG completa, auditoría de dependencias y métricas LCP/CLS,
+pruebas E2E, pruebas backend con base de datos (concurrencia real), README ampliado.
+
 ## [1.2.0] - 2026-10-27
 
 ### Añadido

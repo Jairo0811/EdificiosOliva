@@ -90,7 +90,8 @@ Angular /booking
    │          ├── valida capacidad
    │          └── detecta solapamientos
    │
-   └── POST /api/public/bookings
+   ├── POST /api/public/bookings        (cabecera opcional Idempotency-Key)
+   └── POST /api/public/payments/status (solo lectura; estado real del pago)
               │
               ├── crea/reutiliza Customer
               ├── vuelve a comprobar disponibilidad
