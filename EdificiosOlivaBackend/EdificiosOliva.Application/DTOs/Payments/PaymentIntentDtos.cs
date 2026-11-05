@@ -100,6 +100,49 @@ public sealed class CreatePublicPaymentCheckoutRequest
     public string Provider { get; init; } = "AZUL";
 }
 
+public sealed class PublicPaymentStatusRequest
+{
+    [Required]
+    public Guid ReservationId { get; init; }
+
+    [Required, StringLength(32, MinimumLength = 5)]
+    public string ConfirmationCode { get; init; } = string.Empty;
+
+    [Required, EmailAddress, StringLength(200)]
+    public string Email { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Opcional. Si se envía debe pertenecer a la misma reserva;
+    /// en caso contrario se evalúa el intento más reciente.
+    /// </summary>
+    public Guid? PaymentIntentId { get; init; }
+}
+
+/// <summary>
+/// Estado de pago visible para el huésped, derivado únicamente de datos
+/// persistidos y verificados por el backend (nunca del retorno del navegador).
+/// </summary>
+public enum PublicPaymentState
+{
+    NotStarted = 0,
+    Pending = 1,
+    Confirmed = 2,
+    Declined = 3,
+    Cancelled = 4,
+    Refunded = 5,
+    RequiresReview = 6,
+}
+
+public sealed record PublicPaymentStatusResponse(
+    Guid ReservationId,
+    string ConfirmationCode,
+    ReservationStatus ReservationStatus,
+    PublicPaymentState PaymentState,
+    Guid? PaymentIntentId,
+    decimal Amount,
+    string Currency,
+    DateTime CheckedAtUtc);
+
 public sealed record PublicPaymentCheckoutResponse(
     Guid PaymentIntentId,
     string Provider,

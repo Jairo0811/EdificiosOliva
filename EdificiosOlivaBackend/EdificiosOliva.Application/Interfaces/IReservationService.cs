@@ -24,8 +24,9 @@ public interface IReservationService
         int guestCount,
         CancellationToken cancellationToken = default);
 
-    Task<PublicBookingResponse> CreatePublicAsync(
+    Task<PublicBookingCreateResult> CreatePublicAsync(
         PublicBookingRequest request,
+        string? idempotencyKey,
         CancellationToken cancellationToken = default);
 
     Task<bool> UpdateAsync(

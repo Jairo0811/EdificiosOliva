@@ -496,6 +496,14 @@ namespace EdificiosOliva.Infrastructure.Persistence.Migrations
                     b.Property<int>("GuestCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("IdempotencyFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -520,6 +528,10 @@ namespace EdificiosOliva.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("[IdempotencyKey] IS NOT NULL");
 
                     b.HasIndex("ApartmentId", "CheckInDate", "CheckOutDate");
 

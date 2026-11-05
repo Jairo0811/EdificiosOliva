@@ -33,15 +33,33 @@ public sealed class PublicBookingsController(IReservationService reservationServ
         return Ok(result);
     }
 
+    /// <summary>
+    /// Crea una reserva pública. Si se envía la cabecera <c>Idempotency-Key</c>,
+    /// un reintento con los mismos datos devuelve la reserva original (200) sin
+    /// duplicarla; la misma clave con datos distintos responde 409.
+    /// </summary>
     [HttpPost]
     [ProducesResponseType<PublicBookingResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<PublicBookingResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<PublicBookingResponse>> Create(
         [FromBody] PublicBookingRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await reservationService.CreatePublicAsync(request, cancellationToken);
-        return Created($"/api/reservations/{result.ReservationId}", result);
+        var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
+        var result = await reservationService.CreatePublicAsync(
+            request,
+            idempotencyKey,
+            cancellationToken);
+
+        if (result.Replayed)
+        {
+            Response.Headers["Idempotent-Replayed"] = "true";
+            return Ok(result.Booking);
+        }
+
+        return Created($"/api/reservations/{result.Booking.ReservationId}", result.Booking);
     }
 }

@@ -42,6 +42,11 @@ public sealed record PublicBookingResponse(
     decimal TotalAmount,
     ReservationStatus Status);
 
+/// <summary>Resultado de crear una reserva pública; <c>Replayed</c> indica un reintento idempotente.</summary>
+public sealed record PublicBookingCreateResult(
+    PublicBookingResponse Booking,
+    bool Replayed);
+
 public sealed class PublicBookingRequest
 {
     [Required, StringLength(150, MinimumLength = 2)]

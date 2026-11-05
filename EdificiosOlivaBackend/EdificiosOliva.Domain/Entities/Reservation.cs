@@ -18,4 +18,10 @@ public sealed class Reservation : BaseEntity
     public decimal TotalAmount { get; set; }
     public ReservationStatus Status { get; set; } = ReservationStatus.Pending;
     public string? Notes { get; set; }
+
+    /// <summary>Clave de idempotencia de la creación pública (nula en reservas administrativas).</summary>
+    public string? IdempotencyKey { get; set; }
+
+    /// <summary>Huella SHA-256 de la solicitud que originó la clave.</summary>
+    public string? IdempotencyFingerprint { get; set; }
 }

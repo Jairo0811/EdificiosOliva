@@ -1,4 +1,5 @@
 using System.Data;
+using EdificiosOliva.Application.Common.Exceptions;
 using EdificiosOliva.Application.Common.Models;
 using EdificiosOliva.Application.DTOs.Notifications;
 using EdificiosOliva.Application.DTOs.Reservations;
@@ -150,9 +151,84 @@ public sealed class ReservationService(
             apartment.PricePerNight * nights);
     }
 
-    public async Task<PublicBookingResponse> CreatePublicAsync(
+    public async Task<PublicBookingCreateResult> CreatePublicAsync(
         PublicBookingRequest request,
+        string? idempotencyKey,
         CancellationToken cancellationToken = default)
+    {
+        var key = BookingRequestFingerprint.NormalizeKey(idempotencyKey);
+        if (key is null)
+        {
+            return new PublicBookingCreateResult(
+                await CreatePublicCoreAsync(request, null, null, cancellationToken),
+                false);
+        }
+
+        var fingerprint = BookingRequestFingerprint.Compute(request);
+
+        var existing = await FindByIdempotencyKeyAsync(key, cancellationToken);
+        if (existing is not null)
+        {
+            return ReplayExisting(existing, fingerprint);
+        }
+
+        try
+        {
+            return new PublicBookingCreateResult(
+                await CreatePublicCoreAsync(request, key, fingerprint, cancellationToken),
+                false);
+        }
+        catch (Exception exception) when (
+            exception is not OperationCanceledException &&
+            exception is not IdempotencyConflictException)
+        {
+            // Solicitud concurrente con la misma clave (violación del índice único,
+            // interbloqueo serializable o solapamiento con la reserva recién creada):
+            // si la reserva original ya existe, la respuesta correcta es devolverla.
+            dbContext.ChangeTracker.Clear();
+
+            var concurrent = await FindByIdempotencyKeyAsync(key, cancellationToken);
+            if (concurrent is not null)
+            {
+                return ReplayExisting(concurrent, fingerprint);
+            }
+
+            throw;
+        }
+    }
+
+    private async Task<Reservation?> FindByIdempotencyKeyAsync(
+        string key,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.Reservations
+            .AsNoTracking()
+            .Include(item => item.Customer)
+            .Include(item => item.Apartment)
+            .SingleOrDefaultAsync(item => item.IdempotencyKey == key, cancellationToken);
+    }
+
+    private static PublicBookingCreateResult ReplayExisting(
+        Reservation existing,
+        string fingerprint)
+    {
+        if (existing.IsDeleted ||
+            !string.Equals(existing.IdempotencyFingerprint, fingerprint, StringComparison.Ordinal))
+        {
+            throw new IdempotencyConflictException(
+                "La clave de idempotencia ya fue utilizada con una solicitud distinta.");
+        }
+
+        return new PublicBookingCreateResult(
+            MapPublicResponse(existing, existing.Customer.Email),
+            true);
+    }
+
+    private async Task<PublicBookingResponse> CreatePublicCoreAsync(
+        PublicBookingRequest request,
+        string? idempotencyKey,
+        string? fingerprint,
+        CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
@@ -208,6 +284,8 @@ public sealed class ReservationService(
             TotalAmount = availability.TotalAmount,
             Status = ReservationStatus.Pending,
             Notes = NormalizeOptional(request.Notes),
+            IdempotencyKey = idempotencyKey,
+            IdempotencyFingerprint = fingerprint,
         };
 
         await dbContext.Reservations.AddAsync(reservation, cancellationToken);
