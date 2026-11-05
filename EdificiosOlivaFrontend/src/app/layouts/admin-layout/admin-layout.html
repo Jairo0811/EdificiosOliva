@@ -1,4 +1,6 @@
 <div class="admin-layout">
+  <a class="skip-link" href="#admin-main">Saltar al contenido</a>
+
   <button
     class="mobile-menu"
     type="button"
@@ -49,78 +51,24 @@
     </a>
 
     <nav aria-label="Navegación del panel administrativo">
-      <a
-        routerLink="/admin"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
-        <span>Dashboard</span>
-      </a>
+      @for (group of navGroups; track group.title) {
+        <div class="nav-group" role="group" [attr.aria-label]="group.title">
+          <span class="nav-group-title" aria-hidden="true">{{ group.title }}</span>
 
-      <a
-        routerLink="/admin/apartamentos"
-        routerLinkActive="active"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-building-fill" aria-hidden="true"></i>
-        <span>Apartamentos</span>
-      </a>
-
-      <a
-        routerLink="/admin/reservas"
-        routerLinkActive="active"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-calendar-check-fill" aria-hidden="true"></i>
-        <span>Reservas</span>
-      </a>
-
-      <a
-        routerLink="/admin/clientes"
-        routerLinkActive="active"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-people-fill" aria-hidden="true"></i>
-        <span>Clientes</span>
-      </a>
-
-      <a
-        routerLink="/admin/pagos"
-        routerLinkActive="active"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-credit-card-fill" aria-hidden="true"></i>
-        <span>Pagos</span>
-      </a>
-
-      <a
-        routerLink="/admin/intentos-pago"
-        routerLinkActive="active"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-shield-check" aria-hidden="true"></i>
-        <span>Operación de pagos</span>
-      </a>
-
-      <a
-        routerLink="/admin/operacion"
-        routerLinkActive="active"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i>
-        <span>Operación y analítica</span>
-      </a>
-
-      <a
-        routerLink="/admin/galeria"
-        routerLinkActive="active"
-        (click)="closeMenu()"
-      >
-        <i class="bi bi-images" aria-hidden="true"></i>
-        <span>Galería</span>
-      </a>
+          @for (item of group.items; track item.link) {
+            <a
+              [routerLink]="item.link"
+              routerLinkActive="active"
+              ariaCurrentWhenActive="page"
+              [routerLinkActiveOptions]="{ exact: !!item.exact }"
+              (click)="closeMenu()"
+            >
+              <i class="bi" [class]="'bi ' + item.icon" aria-hidden="true"></i>
+              <span>{{ item.label }}</span>
+            </a>
+          }
+        </div>
+      }
     </nav>
 
     <div class="sidebar-account">
@@ -152,11 +100,11 @@
     </div>
   </aside>
 
-  <main>
+  <main id="admin-main" tabindex="-1">
     <header class="topbar">
       <div class="topbar-heading">
         <span class="topbar-kicker">Edificios Oliva</span>
-        <h1>Panel Administrativo</h1>
+        <h1>{{ pageTitle }}</h1>
       </div>
 
       <div class="topbar-actions">
