@@ -24,8 +24,25 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 - Verificación del pago en `/reservar` tras el retorno de AZUL con sondeo acotado (6 intentos / 4 s).
 - Pruebas: backend 32 (CI), frontend 83.
 
+### Cambiado
+
+- Dependencias sin consumidores eliminadas: `@fortawesome/fontawesome-free`, `aos`, `leaflet` (CSS y JS
+  globales en `angular.json`) y `swiper`. Se conservan Bootstrap, Bootstrap Icons (92 usos) y Angular
+  Material (aporta el tema `--mat-sys-*`; `@angular/cdk` es su dependencia). Medido en build de producción
+  en sandbox (fuentes de Google desactivadas): carga inicial 322.08 kB -> 263.48 kB transferidos
+  (1.46 MB -> 1.18 MB sin comprimir); `styles.css` 57.12 -> 35.81 kB; `scripts.js` (Leaflet, 37.29 kB) eliminado.
+- Sistema de diseño: `.eo-hero`, `.eo-stepper`, `.eo-input`, `.eo-btn`, `.eo-alert` en `styles.css`.
+- Administración: navegación agrupada (General, Alojamiento, Reservas, Finanzas, Operación), título de
+  sección dinámico, enlace "Saltar al contenido", tablas desplazables enfocables y diálogo de conciliación
+  accesible (foco, Escape). Sin cambios en las reglas de conciliación.
+- Galería: lightbox accesible (Escape, flechas, foco atrapado y restaurado).
+- Contacto: el formulario no enviaba nada; ahora valida y abre WhatsApp con el mensaje (no hay endpoint).
+- Registro: placeholder reemplazado por página informativa (no existe registro público).
+
 ### Corregido
 
+- Login: eliminado `console.log` de credenciales/perfil; los errores ya se muestran.
+- Repintado sin Zone.js en Login, Navbar, layout admin, Intentos de pago y Operación.
 - Parámetros entre detalle y `/reservar`, fechas en zona horaria de la propiedad, repintado sin Zone.js,
   textos que daban por confirmada una reserva solo por `?payment=approved`, `re2js` (GHSA-gg6h-894w-4m9c).
 
@@ -37,9 +54,10 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
 ### Pendiente en v1.3 (no implementado)
 
-Sistema de diseño en Nosotros/Contacto/Galería/Login/Registro/Políticas/navbar/footer, lightbox accesible,
-Administración 2.0, auditoría responsive/WCAG completa, auditoría de dependencias y métricas LCP/CLS,
-pruebas E2E, pruebas backend con base de datos (concurrencia real), README ampliado.
+Administración 2.0 (dashboard con filtros/KPI, vistas adaptadas de tablas, estilos con tokens en las
+pantallas admin; solo se hizo navegación, accesibilidad y repintado), auditoría responsive/WCAG completa,
+métricas LCP/CLS/Lighthouse, pruebas E2E, pruebas backend con base de datos (concurrencia real),
+README ampliado.
 
 ## [1.2.0] - 2026-10-27
 
