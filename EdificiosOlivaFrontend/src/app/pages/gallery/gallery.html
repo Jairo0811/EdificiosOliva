@@ -64,7 +64,8 @@
     class="lightbox"
     role="dialog"
     aria-modal="true"
-    aria-label="Visor de imágenes de la galería"
+    aria-labelledby="lightbox-title"
+    (click)="$event.target === $event.currentTarget && closeLightbox()"
   >
     <button
       class="lightbox-close"
@@ -89,9 +90,9 @@
       [alt]="selectedImage.altText"
     />
 
-    <div class="lightbox-caption">
-      <strong>{{ selectedImage.title }}</strong>
-      <span>{{ selectedImage.category }}</span>
+    <div class="lightbox-caption" aria-live="polite">
+      <strong id="lightbox-title">{{ selectedImage.title }}</strong>
+      <span>{{ selectedImage.category }} · {{ selectedIndex + 1 }} de {{ images.length }}</span>
     </div>
 
     <button
