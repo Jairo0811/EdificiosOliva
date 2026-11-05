@@ -74,4 +74,23 @@ describe('PaymentIntentsAdmin', () => {
     expect(component.loading).toBe(false);
     expect(fixture.nativeElement.textContent).toContain('ABCDEF12');
   });
+
+  it('moves focus into the reconciliation dialog and closes it with Escape', () => {
+    component.openReconciliation(intent);
+
+    expect(document.activeElement?.classList.contains('reconcile-modal')).toBe(true);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(component.selected).toBeNull();
+  });
+
+  it('does not close the dialog with Escape while saving', () => {
+    component.openReconciliation(intent);
+    component.saving = true;
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(component.selected).not.toBeNull();
+  });
 });

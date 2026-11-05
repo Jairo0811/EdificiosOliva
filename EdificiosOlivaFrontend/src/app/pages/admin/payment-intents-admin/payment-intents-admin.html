@@ -59,7 +59,7 @@
     </button>
   </div>
 
-  <div class="table-card">
+  <div class="table-card" role="region" aria-label="Tabla de intentos de pago" tabindex="0">
     @if (loading) {
       <div class="empty-state">Cargando intentos de pago…</div>
     } @else if (intents.length === 0) {
@@ -136,13 +136,13 @@
 
   @if (selected) {
     <div class="modal-backdrop">
-      <div class="reconcile-modal" role="dialog" aria-modal="true" aria-labelledby="reconcile-title">
+      <div class="reconcile-modal" role="dialog" aria-modal="true" aria-labelledby="reconcile-title" tabindex="-1">
         <div class="modal-header">
           <div>
             <span>{{ selected.provider }} · {{ selected.providerReference || shortId(selected.id) }}</span>
             <h2 id="reconcile-title">Conciliar intento de pago</h2>
           </div>
-          <button type="button" class="close-btn" (click)="closeReconciliation()" [disabled]="saving">×</button>
+          <button type="button" class="close-btn" (click)="closeReconciliation()" [disabled]="saving" aria-label="Cerrar conciliación">×</button>
         </div>
 
         @if (errorMessage) {

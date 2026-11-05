@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -69,7 +69,18 @@ export class PaymentIntentsAdmin implements OnInit {
       });
   }
 
+  private lastFocused: HTMLElement | null = null;
+
+  /** Escape closes the reconciliation dialog unless a save is in flight. */
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.selected) {
+      this.closeReconciliation();
+    }
+  }
+
   openReconciliation(intent: PaymentIntentAdmin): void {
+    this.lastFocused = document.activeElement as HTMLElement | null;
     this.selected = intent;
     this.reconciliation = {
       outcome: 1,
@@ -78,11 +89,16 @@ export class PaymentIntentsAdmin implements OnInit {
     };
     this.errorMessage = '';
     this.successMessage = '';
+    this.cdr.detectChanges();
+    document.querySelector<HTMLElement>('.reconcile-modal')?.focus();
   }
 
   closeReconciliation(): void {
     if (!this.saving) {
       this.selected = null;
+      this.cdr.detectChanges();
+      this.lastFocused?.focus();
+      this.lastFocused = null;
     }
   }
 
