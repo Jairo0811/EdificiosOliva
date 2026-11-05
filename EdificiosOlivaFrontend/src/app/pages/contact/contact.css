@@ -49,35 +49,9 @@
   gap: 18px;
 }
 
-.contact-form input,
-.contact-form textarea {
-  border: 1px solid #d8dee9;
-  border-radius: 14px;
-  padding: 15px;
-  font-size: 15px;
-}
 
-.contact-form input:focus,
-.contact-form textarea:focus {
-  outline: none;
-  border-color: #0f4c81;
-}
 
-.contact-form button {
-  border: none;
-  border-radius: 14px;
-  padding: 16px;
-  background: #0f4c81;
-  color: white;
-  font-size: 17px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.3s;
-}
 
-.contact-form button:hover {
-  background: #0077b6;
-}
 
 .contact-map iframe {
   width: 100%;

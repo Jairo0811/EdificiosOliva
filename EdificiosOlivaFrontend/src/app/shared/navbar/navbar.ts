@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, HostListener, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { User } from 'firebase/auth';
@@ -17,6 +17,8 @@ export class Navbar implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  // No zone.js: state assigned after an async call must be repainted explicitly.
+  private readonly cdr = inject(ChangeDetectorRef);
 
   firebaseUser: User | null = null;
   profile: AppUser | null = null;
@@ -41,7 +43,15 @@ export class Navbar implements OnInit {
 
     this.authService.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (user) => {
       this.firebaseUser = user;
-      this.profile = user ? await this.authService.getUserProfile(user.uid) : null;
+      this.cdr.markForCheck();
+
+      try {
+        this.profile = user ? await this.authService.getUserProfile(user.uid) : null;
+      } catch {
+        this.profile = null;
+      }
+
+      this.cdr.markForCheck();
     });
   }
 
@@ -52,6 +62,14 @@ export class Navbar implements OnInit {
       this.firebaseUser?.email?.split('@')[0] ||
       'Usuario'
     );
+  }
+
+  /** Escape closes any open menu (keyboard users must be able to dismiss it). */
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.menuOpen || this.userMenuOpen) {
+      this.closeMenus();
+    }
   }
 
   toggleMenu(): void {
@@ -102,6 +120,7 @@ export class Navbar implements OnInit {
       await this.router.navigateByUrl('/');
     } finally {
       this.loggingOut = false;
+      this.cdr.markForCheck();
     }
   }
 

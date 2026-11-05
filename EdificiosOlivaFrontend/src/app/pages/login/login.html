@@ -10,10 +10,11 @@
       <p>Accede para administrar apartamentos, reservas, clientes y pagos.</p>
     </div>
 
-    <form (ngSubmit)="login()" autocomplete="on">
-      <label for="email"> Correo electrónico </label>
+    <form (ngSubmit)="login()" autocomplete="on" novalidate>
+      <label class="eo-label" for="email">Correo electrónico</label>
 
       <input
+        class="eo-input"
         id="email"
         type="email"
         name="email"
@@ -22,12 +23,18 @@
         placeholder="admin@edificiosoliva.com"
         required
         aria-required="true"
+        [attr.aria-invalid]="emailError ? 'true' : null"
+        [attr.aria-describedby]="emailError ? 'email-error' : null"
       />
+      @if (emailError) {
+        <p class="eo-field-error" id="email-error">{{ emailError }}</p>
+      }
 
-      <label for="password"> Contraseña </label>
+      <label class="eo-label" for="password">Contraseña</label>
 
       <div class="password-field">
         <input
+          class="eo-input"
           id="password"
           [type]="showPassword ? 'text' : 'password'"
           name="password"
@@ -54,16 +61,14 @@
       </div>
 
       @if (errorMessage) {
-        <div class="error-message" role="alert" aria-live="assertive">
+        <div class="eo-alert" role="alert">
           {{ errorMessage }}
         </div>
       }
 
-      <button class="login-btn" type="submit" [disabled]="loading" [attr.aria-busy]="loading">
+      <button class="eo-btn eo-btn-primary login-btn" type="submit" [disabled]="loading" [attr.aria-busy]="loading">
         @if (loading) {
-          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"> </span>
-
-          Iniciando sesión...
+          Iniciando sesión…
         } @else {
           Iniciar sesión
         }
@@ -74,7 +79,7 @@
       </div>
 
       <button
-        class="google-btn"
+        class="eo-btn eo-btn-outline google-btn"
         type="button"
         (click)="loginGoogle()"
         [disabled]="loading"

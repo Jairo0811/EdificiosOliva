@@ -490,3 +490,95 @@ textarea:focus {
   font-size: 1.05rem;
   line-height: 1.7;
 }
+
+/* Design system: form controls, buttons and alerts */
+.eo-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid #d0d7e2;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.eo-input:focus {
+  border-color: #0f4c81;
+  box-shadow: 0 0 0 4px rgba(15, 76, 129, 0.14);
+  outline: none;
+}
+
+.eo-input[aria-invalid='true'] {
+  border-color: #b3261e;
+}
+
+.eo-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.eo-field-error {
+  margin: 6px 0 0;
+  color: #b3261e;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.eo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.eo-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.eo-btn-primary {
+  background: #0f4c81;
+  color: #fff;
+}
+
+.eo-btn-primary:hover:not(:disabled) {
+  background: #0c3d68;
+}
+
+.eo-btn-outline {
+  border-color: #d0d7e2;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.eo-btn-outline:hover:not(:disabled) {
+  border-color: #0f4c81;
+}
+
+.eo-alert {
+  padding: 14px 16px;
+  border: 1px solid #f1c8c8;
+  border-radius: var(--radius-md);
+  background: #fdeaea;
+  color: #8a1c1c;
+  font-weight: 600;
+}
+
+.eo-alert-info {
+  border-color: #c8dced;
+  background: #f3f8fc;
+  color: #234b6e;
+}
