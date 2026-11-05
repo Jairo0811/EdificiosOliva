@@ -20,6 +20,16 @@ public sealed class ReservationConfiguration : IEntityTypeConfiguration<Reservat
         builder.Property(reservation => reservation.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(reservation => reservation.IdempotencyKey)
+            .HasMaxLength(100);
+
+        builder.Property(reservation => reservation.IdempotencyFingerprint)
+            .HasMaxLength(64);
+
+        builder.HasIndex(reservation => reservation.IdempotencyKey)
+            .IsUnique()
+            .HasFilter("[IdempotencyKey] IS NOT NULL");
+
         builder.HasIndex(reservation => new
         {
             reservation.ApartmentId,

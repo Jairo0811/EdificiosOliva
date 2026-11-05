@@ -1,39 +1,7 @@
-.gallery-hero {
-  height: 420px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #0b2740;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  color: white;
-  text-align: center;
-}
 
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-}
 
-.hero-content {
-  position: relative;
-  z-index: 2;
-}
 
-.hero-content span {
-  color: #f5e6c8;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
 
-.hero-content h1 {
-  margin: 15px 0;
-  font-size: 68px;
-}
 
 .gallery-section {
   padding: 90px 0;
@@ -195,13 +163,7 @@
 }
 
 @media (max-width: 768px) {
-  .gallery-hero {
-    background-attachment: scroll;
-  }
 
-  .hero-content h1 {
-    font-size: 42px;
-  }
 
   .lightbox {
     padding: 20px;

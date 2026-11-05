@@ -1,4 +1,4 @@
-<section class="contact-hero" aria-labelledby="contact-title">
+<section class="eo-hero" aria-labelledby="contact-title">
   <div class="overlay"></div>
 
   <div class="hero-content">
@@ -64,51 +64,90 @@
       <div class="contact-form">
         <h2 id="contact-form-title">Envíanos un mensaje</h2>
 
-        <form aria-labelledby="contact-form-title">
-          <label for="contact-name">Nombre completo</label>
-          <input
-            id="contact-name"
-            name="name"
-            type="text"
-            autocomplete="name"
-            required
-            aria-required="true"
-            placeholder="Ej. Juan Pérez"
-          />
+        <form aria-labelledby="contact-form-title" novalidate (ngSubmit)="submit()">
+          <div>
+            <label class="eo-label" for="contact-name">Nombre completo</label>
+            <input
+              class="eo-input"
+              id="contact-name"
+              name="name"
+              type="text"
+              autocomplete="name"
+              [(ngModel)]="form.name"
+              required
+              aria-required="true"
+              placeholder="Ej. Juan Pérez"
+              [attr.aria-invalid]="attempted && errors.name ? 'true' : null"
+              [attr.aria-describedby]="attempted && errors.name ? 'contact-name-error' : null"
+            />
+            @if (attempted && errors.name) {
+              <p class="eo-field-error" id="contact-name-error">{{ errors.name }}</p>
+            }
+          </div>
 
-          <label for="contact-email">Correo electrónico</label>
-          <input
-            id="contact-email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            required
-            aria-required="true"
-            placeholder="ejemplo@correo.com"
-          />
+          <div>
+            <label class="eo-label" for="contact-email">Correo electrónico</label>
+            <input
+              class="eo-input"
+              id="contact-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              [(ngModel)]="form.email"
+              required
+              aria-required="true"
+              placeholder="ejemplo@correo.com"
+              [attr.aria-invalid]="attempted && errors.email ? 'true' : null"
+              [attr.aria-describedby]="attempted && errors.email ? 'contact-email-error' : null"
+            />
+            @if (attempted && errors.email) {
+              <p class="eo-field-error" id="contact-email-error">{{ errors.email }}</p>
+            }
+          </div>
 
-          <label for="contact-phone">Teléfono</label>
-          <input
-            id="contact-phone"
-            name="phone"
-            type="tel"
-            autocomplete="tel"
-            placeholder="Ej. 809-000-0000"
-          />
+          <div>
+            <label class="eo-label" for="contact-phone">Teléfono <small>(opcional)</small></label>
+            <input
+              class="eo-input"
+              id="contact-phone"
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              [(ngModel)]="form.phone"
+              placeholder="Ej. 809-000-0000"
+            />
+          </div>
 
-          <label for="contact-message">Mensaje</label>
-          <textarea
-            id="contact-message"
-            name="message"
-            rows="6"
-            required
-            aria-required="true"
-            placeholder="Escribe tu mensaje..."
-          ></textarea>
+          <div>
+            <label class="eo-label" for="contact-message">Mensaje</label>
+            <textarea
+              class="eo-input"
+              id="contact-message"
+              name="message"
+              rows="6"
+              [(ngModel)]="form.message"
+              required
+              aria-required="true"
+              placeholder="Escribe tu mensaje..."
+              [attr.aria-invalid]="attempted && errors.message ? 'true' : null"
+              [attr.aria-describedby]="attempted && errors.message ? 'contact-message-error' : null"
+            ></textarea>
+            @if (attempted && errors.message) {
+              <p class="eo-field-error" id="contact-message-error">{{ errors.message }}</p>
+            }
+          </div>
 
-          <button type="submit">
-            Enviar mensaje
+          <button class="eo-btn eo-btn-primary" type="submit">
+            <i class="bi bi-whatsapp" aria-hidden="true"></i>
+            Enviar por WhatsApp
           </button>
+
+          @if (handedOff) {
+            <p class="eo-alert eo-alert-info" role="status">
+              Abrimos WhatsApp con tu mensaje. Envíalo desde ahí para que lo recibamos; si no se abrió,
+              escríbenos a {{ email }}.
+            </p>
+          }
         </form>
       </div>
     </div>

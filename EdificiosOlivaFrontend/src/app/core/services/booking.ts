@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -62,7 +62,20 @@ export class PublicBookingService {
     });
   }
 
-  create(request: PublicBookingRequest): Observable<PublicBookingConfirmation> {
-    return this.http.post<PublicBookingConfirmation>(this.apiUrl, request);
+  /**
+   * `idempotencyKey` must be reused for retries of the same request: the backend
+   * then returns the original reservation instead of creating a duplicate.
+   */
+  create(
+    request: PublicBookingRequest,
+    idempotencyKey?: string,
+  ): Observable<PublicBookingConfirmation> {
+    const headers = idempotencyKey
+      ? new HttpHeaders({ 'Idempotency-Key': idempotencyKey })
+      : undefined;
+
+    return this.http.post<PublicBookingConfirmation>(this.apiUrl, request, {
+      headers,
+    });
   }
 }

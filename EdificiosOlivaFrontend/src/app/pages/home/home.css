@@ -1,13 +1,14 @@
 .hero {
   position: relative;
-  height: 85vh;
+  height: 78vh;
+  min-height: 560px;
   display: flex;
   align-items: center;
   color: white;
   background-color: #0b2740;
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
+  background-attachment: scroll;
 }
 
 .hero-overlay {
@@ -41,6 +42,7 @@
 }
 
 .hero h1 {
+  font-weight: 800;
   font-size: 64px;
 
   line-height: 1.1;
@@ -63,7 +65,8 @@
 }
 
 .btn-primary {
-  background: #0f4c81;
+  border: 2px solid var(--accent);
+  background: var(--accent);
 
   color: white;
 
@@ -83,184 +86,41 @@
 }
 
 .search-card {
-  margin-top: -70px;
-
+  margin-top: -44px;
   position: relative;
-
   z-index: 20;
 }
 
-.search-grid {
-  background: white;
-
-  border-radius: 20px;
-
-  padding: 30px;
-
-  display: grid;
-
-  grid-template-columns: repeat(4, 1fr);
-
-  gap: 20px;
-
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
-}
-
-.search-grid label {
-  display: block;
-
-  margin-bottom: 8px;
-
-  font-weight: 600;
-}
-
-.search-grid input,
-.search-grid select {
-  width: 100%;
-
-  padding: 15px;
-
-  border: 1px solid #ddd;
-
-  border-radius: 12px;
-}
-
-.search-grid button {
-  border: none;
-
-  background: #0f4c81;
-
-  color: white;
-
-  border-radius: 14px;
-
-  font-size: 17px;
-
-  cursor: pointer;
-}
 .featured-apartments {
-  padding: 120px 0 80px;
-  background: #f7f9fb;
+  padding: 80px 0;
+  background: var(--surface);
 }
 
 .section-header {
   max-width: 720px;
-  margin: 0 auto 55px;
+  margin: 0 auto 40px;
   text-align: center;
 }
 
 .section-header span {
-  color: #0f4c81;
+  color: var(--primary);
   font-weight: 700;
   letter-spacing: 2px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 
 .section-header h2 {
-  font-size: 46px;
-  margin: 15px 0;
-  color: #1f2933;
+  font-size: clamp(26px, 4vw, 38px);
+  margin: 12px 0;
+  color: var(--text);
 }
 
 .section-header p {
-  color: #6b7280;
-  font-size: 18px;
+  color: var(--text-muted);
+  font-size: 17px;
 }
 
-.apartments-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-}
-
-.apartment-card {
-  background: white;
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(15, 76, 129, 0.1);
-  transition: 0.3s ease;
-}
-
-.apartment-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 25px 70px rgba(15, 76, 129, 0.18);
-}
-
-.apartment-card img {
-  width: 100%;
-  height: 260px;
-  object-fit: cover;
-}
-
-.card-body {
-  padding: 28px;
-}
-
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  align-items: start;
-}
-
-.card-top h3 {
-  font-size: 22px;
-  margin: 0;
-  color: #1f2933;
-}
-
-.card-top span {
-  color: #0f4c81;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.card-body p {
-  color: #6b7280;
-  margin: 18px 0;
-}
-
-.features {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.features span {
-  background: #eef6fb;
-  color: #0f4c81;
-  padding: 8px 12px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.card-body a {
-  display: inline-block;
-  color: white;
-  background: #0f4c81;
-  padding: 12px 22px;
-  border-radius: 30px;
-  font-weight: 600;
-}
-
-@media (max-width: 992px) {
-  .hero h1 {
-    font-size: 46px;
-  }
-
-  .search-grid,
-  .apartments-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero {
-    height: auto;
-    min-height: 760px;
-    padding: 120px 0;
-  }
-}
 .amenities {
   padding: 100px 0;
   background: #ffffff;
@@ -438,26 +298,6 @@
 
   border: none;
 }
-.map-placeholder {
-  height: 100%;
-  min-height: 330px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.94);
-  display: grid;
-  place-content: center;
-  text-align: center;
-  padding: 40px;
-}
-
-.map-placeholder i {
-  font-size: 54px;
-  color: #0f4c81;
-}
-
-.map-placeholder h3 {
-  margin: 20px 0 10px;
-}
-
 .trust-section {
   padding: 100px 0;
   background: #f7f9fb;
@@ -646,7 +486,6 @@
     font-size: 54px;
   }
 
-  .apartments-grid,
   .amenities-grid,
   .trust-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -733,7 +572,6 @@
   .btn-primary,
   .btn-secondary,
   .search-grid button,
-  .card-body a,
   .cta-content a {
     width: 100%;
     text-align: center;
@@ -752,17 +590,8 @@
   .amenities,
   .gallery-preview,
   .location-section,
-  .nearby-section,
-  .testimonials {
+  .nearby-section {
     padding: 70px 0;
-  }
-
-  .apartment-card img {
-    height: 220px;
-  }
-
-  .card-top {
-    flex-direction: column;
   }
 
   .map-card {
@@ -775,5 +604,35 @@
 
   .cta-content p {
     font-size: 17px;
+  }
+}
+/* v1.3 responsive: Airbnb-style search pill and card grid */
+@media (max-width: 992px) {
+  .search-grid {
+    grid-template-columns: 1fr 1fr;
+    border-radius: var(--radius-lg);
+    gap: 4px;
+  }
+
+  .search-grid > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+  }
+
+  .search-grid > div:nth-of-type(3) {
+    grid-column: 1 / -1;
+    border-bottom: 0;
+  }
+
+  .search-grid button {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .search-grid {
+    grid-template-columns: 1fr;
   }
 }

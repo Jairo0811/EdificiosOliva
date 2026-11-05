@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { OperationsService } from '../../../core/services/operations';
 import { Operations } from './operations';
@@ -44,5 +44,24 @@ describe('Operations', () => {
 
   it('should create', () => {
     expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('shows the error message after a failed request without a manual repaint', async () => {
+    const service = TestBed.inject(OperationsService);
+    const failing = new Subject<never>();
+    vi.spyOn(service, 'getAnalytics').mockReturnValue(failing);
+
+    const markForCheck = vi.spyOn(
+      Object.getPrototypeOf(fixture.componentRef.changeDetectorRef),
+      'markForCheck',
+    );
+
+    fixture.componentInstance.load();
+    failing.error({ error: { detail: 'Rango no permitido' } });
+    expect(markForCheck).toHaveBeenCalled();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.loading).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Rango no permitido');
   });
 });

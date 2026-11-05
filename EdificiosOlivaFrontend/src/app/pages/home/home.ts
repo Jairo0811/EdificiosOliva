@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -7,6 +7,8 @@ import { Apartment } from '../../core/models/apartment.model';
 import { GalleryImage } from '../../core/models/gallery-image.model';
 import { Apartments as ApartmentsService } from '../../core/services/apartments';
 import { GalleryImages } from '../../core/services/gallery-images';
+import { todayInPropertyZone } from '../../core/utils/property-date';
+import { repaint } from '../../core/utils/repaint';
 
 interface AvailabilitySearchModel {
   checkInDate: string;
@@ -30,8 +32,9 @@ export class Home implements OnInit {
   private readonly galleryService = inject(GalleryImages);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  readonly minDate = this.toDateInputValue(new Date());
+  readonly minDate = todayInPropertyZone();
 
   featuredApartments: Apartment[] = [];
   galleryPreview: GalleryImage[] = [];
@@ -131,6 +134,7 @@ export class Home implements OnInit {
     this.apartmentsService
       .getAvailableApartments()
       .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (apartments) => {
           this.featuredApartments = apartments.slice(0, 3);
@@ -148,6 +152,7 @@ export class Home implements OnInit {
     this.galleryService
       .getAll('', '', true)
       .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (result) => {
           this.galleryPreview = result.items.slice(0, 5);
@@ -159,10 +164,5 @@ export class Home implements OnInit {
           this.loadingGallery = false;
         },
       });
-  }
-
-  private toDateInputValue(date: Date): string {
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-    return localDate.toISOString().slice(0, 10);
   }
 }

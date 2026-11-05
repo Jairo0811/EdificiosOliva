@@ -42,6 +42,28 @@ public sealed class PublicPaymentsController(
         return Ok(checkout);
     }
 
+    [HttpPost("status")]
+    [EnableRateLimiting("PublicPayment")]
+    [ProducesResponseType<PublicPaymentStatusResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<PublicPaymentStatusResponse>> GetStatus(
+        [FromBody] PublicPaymentStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Consulta de solo lectura. Se usa POST únicamente para no exponer el
+        // correo ni el código de reserva en la URL ni en los registros de acceso.
+        var status = await paymentIntentService.GetPublicStatusAsync(
+            request,
+            cancellationToken);
+
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers.Pragma = "no-cache";
+
+        return Ok(status);
+    }
+
     [HttpGet("returns/{provider}/{outcome}")]
     [EnableRateLimiting("PaymentWebhook")]
     [ProducesResponseType(StatusCodes.Status302Found)]

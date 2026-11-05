@@ -6,8 +6,8 @@
   <div class="hero-overlay"></div>
 
   <div class="container hero-content">
-    <span>Edificios Oliva</span>
-    <h1 id="apartments-page-title">Departamentos disponibles</h1>
+    <span>Edificios Oliva · Bávaro, Punta Cana</span>
+    <h1 id="apartments-page-title">Encuentra tu estadía en el Caribe</h1>
     <p>Opciones cómodas para hospedarte en Bávaro, Punta Cana.</p>
   </div>
 </section>
@@ -43,12 +43,7 @@
 
       <div>
         <label for="apartments-guests">Huéspedes</label>
-        <select
-          id="apartments-guests"
-          name="guestCount"
-          [(ngModel)]="search.guestCount"
-          required
-        >
+        <select id="apartments-guests" name="guestCount" [(ngModel)]="search.guestCount" required>
           <option [ngValue]="1">1 persona</option>
           <option [ngValue]="2">2 personas</option>
           <option [ngValue]="3">3 personas</option>
@@ -65,7 +60,8 @@
         [disabled]="availabilityForm.invalid"
         aria-label="Consultar disponibilidad con las fechas seleccionadas"
       >
-        Consultar disponibilidad
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <span>Buscar</span>
       </button>
     </form>
 
@@ -104,38 +100,26 @@
             </div>
 
             <div class="card-body">
-              <div class="card-top">
-                <div>
-                  <h3>{{ apartment.name }}</h3>
-                  <p class="location">
-                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
-                    {{ apartment.location }}
-                  </p>
-                </div>
-
-                <span class="price">US${{ apartment.price }}/noche</span>
-              </div>
-
-              <p class="description">{{ apartment.description }}</p>
-
-              <div class="features" [attr.aria-label]="'Características de ' + apartment.name">
-                <span><i class="bi bi-people" aria-hidden="true"></i>
-                  {{ apartment.guests }} huéspedes</span>
-                <span><i class="bi bi-door-open" aria-hidden="true"></i>
-                  {{ apartment.bedrooms }} hab.</span>
-                <span><i class="bi bi-droplet" aria-hidden="true"></i>
-                  {{ apartment.bathrooms }} baños</span>
-                @for (amenity of (apartment.amenities || []).slice(0, 2); track amenity) {
-                  <span>{{ amenity }}</span>
-                }
-              </div>
-
-              <a
-                [routerLink]="['/departamentos', apartment.id]"
-                [attr.aria-label]="'Ver detalles de ' + apartment.name"
-              >
-                Ver detalles
-              </a>
+              <h3>
+                <a
+                  class="card-link"
+                  [routerLink]="['/departamentos', apartment.id]"
+                  [attr.aria-label]="'Ver detalles de ' + apartment.name"
+                >
+                  {{ apartment.name }}
+                </a>
+              </h3>
+              <p class="location">
+                <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                {{ apartment.location }}
+              </p>
+              <p class="specs">
+                {{ apartment.guests }} huéspedes · {{ apartment.bedrooms }} hab. ·
+                {{ apartment.bathrooms }} baños
+              </p>
+              <p class="price">
+                <strong>US$ {{ apartment.price }}</strong> / noche
+              </p>
             </div>
           </article>
         }

@@ -21,6 +21,7 @@ public sealed class PaymentIntentService(
 {
     private const string DefaultCurrency = "USD";
     private static readonly TimeSpan DefaultIntentLifetime = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan PublicStatusLookupWindow = TimeSpan.FromDays(30);
 
     public async Task<PagedResult<PaymentIntentResponse>> GetPagedAsync(
         PaymentIntentQueryParameters parameters,
@@ -452,6 +453,65 @@ public sealed class PaymentIntentService(
             intentResponse.ExpiresAtUtc);
     }
 
+    public async Task<PublicPaymentStatusResponse> GetPublicStatusAsync(
+        PublicPaymentStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // Mismo mecanismo de autorización que el checkout público (id completo +
+        // código + correo) y mensaje uniforme para evitar enumeración.
+        const string notFound = "No se pudo validar la reserva solicitada.";
+
+        var reservation = await LoadPublicReservationAsync(
+            request.ReservationId,
+            request.ConfirmationCode,
+            request.Email,
+            notFound,
+            cancellationToken);
+
+        var now = DateTime.UtcNow;
+        if (reservation.CreatedAtUtc < now - PublicStatusLookupWindow)
+        {
+            throw new KeyNotFoundException(notFound);
+        }
+
+        var intentsQuery = dbContext.PaymentIntents
+            .AsNoTracking()
+            .Where(item => !item.IsDeleted && item.ReservationId == reservation.Id);
+
+        if (request.PaymentIntentId.HasValue)
+        {
+            var requestedId = request.PaymentIntentId.Value;
+            intentsQuery = intentsQuery.Where(item => item.Id == requestedId);
+        }
+
+        var intent = await intentsQuery
+            .OrderByDescending(item => item.CreatedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (request.PaymentIntentId.HasValue && intent is null)
+        {
+            // Intento ajeno a esta reserva o inexistente: misma respuesta que
+            // cualquier otra validación fallida.
+            throw new KeyNotFoundException(notFound);
+        }
+
+        var state = PublicPaymentStatusMapper.Resolve(
+            reservation.Status,
+            intent?.Status,
+            intent?.ExpiresAtUtc,
+            now);
+
+        return new PublicPaymentStatusResponse(
+            reservation.Id,
+            $"EO-{reservation.Id.ToString("N")[..8].ToUpperInvariant()}",
+            reservation.Status,
+            state,
+            intent?.Id,
+            intent?.Amount ?? reservation.TotalAmount,
+            intent?.Currency ?? DefaultCurrency,
+            now);
+    }
+
     public async Task<PaymentWebhookProcessResponse> ProcessWebhookAsync(
         string provider,
         string payload,
@@ -819,6 +879,29 @@ public sealed class PaymentIntentService(
         string email,
         CancellationToken cancellationToken)
     {
+        var reservation = await LoadPublicReservationAsync(
+            reservationId,
+            confirmationCode,
+            email,
+            "No se pudo validar la reserva para iniciar el pago.",
+            cancellationToken);
+
+        if (reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed)
+        {
+            throw new InvalidOperationException(
+                "Esta reserva ya no admite nuevos pagos en línea.");
+        }
+
+        return reservation;
+    }
+
+    private async Task<Reservation> LoadPublicReservationAsync(
+        Guid reservationId,
+        string confirmationCode,
+        string email,
+        string notFoundMessage,
+        CancellationToken cancellationToken)
+    {
         var reservation = await dbContext.Reservations
             .AsNoTracking()
             .Include(item => item.Customer)
@@ -829,8 +912,7 @@ public sealed class PaymentIntentService(
 
         if (reservation is null)
         {
-            throw new KeyNotFoundException(
-                "No se pudo validar la reserva para iniciar el pago.");
+            throw new KeyNotFoundException(notFoundMessage);
         }
 
         var expectedConfirmationCode =
@@ -846,14 +928,7 @@ public sealed class PaymentIntentService(
                 normalizedEmail,
                 StringComparison.Ordinal))
         {
-            throw new KeyNotFoundException(
-                "No se pudo validar la reserva para iniciar el pago.");
-        }
-
-        if (reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed)
-        {
-            throw new InvalidOperationException(
-                "Esta reserva ya no admite nuevos pagos en línea.");
+            throw new KeyNotFoundException(notFoundMessage);
         }
 
         return reservation;

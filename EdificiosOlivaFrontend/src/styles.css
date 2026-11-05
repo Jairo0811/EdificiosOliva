@@ -1,7 +1,5 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "bootstrap-icons/font/bootstrap-icons.css";
-@import "@fortawesome/fontawesome-free/css/all.min.css";
-@import "aos/dist/aos.css";
 
 :root {
   --primary: #0f4c81;
@@ -9,6 +7,22 @@
   --sand: #f5e6c8;
   --dark: #1f2933;
   --light: #ffffff;
+
+  /* Design tokens v1.3 */
+  --accent: #f0604d;
+  --accent-dark: #d94a38;
+  --text: #222222;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --surface: #ffffff;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.18);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 * {
@@ -27,7 +41,7 @@ body {
   width: 100%;
   min-height: 100%;
   overflow-x: hidden;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   background: #f7f9fb;
   color: var(--dark);
 }
@@ -175,4 +189,394 @@ textarea:focus {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Shared apartment card (home + listing), Airbnb-style */
+.apartments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 32px 24px;
+}
+
+.apartments-grid .apartment-card {
+  position: relative;
+}
+
+.apartments-grid .image-wrapper {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  aspect-ratio: 4 / 3;
+  background: #e5e7eb;
+}
+
+.apartments-grid .image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.apartments-grid .apartment-card:hover .image-wrapper img {
+  transform: scale(1.04);
+}
+
+.apartments-grid .card-body {
+  padding: 12px 2px 0;
+}
+
+.apartments-grid .card-body h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.apartments-grid .card-link {
+  color: inherit;
+}
+
+.apartments-grid .card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+}
+
+.apartments-grid .card-link:focus-visible {
+  outline: none;
+}
+
+.apartments-grid .card-link:focus-visible::after {
+  outline: 3px solid var(--secondary);
+  outline-offset: 3px;
+}
+
+.apartments-grid .location,
+.apartments-grid .specs {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.apartments-grid .price {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+/* Shared search pill (home + listing) */
+.search-grid,
+.filters-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  align-items: center;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-lg);
+}
+
+.search-grid > div,
+.filters-card > div {
+  padding: 8px 24px;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.search-grid > div:focus-within,
+.filters-card > div:focus-within {
+  background: #f3f4f6;
+  border-radius: var(--radius-pill);
+}
+
+.search-grid label,
+.filters-card label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.search-grid input,
+.search-grid select,
+.filters-card input,
+.filters-card select {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  padding: 2px 0;
+}
+
+.search-grid button,
+.filters-card button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  padding: 16px 28px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.search-grid button:hover:not(:disabled),
+.filters-card button:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.search-grid button:disabled,
+.filters-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Design system: accessible stepper (used by the booking flow) */
+.eo-stepper {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+}
+
+.eo-stepper li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.eo-stepper button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.eo-stepper button:disabled {
+  cursor: default;
+}
+
+.eo-stepper-bullet {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.eo-stepper-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eo-stepper .is-current button {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.eo-stepper .is-current .eo-stepper-bullet,
+.eo-stepper .is-done .eo-stepper-bullet {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .eo-stepper-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .eo-stepper .is-current .eo-stepper-label {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
+  }
+
+  .eo-stepper .is-current {
+    flex: 3 1 0;
+  }
+}
+
+/* Design system: shared page hero (about, contact, gallery, policies, booking) */
+.eo-hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: clamp(280px, 40vh, 420px);
+  background-color: #0b2740;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0, 180, 216, 0.22), transparent 34%),
+    linear-gradient(135deg, #071f35, #0f4c81);
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  text-align: center;
+}
+
+.eo-hero .overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(6, 28, 48, 0.78), rgba(15, 76, 129, 0.48));
+}
+
+.eo-hero .hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  padding: 40px 24px;
+}
+
+.eo-hero .hero-content span {
+  color: #f5e6c8;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.eo-hero .hero-content h1 {
+  margin: 14px 0;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  line-height: 1.1;
+}
+
+.eo-hero .hero-content p {
+  max-width: 620px;
+  margin: 0 auto;
+  color: #e6eef5;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+/* Design system: form controls, buttons and alerts */
+.eo-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid #d0d7e2;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.eo-input:focus {
+  border-color: #0f4c81;
+  box-shadow: 0 0 0 4px rgba(15, 76, 129, 0.14);
+  outline: none;
+}
+
+.eo-input[aria-invalid='true'] {
+  border-color: #b3261e;
+}
+
+.eo-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.eo-field-error {
+  margin: 6px 0 0;
+  color: #b3261e;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.eo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.eo-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.eo-btn-primary {
+  background: #0f4c81;
+  color: #fff;
+}
+
+.eo-btn-primary:hover:not(:disabled) {
+  background: #0c3d68;
+}
+
+.eo-btn-outline {
+  border-color: #d0d7e2;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.eo-btn-outline:hover:not(:disabled) {
+  border-color: #0f4c81;
+}
+
+.eo-alert {
+  padding: 14px 16px;
+  border: 1px solid #f1c8c8;
+  border-radius: var(--radius-md);
+  background: #fdeaea;
+  color: #8a1c1c;
+  font-weight: 600;
+}
+
+.eo-alert-info {
+  border-color: #c8dced;
+  background: #f3f8fc;
+  color: #234b6e;
 }

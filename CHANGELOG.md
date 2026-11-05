@@ -2,6 +2,63 @@
 
 Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
+## [Unreleased] - v1.3.0 (en curso, PR #30)
+
+> Alcance parcial: ver "Pendiente" al final de esta sección. No es una release.
+
+### Añadido
+
+- `POST /api/public/payments/status`: consulta de **solo lectura** del estado de pago. Autoriza con
+  `reservationId` + código de reserva + correo (igual que el checkout), responde 404 uniforme ante
+  cualquier discrepancia, limita la consulta a reservas de los últimos 30 días, usa la política de
+  rate limit `PublicPayment` y `Cache-Control: no-store`. Se usa POST solo para no exponer correo ni
+  código en la URL. Estados: `NotStarted, Pending, Confirmed, Declined, Cancelled, Refunded,
+  RequiresReview` (numéricos). `Confirmed` exige intento `Succeeded` **y** reserva ya confirmada.
+- Idempotencia en `POST /api/public/bookings` mediante la cabecera opcional `Idempotency-Key`
+  (8-100 caracteres `[A-Za-z0-9._:-]`): reintento idéntico -> 200 con la reserva original y
+  `Idempotent-Replayed: true`; misma clave con datos distintos -> 409. Índice único filtrado en
+  `Reservations.IdempotencyKey`. Sin cabecera el comportamiento no cambia.
+- **Migración `AddReservationIdempotency`**: aplicar `dotnet ef database update` **antes** de desplegar
+  este backend (agrega dos columnas nulas y un índice).
+- Stepper de reserva de cinco pasos (Estadía, Huésped, Revisión, Pago, Resultado) accesible por teclado.
+- Verificación del pago en `/reservar` tras el retorno de AZUL con sondeo acotado (6 intentos / 4 s).
+- Pruebas: backend 32 (CI), frontend 83.
+
+### Cambiado
+
+- Dependencias sin consumidores eliminadas: `@fortawesome/fontawesome-free`, `aos`, `leaflet` (CSS y JS
+  globales en `angular.json`) y `swiper`. Se conservan Bootstrap, Bootstrap Icons (92 usos) y Angular
+  Material (aporta el tema `--mat-sys-*`; `@angular/cdk` es su dependencia). Medido en build de producción
+  en sandbox (fuentes de Google desactivadas): carga inicial 322.08 kB -> 263.48 kB transferidos
+  (1.46 MB -> 1.18 MB sin comprimir); `styles.css` 57.12 -> 35.81 kB; `scripts.js` (Leaflet, 37.29 kB) eliminado.
+- Sistema de diseño: `.eo-hero`, `.eo-stepper`, `.eo-input`, `.eo-btn`, `.eo-alert` en `styles.css`.
+- Administración: navegación agrupada (General, Alojamiento, Reservas, Finanzas, Operación), título de
+  sección dinámico, enlace "Saltar al contenido", tablas desplazables enfocables y diálogo de conciliación
+  accesible (foco, Escape). Sin cambios en las reglas de conciliación.
+- Galería: lightbox accesible (Escape, flechas, foco atrapado y restaurado).
+- Contacto: el formulario no enviaba nada; ahora valida y abre WhatsApp con el mensaje (no hay endpoint).
+- Registro: placeholder reemplazado por página informativa (no existe registro público).
+
+### Corregido
+
+- Login: eliminado `console.log` de credenciales/perfil; los errores ya se muestran.
+- Repintado sin Zone.js en Login, Navbar, layout admin, Intentos de pago y Operación.
+- Parámetros entre detalle y `/reservar`, fechas en zona horaria de la propiedad, repintado sin Zone.js,
+  textos que daban por confirmada una reserva solo por `?payment=approved`, `re2js` (GHSA-gg6h-894w-4m9c).
+
+### Seguridad
+
+- La UI nunca declara un pago aprobado sin confirmación del backend; un retorno manipulado no confirma.
+- No se inicia un segundo cobro mientras el pago esté pendiente, confirmado, en revisión o sin verificar.
+- Sin cambios en la verificación criptográfica de AZUL ni en la conciliación.
+
+### Pendiente en v1.3 (no implementado)
+
+Administración 2.0 (dashboard con filtros/KPI, vistas adaptadas de tablas, estilos con tokens en las
+pantallas admin; solo se hizo navegación, accesibilidad y repintado), auditoría responsive/WCAG completa,
+métricas LCP/CLS/Lighthouse, pruebas E2E, pruebas backend con base de datos (concurrencia real),
+README ampliado.
+
 ## [1.2.0] - 2026-10-27
 
 ### Añadido
