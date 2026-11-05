@@ -226,6 +226,7 @@ describe('Booking', () => {
 
   describe('idempotent booking creation', () => {
     beforeEach(() => {
+      component.paymentTermsAccepted = true;
       component.form = {
         fullName: 'Cliente de prueba',
         email: 'cliente@example.com',
@@ -276,6 +277,111 @@ describe('Booking', () => {
       component.submit();
 
       expect(create.mock.calls[1][1]).not.toBe(create.mock.calls[0][1]);
+    });
+  });
+
+  describe('stepper', () => {
+    const fillStay = () => {
+      component.form.apartmentId = 'test-apartment';
+      component.form.checkInDate = '2030-09-10';
+      component.form.checkOutDate = '2030-09-12';
+      component.availability = {
+        apartmentId: 'test-apartment',
+        apartmentName: 'Apartamento de prueba',
+        available: true,
+        nights: 2,
+        nightlyRate: 80,
+        totalAmount: 160,
+      };
+    };
+
+    it('starts at step 1 and cannot advance without confirmed availability', () => {
+      component.continueFromStay();
+
+      expect(component.currentStep).toBe(1);
+      expect(component.errorMessage).not.toBe('');
+    });
+
+    it('advances to the guest step once availability is confirmed', () => {
+      fillStay();
+
+      component.continueFromStay();
+
+      expect(component.currentStep).toBe(2);
+    });
+
+    it('validates guest data with accessible per-field errors and keeps the step', () => {
+      fillStay();
+      component.continueFromStay();
+      component.form.email = 'no-es-correo';
+
+      component.continueFromGuest();
+
+      expect(component.currentStep).toBe(2);
+      expect(component.fieldError('fullName')).toBeTruthy();
+      expect(component.fieldError('email')).toBeTruthy();
+      expect(component.fieldError('phone')).toBeTruthy();
+    });
+
+    it('keeps guest data when going back and forward', () => {
+      fillStay();
+      component.continueFromStay();
+      Object.assign(component.form, {
+        fullName: 'Ana Perez',
+        email: 'ana@example.com',
+        phone: '8095551234',
+      });
+      component.continueFromGuest();
+
+      component.previousStep();
+      component.previousStep();
+      component.continueFromStay();
+
+      expect(component.currentStep).toBe(2);
+      expect(component.form.fullName).toBe('Ana Perez');
+      expect(component.guestErrors).toEqual({});
+    });
+
+    it('does not register the reservation until the policies are accepted', () => {
+      fillStay();
+      Object.assign(component.form, {
+        fullName: 'Ana Perez',
+        email: 'ana@example.com',
+        phone: '8095551234',
+      });
+
+      component.submit();
+
+      expect(create).not.toHaveBeenCalled();
+      expect(component.errorMessage).toContain('políticas');
+    });
+
+    it('moves to payment after registering and never recreates the reservation', () => {
+      fillStay();
+      Object.assign(component.form, {
+        fullName: 'Ana Perez',
+        email: 'ana@example.com',
+        phone: '8095551234',
+      });
+      component.paymentTermsAccepted = true;
+
+      component.submit();
+      component.submit();
+
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(component.currentStep).toBe(4);
+      expect(component.reservationLocked).toBe(true);
+      expect(component.canVisit(1)).toBe(false);
+      expect(component.canVisit(2)).toBe(false);
+      expect(component.canVisit(5)).toBe(true);
+    });
+
+    it('does not wipe the registered reservation when availability is refreshed', () => {
+      component.confirmation = { ...confirmationFixture };
+
+      component.refreshAvailability();
+
+      expect(component.confirmation).not.toBeNull();
     });
   });
 });

@@ -49,6 +49,18 @@ export class Booking implements OnInit {
   readonly minDate = todayInPropertyZone();
   readonly whatsappNumber = '18296196970';
 
+  readonly steps = [
+    { id: 1, label: 'Estadía' },
+    { id: 2, label: 'Huésped' },
+    { id: 3, label: 'Revisión' },
+    { id: 4, label: 'Pago' },
+    { id: 5, label: 'Resultado' },
+  ] as const;
+
+  currentStep = 1;
+  attemptedGuestStep = false;
+  private readonly touchedFields = new Set<string>();
+
   apartments: Apartment[] = [];
   availability: BookingAvailability | null = null;
   confirmation: PublicBookingConfirmation | null = null;
@@ -88,6 +100,9 @@ export class Booking implements OnInit {
     this.applyPaymentReturn();
     this.restoreConfirmationAfterPaymentReturn();
     this.startVerificationAfterPaymentReturn();
+    if (this.paymentOutcome) {
+      this.currentStep = 5;
+    }
     this.loadPaymentProviders();
     this.applyQueryPrefill();
 
@@ -150,7 +165,11 @@ export class Booking implements OnInit {
   }
 
   refreshAvailability(): void {
-    this.confirmation = null;
+    // Once the reservation exists the stay is locked: it is never recreated.
+    if (this.confirmation) {
+      return;
+    }
+
     this.availability = null;
     this.errorMessage = '';
 
@@ -203,12 +222,17 @@ export class Booking implements OnInit {
   }
 
   submit(): void {
-    if (this.submitting) {
+    if (this.submitting || this.confirmation) {
       return;
     }
 
     this.errorMessage = '';
-    this.confirmation = null;
+
+    if (!this.paymentTermsAccepted) {
+      this.errorMessage =
+        'Acepta las políticas de reserva, cancelación, privacidad y pago para continuar.';
+      return;
+    }
 
     if (
       !this.form.fullName.trim() ||
@@ -270,6 +294,7 @@ export class Booking implements OnInit {
           };
           this.persistPendingBooking(confirmation);
           this.submitting = false;
+          this.setStep(4);
         },
         error: (error) => {
           this.submitting = false;
@@ -279,6 +304,132 @@ export class Booking implements OnInit {
           );
         },
       });
+  }
+
+  get reservationLocked(): boolean {
+    return this.confirmation !== null;
+  }
+
+  canVisit(step: number): boolean {
+    if (step === this.currentStep) {
+      return true;
+    }
+
+    // After the reservation is registered, steps 1-3 are read-only history.
+    return this.reservationLocked ? step >= 4 : step < this.currentStep;
+  }
+
+  goToStep(step: number): void {
+    if (this.canVisit(step)) {
+      this.setStep(step);
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 1 && this.canVisit(this.currentStep - 1)) {
+      this.setStep(this.currentStep - 1);
+    }
+  }
+
+  /** Enter key / primary button: advances the current step only when it is valid. */
+  onStepSubmit(): void {
+    switch (this.currentStep) {
+      case 1:
+        this.continueFromStay();
+        break;
+      case 2:
+        this.continueFromGuest();
+        break;
+      case 3:
+        this.submit();
+        break;
+      default:
+        break;
+    }
+  }
+
+  continueFromStay(): void {
+    this.errorMessage = '';
+
+    if (this.checkingAvailability) {
+      return;
+    }
+
+    if (!this.canCheckAvailability) {
+      this.errorMessage = 'Selecciona apartamento, fechas y huéspedes.';
+      return;
+    }
+
+    if (!this.availability?.available) {
+      this.errorMessage =
+        this.errorMessage || 'Comprueba que las fechas estén disponibles antes de continuar.';
+      return;
+    }
+
+    this.setStep(2);
+  }
+
+  continueFromGuest(): void {
+    this.errorMessage = '';
+    this.attemptedGuestStep = true;
+
+    if (Object.keys(this.guestErrors).length > 0) {
+      this.errorMessage = 'Revisa los campos marcados para continuar.';
+      this.focusFirstInvalid();
+      return;
+    }
+
+    this.setStep(3);
+  }
+
+  get guestErrors(): Partial<Record<'fullName' | 'email' | 'phone', string>> {
+    const errors: Partial<Record<'fullName' | 'email' | 'phone', string>> = {};
+
+    if (this.form.fullName.trim().length < 2) {
+      errors.fullName = 'Ingresa tu nombre completo.';
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email.trim())) {
+      errors.email = 'Ingresa un correo electrónico válido.';
+    }
+
+    const phone = this.form.phone.trim();
+    if (phone.replace(/\D/g, '').length < 7 || phone.length > 30) {
+      errors.phone = 'Ingresa un teléfono válido (mínimo 7 dígitos).';
+    }
+
+    return errors;
+  }
+
+  fieldError(field: 'fullName' | 'email' | 'phone'): string {
+    return this.attemptedGuestStep || this.touchedFields.has(field)
+      ? (this.guestErrors[field] ?? '')
+      : '';
+  }
+
+  touch(field: string): void {
+    this.touchedFields.add(field);
+  }
+
+  private setStep(step: number): void {
+    this.currentStep = step;
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+
+    if (step === 5 && this.confirmation && this.verificationPhase === 'idle') {
+      this.verifyPayment();
+    }
+
+    if (typeof document !== 'undefined') {
+      document.getElementById('step-heading')?.focus();
+    }
+  }
+
+  private focusFirstInvalid(): void {
+    this.cdr.detectChanges();
+    if (typeof document !== 'undefined') {
+      document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    }
   }
 
   get paymentOutcomeMessage(): string {
@@ -320,11 +471,16 @@ export class Booking implements OnInit {
       return false;
     }
 
-    if (!this.paymentOutcome) {
-      return true;
+    if (this.verificationPhase === 'checking') {
+      return false;
     }
 
-    return this.paymentView?.canRetryPayment === true;
+    if (this.paymentView) {
+      return this.paymentView.canRetryPayment;
+    }
+
+    // Returned from the gateway but not verified yet: never offer a second charge.
+    return !this.paymentOutcome;
   }
 
   /** Asks the backend for the real state; the URL outcome is never trusted. */

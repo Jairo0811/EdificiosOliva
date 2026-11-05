@@ -355,3 +355,87 @@ textarea:focus {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Design system: accessible stepper (used by the booking flow) */
+.eo-stepper {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+}
+
+.eo-stepper li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.eo-stepper button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.eo-stepper button:disabled {
+  cursor: default;
+}
+
+.eo-stepper-bullet {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.eo-stepper-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eo-stepper .is-current button {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.eo-stepper .is-current .eo-stepper-bullet,
+.eo-stepper .is-done .eo-stepper-bullet {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .eo-stepper-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .eo-stepper .is-current .eo-stepper-label {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
+  }
+
+  .eo-stepper .is-current {
+    flex: 3 1 0;
+  }
+}
