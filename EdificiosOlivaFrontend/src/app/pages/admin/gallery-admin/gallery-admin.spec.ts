@@ -28,6 +28,7 @@ describe('GalleryAdmin v1.3', () => {
   it('renders an accessible preview dialog and closes on Escape', async () => {
     component.openPreview(image);
     fixture.detectChanges();
+    await fixture.whenStable();
     const dialog = fixture.nativeElement.querySelector('.image-preview');
     expect(dialog?.getAttribute('role')).toBe('dialog');
     expect(dialog?.getAttribute('aria-modal')).toBe('true');

@@ -36,6 +36,7 @@ describe('Customers v1.3', () => {
   it('closes the keyboard-trapped dialog with Escape', async () => {
     component.openCreateForm();
     fixture.detectChanges();
+    await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[cdktrapfocus]')).not.toBeNull();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await fixture.whenStable();
