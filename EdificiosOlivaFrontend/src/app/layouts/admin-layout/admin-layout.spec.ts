@@ -63,7 +63,8 @@ describe('AdminLayout', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await fixture.whenStable();
     expect(component.menuOpen).toBe(false);
-    expect(document.activeElement?.classList.contains('mobile-menu')).toBe(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.mobile-menu').getAttribute('aria-expanded')).toBe('false');
   });
 
   it('offers a skip link to the main content', () => {
