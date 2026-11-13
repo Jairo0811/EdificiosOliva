@@ -85,3 +85,14 @@ test('template parser rejects malformed and duplicate keys', () => {
   assert.throws(() => parseEnvTemplate('INVALID_LINE'));
   assert.throws(() => parseEnvTemplate('FOO=one\nFOO=two'));
 });
+
+test('an additional CORS origin is rejected even when the first origin is correct', () => {
+  const config = configuredStaging();
+  config.Cors__AllowedOrigins__1 = 'https://edificiosoliva.com';
+  assert.ok(validateStagingConfig(config).some((message) => message.includes('CORS')));
+});
+
+test('the committed template never contains payment or SMTP credentials', () => {
+  const config = { ...template, Payments__Azul__AuthKey: 'SYNTHETIC_TEST_ONLY' };
+  assert.ok(validateStagingConfig(config, { template: true }).some((message) => message.includes('debe estar vacío')));
+});
