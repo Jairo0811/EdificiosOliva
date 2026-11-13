@@ -75,6 +75,20 @@ export function validateStagingConfig(vars, { template = false } = {}) {
   requireStagingUrl('Notifications__Email__PublicBaseUrl');
   requireStagingUrl('Payments__Azul__ReturnBaseUrl', { allowEmpty: true });
 
+  const activeKeyVersion = read('PublicPayments__ActiveKeyVersion');
+  const secretKey = read('PublicPayments__CapabilityKeys__1');
+  if (activeKeyVersion !== '1') problem('La versión activa del token público debe ser 1 en staging inicial.');
+  if (template) {
+    if (!secretKey.startsWith('REPLACE_WITH_'))
+      problem('El inventario no puede contener una clave HMAC pública real.');
+  } else {
+    const bytes = Buffer.from(secretKey, 'base64');
+    if (bytes.length < 32 || !/^[A-Za-z0-9+/]+={0,2}$/.test(secretKey) ||
+        secretKey.toLowerCase().includes('replace')) {
+      problem('La clave HMAC pública debe ser Base64 de al menos 256 bits, inyectada fuera de Git.');
+    }
+  }
+
   const firebase = read('Firebase__ProjectId').toLowerCase();
   if (!firebase || firebase === 'edificios-oliva' || !firebase.includes('staging')) {
     problem('Firebase debe utilizar un proyecto explícitamente separado de producción.');
@@ -132,6 +146,11 @@ export function validateStagingConfig(vars, { template = false } = {}) {
 
   const tls = read('Security__UseHttpsRedirection').toLowerCase();
   const trustedProxy = read('Staging__TrustedHttpsProxy').toLowerCase();
+  const knownProxy = read('ReverseProxy__KnownProxies__0');
+  if (!template && tls === 'false' && trustedProxy === 'true' &&
+      !/^(?:10\\.|172\\.(?:1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)[0-9.]+$/.test(knownProxy)) {
+    problem('La terminación TLS exige la IP privada exacta del proxy nginx confiable.');
+  }
   if (tls !== 'true' && !(tls === 'false' && trustedProxy === 'true')) {
     problem('HTTPS debe mantenerse activo, salvo TLS terminado en proxy confiable declarado.');
   }

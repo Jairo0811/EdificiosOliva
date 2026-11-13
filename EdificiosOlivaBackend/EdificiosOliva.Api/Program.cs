@@ -1,4 +1,6 @@
 using System.Threading.RateLimiting;
+using System.Net;
+using Microsoft.AspNetCore.HttpOverrides;
 using EdificiosOliva.Api.Middlewares;
 using EdificiosOliva.Infrastructure;
 using EdificiosOliva.Infrastructure.Persistence.Context;
@@ -117,36 +119,62 @@ builder.Services.AddAuthorization(options =>
             .RequireClaim("role", "admin"));
 });
 
+// Solo confiamos en proxies enumerados explícitamente. X-Forwarded-For arbitrario
+// enviado por el visitante no puede alterar la partición del limitador.
+var knownProxyAddresses = builder.Configuration.GetSection("ReverseProxy:KnownProxies")
+    .GetChildren()
+    .Select(child => child.Value)
+    .Where(value => !string.IsNullOrWhiteSpace(value))
+    .Select(value => IPAddress.TryParse(value, out var address)
+        ? address!
+        : throw new InvalidOperationException("ReverseProxy:KnownProxies contiene una IP inválida."))
+    .ToArray();
+
+if (knownProxyAddresses.Length > 0)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.ForwardLimit = 1;
+        options.KnownProxies.Clear();
+        options.KnownNetworks.Clear();
+        foreach (var address in knownProxyAddresses)
+            options.KnownProxies.Add(address);
+    });
+}
+
+static string ClientIp(HttpContext context)
+{
+    var address = context.Connection.RemoteIpAddress;
+    if (address is null) return "unknown";
+    return address.IsIPv4MappedToIPv6 ? address.MapToIPv4().ToString() : address.ToString();
+}
+
+static FixedWindowRateLimiterOptions FixedWindow(int permits) => new()
+{
+    PermitLimit = permits,
+    Window = TimeSpan.FromMinutes(1),
+    QueueLimit = 0,
+    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+    AutoReplenishment = true,
+};
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Protección global secundaria: cuota suficientemente alta para no colisionar
+    // con visitantes legítimos; requiere observabilidad y ajuste de carga en staging.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter("global", _ => FixedWindow(2000)));
 
-    options.AddFixedWindowLimiter(PublicBookingRatePolicy, limiterOptions =>
-    {
-        limiterOptions.PermitLimit = 30;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueLimit = 0;
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.AutoReplenishment = true;
-    });
+    options.AddPolicy(PublicBookingRatePolicy, context =>
+        RateLimitPartition.GetFixedWindowLimiter($"booking:{ClientIp(context)}", _ => FixedWindow(30)));
 
-    options.AddFixedWindowLimiter(PaymentWebhookRatePolicy, limiterOptions =>
-    {
-        limiterOptions.PermitLimit = 120;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueLimit = 0;
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.AutoReplenishment = true;
-    });
+    options.AddPolicy(PaymentWebhookRatePolicy, context =>
+        RateLimitPartition.GetFixedWindowLimiter($"webhook:{ClientIp(context)}", _ => FixedWindow(120)));
 
-    options.AddFixedWindowLimiter(PublicPaymentRatePolicy, limiterOptions =>
-    {
-        limiterOptions.PermitLimit = 20;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueLimit = 0;
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.AutoReplenishment = true;
-    });
+    options.AddPolicy(PublicPaymentRatePolicy, context =>
+        RateLimitPartition.GetFixedWindowLimiter($"payment:{ClientIp(context)}", _ => FixedWindow(20)));
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -178,6 +206,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+if (knownProxyAddresses.Length > 0)
+    app.UseForwardedHeaders();
 
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
