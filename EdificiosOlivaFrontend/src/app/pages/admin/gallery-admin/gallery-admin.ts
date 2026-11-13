@@ -2,11 +2,13 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  HostListener,
   OnInit,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Observable, finalize } from 'rxjs';
 
 import { GalleryImage } from '../../../core/models/gallery-image.model';
@@ -27,7 +29,7 @@ interface GalleryForm {
 
 @Component({
   selector: 'app-gallery-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   templateUrl: './gallery-admin.html',
   styleUrl: './gallery-admin.css',
 })
@@ -35,6 +37,7 @@ export class GalleryAdmin implements OnInit {
   private readonly galleryService = inject(GalleryImages);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private previouslyFocused: HTMLElement | null = null;
 
   readonly categories = [
     'Apartamentos',
@@ -97,6 +100,7 @@ export class GalleryAdmin implements OnInit {
   }
 
   openCreateForm(): void {
+    this.rememberFocus();
     this.editingId = null;
     this.imageForm = this.getEmptyForm();
     this.clearMessages();
@@ -104,6 +108,7 @@ export class GalleryAdmin implements OnInit {
   }
 
   openEditForm(image: GalleryImage): void {
+    this.rememberFocus();
     this.editingId = image.id;
     this.imageForm = {
       title: image.title,
@@ -123,6 +128,24 @@ export class GalleryAdmin implements OnInit {
     this.showForm = false;
     this.editingId = null;
     this.imageForm = this.getEmptyForm();
+    this.restoreFocus();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.previewImage) this.closePreview();
+    else if (this.showForm && !this.saving) this.closeForm();
+  }
+
+  private rememberFocus(): void {
+    this.previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+  }
+
+  private restoreFocus(): void {
+    const element = this.previouslyFocused;
+    this.previouslyFocused = null;
+    queueMicrotask(() => element?.focus());
   }
 
   saveImage(): void {
@@ -169,6 +192,7 @@ export class GalleryAdmin implements OnInit {
           this.showForm = false;
           this.editingId = null;
           this.imageForm = this.getEmptyForm();
+          this.restoreFocus();
           this.loadImages();
         },
         error: (error: unknown) => {
@@ -206,11 +230,13 @@ export class GalleryAdmin implements OnInit {
   }
 
   openPreview(image: GalleryImage): void {
+    this.rememberFocus();
     this.previewImage = image;
   }
 
   closePreview(): void {
     this.previewImage = null;
+    this.restoreFocus();
   }
 
   private getEmptyForm(): GalleryForm {
