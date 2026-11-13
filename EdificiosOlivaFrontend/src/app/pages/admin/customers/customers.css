@@ -1,7 +1,6 @@
 .admin-page {
-  padding: 40px;
-  background: #f7f9fb;
-  min-height: 100vh;
+  min-width: 0;
+  background: transparent;
 }
 
 .page-header {
@@ -159,4 +158,33 @@ td { padding: 18px; border-bottom: 1px solid #edf0f3; }
   .customer-form { grid-template-columns: 1fr; }
   .customer-form label,
   .modal-actions { grid-column: 1; }
+}
+
+/* v1.3 mobile customer cards and accessible dialog controls */
+.customer-cards { display: none; }
+.customer-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.customer-card-actions button { width: auto; height: auto; min-height: 44px; margin: 0;
+  padding: 10px 14px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+.customer-modal { max-height: 90dvh; }
+button:focus-visible { outline: 3px solid #0f4c81; outline-offset: 3px; }
+@media (max-width: 767px) {
+  .admin-page { padding: 0; }
+  .page-header h1 { font-size: 26px; }
+  .table-card { overflow: visible; background: transparent; box-shadow: none; }
+  .table-card table { display: none; }
+  .customer-cards { display: grid; gap: 14px; }
+  .customer-card { min-width: 0; padding: 18px; border: 1px solid #dce5ed;
+    border-radius: 18px; background: #fff; box-shadow: 0 5px 20px rgba(15,76,129,.06); }
+  .customer-card-heading { display: flex; justify-content: space-between; flex-wrap: wrap;
+    gap: 12px; align-items: flex-start; }
+  .customer-card-heading h2 { margin: 4px 0 0; font-size: 18px; overflow-wrap: anywhere; }
+  .customer-id { color: #0f4c81; font-size: 12px; font-weight: 700; }
+  .customer-status { display: inline-flex; padding: 6px 12px; border-radius: 999px; font-weight: 700; }
+  .customer-card dl { display: grid; gap: 12px; margin: 18px 0; }
+  .customer-card dt { color: #667085; font-size: 12px; }
+  .customer-card dd { margin: 3px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+  .modal-backdrop { padding: 12px; }
+  .customer-modal { padding: 18px; }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions button { min-height: 44px; }
 }
