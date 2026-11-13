@@ -86,3 +86,9 @@ jobs:
             --project EdificiosOlivaBackend/EdificiosOliva.Infrastructure \
             --startup-project EdificiosOlivaBackend/EdificiosOliva.Api \
             --context ApplicationDbContext --configuration Release --no-build
+
+      - name: Verify sequential and concurrent reservation idempotency
+        run: |
+          dotnet run \
+            --project EdificiosOlivaBackend/EdificiosOliva.IntegrationChecks/EdificiosOliva.IntegrationChecks.csproj \
+            --configuration Release
