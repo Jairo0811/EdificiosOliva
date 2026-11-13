@@ -93,4 +93,22 @@ describe('PaymentIntentsAdmin', () => {
 
     expect(component.selected).not.toBeNull();
   });
+  it('renders a mobile payment card with its status and safe reconciliation action', async () => {
+    response$.next(page([intent]));
+    await fixture.whenStable();
+    const card = fixture.nativeElement.querySelector('.intent-card');
+    expect(card?.textContent).toContain('Ana Perez');
+    expect(card?.textContent).toContain('Referencia');
+    expect(card?.querySelector('.reconcile-btn')).not.toBeNull();
+  });
+
+  it('resets the page before applying new search filters', () => {
+    const service = TestBed.inject(PaymentIntentsService);
+    const spy = vi.spyOn(service, 'getAll');
+    component.page = 3;
+    component.search = 'Ana';
+    component.applyFilters();
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, pageSize: 20, search: 'Ana' }));
+  });
+
 });
