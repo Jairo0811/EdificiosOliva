@@ -98,3 +98,32 @@ Evidencia: https://github.com/Jairo0811/EdificiosOliva/actions/runs/43516317585 
 - Ante fallos financieros, de seguridad, idempotencia, backup o permisos administrativos: **NO-GO**.
 
 Este documento es un plan de verificación. Ninguno de los pasos de despliegue ni de proveedores ha sido ejecutado al redactarlo.
+
+## 6. Bloque automatizado de seguridad de configuración (añadido posteriormente)
+
+El PR incorpora un inventario de staging que **no contiene credenciales y no se puede usar tal cual**:
+
+- `.env.staging.example`: host de ejemplo `.invalid`, Firebase de ejemplo, SQL sin credenciales, AZUL y SMTP deshabilitados.
+- `scripts/validate-staging-config.mjs`: validación offline de nombres de dominio, CORS, URL de retorno, aislamiento Firebase/SQL, cifrado SQL, HTTPS y desactivación de servicios financieros/mensajería. No conecta a servicios y no imprime valores de secretos.
+- `scripts/validate-staging-config.test.mjs`: pruebas de configuración segura y rechazo de valores de producción.
+- `.github/workflows/staging-preflight.yml`: ejecuta los tests y el inventario **sin secretos**, sin crear infraestructura y sin desplegar.
+- `.gitignore`: excluye `.env`, `.env.*`, claves y certificados privados; los inventarios de ejemplo permanecen versionables.
+
+Comandos desde la raíz de la copia de trabajo:
+
+```bash
+node --test scripts/validate-staging-config.test.mjs
+node scripts/validate-staging-config.mjs --template
+```
+
+Tras aprovisionar staging, **desde el propio entorno que recibe las variables inyectadas** (nunca copiar credenciales al repositorio):
+
+```bash
+node scripts/validate-staging-config.mjs --environment
+```
+
+`--environment` devuelve error si se mantiene el host de ejemplo, se usa el proyecto Firebase de producción, se habilita AZUL/SMTP, se apunta al dominio público o se conecta una base que no esté identificada como staging. También requiere `Encrypt=True` y `TrustServerCertificate=False` en SQL Server. Para un proxy HTTPS confiable que termine TLS y reenvíe HTTP interno, puede establecerse `Security__UseHttpsRedirection=false` **junto con** `Staging__TrustedHttpsProxy=true`; esta última es una declaración que consume el validador, no una comprobación automática de seguridad del proxy.
+
+**Límites:** el validador verifica únicamente cadenas de configuración; no demuestra existencia de certificados válidos, aislamiento de red, credenciales correctas, acceso a la DB, permisos de Firebase, ni políticas AZUL/SMTP. Es un bloqueo de errores de preflight, no una prueba end-to-end.
+
+**Estado de validación:** verificar el workflow de preflight del HEAD final antes de marcar este nuevo bloque PASS; los cinco workflows antiguos PASS correspondían al HEAD anterior `2fd8681`.
