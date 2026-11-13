@@ -603,3 +603,21 @@ app-apartments-admin .apartment-cards { display: none; }
   app-apartments-admin .apartment-admin-card-actions button { width: auto; height: auto; min-height: 44px;
     padding: 10px 14px; margin: 0; display: inline-flex; align-items: center; gap: 8px; }
 }
+
+/* v1.3 Web Vitals: reserve featured-card geometry while public API loads. */
+.apartment-skeleton-grid .skeleton-card { pointer-events: none; }
+.apartment-skeleton-grid .image-wrapper { background: #e7edf3; }
+.apartment-skeleton-grid .skeleton-line { height: 16px; width: 80%; margin: 8px 0;
+  border-radius: 8px; background: #e7edf3; }
+.apartment-skeleton-grid .skeleton-line.short { width: 45%; }
+.apartment-skeleton-grid .skeleton-line.medium { width: 65%; }
+.skeleton-shimmer { background-image: linear-gradient(100deg, transparent 25%,
+  rgba(255,255,255,.48) 45%, transparent 65%); background-size: 220% 100%;
+  animation: eo-skeleton-shimmer 1.6s ease-in-out infinite; }
+@keyframes eo-skeleton-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+@media (max-width: 767px) {
+  .apartment-skeleton-grid .skeleton-card:nth-child(n + 2) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer { animation: none; }
+}

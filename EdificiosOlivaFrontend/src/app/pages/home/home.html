@@ -101,9 +101,19 @@
     </div>
 
     @if (loadingApartments) {
-      <p class="status-message" role="status" aria-live="polite">
-        Cargando apartamentos destacados...
-      </p>
+      <p class="sr-only" role="status" aria-live="polite">Cargando apartamentos destacados...</p>
+      <div class="apartments-grid apartment-skeleton-grid" aria-hidden="true">
+        @for (placeholder of [1, 2, 3]; track placeholder) {
+          <div class="apartment-card skeleton-card">
+            <div class="image-wrapper skeleton-shimmer"></div>
+            <div class="card-body">
+              <div class="skeleton-line skeleton-shimmer"></div>
+              <div class="skeleton-line short skeleton-shimmer"></div>
+              <div class="skeleton-line medium skeleton-shimmer"></div>
+            </div>
+          </div>
+        }
+      </div>
     } @else if (apartmentsError) {
       <p class="status-message error" role="alert">{{ apartmentsError }}</p>
     } @else if (featuredApartments.length === 0) {
@@ -294,7 +304,11 @@
     </div>
 
     @if (loadingGallery) {
-      <p class="status-message" role="status" aria-live="polite">Cargando fotografías...</p>
+      <div class="gallery-empty gallery-loading" role="status" aria-live="polite">
+        <i class="bi bi-images" aria-hidden="true"></i>
+        <h3>Preparando galería</h3>
+        <p>Cargando fotografías publicadas...</p>
+      </div>
     } @else if (publicVisuals.length === 0) {
       <div class="gallery-empty">
         <i class="bi bi-images" aria-hidden="true"></i>
