@@ -46,6 +46,23 @@ export class Payments implements OnInit {
   search = '';
   statusFilter = 0;
   methodFilter = 0;
+  page = 1;
+  readonly pageSize = 20;
+  totalItems = 0;
+  totalPages = 0;
+  hasPreviousPage = false;
+  hasNextPage = false;
+
+  get pageStart(): number { return this.totalItems ? (this.page - 1) * this.pageSize + 1 : 0; }
+  get pageEnd(): number { return Math.min(this.page * this.pageSize, this.totalItems); }
+
+  applyFilters(): void { this.page = 1; this.loadPayments(); }
+  changePage(direction: -1 | 1): void {
+    if (this.loading || (direction === -1 && !this.hasPreviousPage) ||
+        (direction === 1 && !this.hasNextPage)) return;
+    this.page += direction;
+    this.loadPayments();
+  }
   successMessage = '';
   errorMessage = '';
 
@@ -63,8 +80,8 @@ export class Payments implements OnInit {
 
     this.paymentsService
       .getAll({
-        page: 1,
-        pageSize: 100,
+        page: this.page,
+        pageSize: this.pageSize,
         search: this.search,
         status: this.statusFilter || undefined,
         method: this.methodFilter || undefined,
@@ -79,10 +96,23 @@ export class Payments implements OnInit {
       .subscribe({
         next: (result) => {
           this.payments = result.items;
+          this.page = result.page;
+          this.totalItems = result.totalItems;
+          this.totalPages = result.totalPages;
+          this.hasPreviousPage = result.hasPreviousPage;
+          this.hasNextPage = result.hasNextPage;
           this.changeDetector.markForCheck();
+          if (!result.items.length && result.page > 1 && result.totalItems > 0) {
+            this.page = Math.max(1, result.totalPages);
+            this.loadPayments();
+          }
         },
         error: (error: unknown) => {
           this.payments = [];
+          this.totalItems = 0;
+          this.totalPages = 0;
+          this.hasPreviousPage = false;
+          this.hasNextPage = false;
           this.errorMessage =
             error instanceof Error
               ? error.message
