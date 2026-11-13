@@ -5,7 +5,7 @@ import { GalleryAdmin } from './gallery-admin';
 
 const image = {
   id: 'i1', title: 'Piscina', category: 'Piscina', url: '/images/piscina.webp',
-  altText: 'Vista de la piscina', sortOrder: 1, isPublished: true,
+  altText: 'Vista de la piscina', sortOrder: 1, isPublished: true, createdAtUtc: '2026-11-13T00:00:00Z',
 };
 
 describe('GalleryAdmin v1.3', () => {
