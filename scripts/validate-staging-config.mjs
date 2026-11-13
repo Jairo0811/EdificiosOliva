@@ -52,7 +52,7 @@ export function validateStagingConfig(vars, { template = false } = {}) {
   }
   const expectedOrigin = host ? `https://${host}` : '';
   const configuredCorsOrigins = Object.entries(vars)
-    .filter(([key, value]) => /^Cors__AllowedOrigins__\\d+$/.test(key) && typeof value === 'string' && value.trim())
+    .filter(([key, value]) => /^Cors__AllowedOrigins__[0-9]+$/.test(key) && typeof value === 'string' && value.trim())
     .map(([key]) => key);
   if (!expectedOrigin || read('Cors__AllowedOrigins__0') !== expectedOrigin ||
       configuredCorsOrigins.length !== 1 || configuredCorsOrigins[0] !== 'Cors__AllowedOrigins__0') {
