@@ -119,6 +119,16 @@ export class AdminLayout {
 
   toggleMenu(): void {
     this.menuOpen = !this.menuOpen;
+    this.cdr.detectChanges();
+    if (this.menuOpen) {
+      queueMicrotask(() =>
+        document.querySelector<HTMLElement>('#admin-sidebar nav a')?.focus(),
+      );
+    } else {
+      queueMicrotask(() =>
+        document.querySelector<HTMLElement>('.mobile-menu')?.focus(),
+      );
+    }
   }
 
   closeMenu(): void {
@@ -127,7 +137,12 @@ export class AdminLayout {
 
   @HostListener('document:keydown.escape')
   handleEscapeKey(): void {
+    if (!this.menuOpen) return;
     this.closeMenu();
+    this.cdr.markForCheck();
+    queueMicrotask(() =>
+      document.querySelector<HTMLElement>('.mobile-menu')?.focus(),
+    );
   }
 
   async logout(): Promise<void> {

@@ -57,6 +57,15 @@ describe('AdminLayout', () => {
     expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Pagos');
   });
 
+  it('opens mobile navigation, closes with Escape and returns focus to the trigger', async () => {
+    component.toggleMenu();
+    expect(component.menuOpen).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await fixture.whenStable();
+    expect(component.menuOpen).toBe(false);
+    expect(document.activeElement?.classList.contains('mobile-menu')).toBe(true);
+  });
+
   it('offers a skip link to the main content', () => {
     expect(fixture.nativeElement.querySelector('.skip-link').getAttribute('href')).toBe(
       '#admin-main',
