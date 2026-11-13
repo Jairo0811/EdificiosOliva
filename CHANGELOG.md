@@ -22,7 +22,7 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
   este backend (agrega dos columnas nulas y un índice).
 - Stepper de reserva de cinco pasos (Estadía, Huésped, Revisión, Pago, Resultado) accesible por teclado.
 - Verificación del pago en `/reservar` tras el retorno de AZUL con sondeo acotado (6 intentos / 4 s).
-- Pruebas: backend 32 (CI); suite frontend ampliada con casos de paginación, tarjetas móviles y filtros PMS (recuento final sujeto a CI).
+- Pruebas: backend 32 (CI); frontend 113 pruebas aprobadas en 42 archivos (CI del 13-11-2026), incluyendo paginación, tarjetas móviles y filtros PMS.
 
 ### Cambiado
 
