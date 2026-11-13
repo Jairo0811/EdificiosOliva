@@ -1,9 +1,9 @@
-# ADR-PAY-001 — Control de acceso a pagos públicos (propuesta S1)
+# ADR-PAY-001 — Control de acceso a pagos públicos (Bloque C)
 
-**Estado:** PROPUESTA — pendiente de implementación y validación, NO habilitado
-**Fecha:** 2026-11-13 · **PR:** #30 · **Impacto:** API pública, Angular, esquema SQL y seguridad
+**Estado:** IMPLEMENTADO EN PR #35 (Draft) — sin aprobación ni despliegue
+**Fecha:** 2026-11-13 · **PR:** #35 (base PR #30) · **Impacto:** API pública, Angular, esquema SQL y seguridad
 
-## Problema actual comprobado
+## Problema previo a la implementación del PR #35
 
 1. `POST /api/public/payments/status` y `/checkout` autorizan con
    `ReservationId + ConfirmationCode + Email`.
@@ -86,6 +86,6 @@ agregada, sin bloqueo injustificado de clientes detrás del mismo NAT.
 
 ## Regla de salida
 
-Este ADR **NO implementa** el cambio ni modifica la ruta de pagos.
-El bloqueo P1 se mantiene hasta completar el contrato, su migración,
-tests de regresión y aceptación. AZUL y SMTP siguen apagados en staging.
+El PR #35 implementa el contrato opaco y la migración, pero faltan
+recuperación segura de reservas legadas, pruebas E2E con proveedores, validación
+real de proxy TLS y revisión manual. **NO-GO a producción**. AZUL/SMTP apagados.

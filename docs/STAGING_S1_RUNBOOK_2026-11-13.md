@@ -1,6 +1,6 @@
 # Bloque S1 — Staging aislado (preparación, NO despliegue)
 
-**Fecha:** 2026-11-13 · **Rama:** `feature/v1.3-frontend-ux` · **PR:** #30 (Draft)
+**Fecha:** 2026-11-13 · **Base:** PR #30 fusionado · **Seguridad:** PR #35 Draft
 
 ## Alcance
 
@@ -61,6 +61,12 @@ terminar TLS en un proxy externo autorizado y validar cabeceras y confianza.
   `X-Forwarded-*`. Si no hay proxy HTTPS, **NO exponer staging al público**.
 - [ ] Inyectar variables desde un **gestor de secretos** del proveedor o
   proceso local seguro. No crear archivos `.env` con contraseñas en el repo.
+- [ ] Inyectar `STAGING_PUBLIC_PAYMENT_CAPABILITY_KEY` desde gestor de secretos
+  (Base64 de 32 bytes aleatorios); no usar claves sintéticas de CI.
+- [ ] Confirmar nginx en IP privada `172.29.77.10` dentro de red
+  `172.29.77.0/24` sin conflicto con infraestructura, y configurar
+  un proxy TLS externo que **sobrescriba** `X-Real-IP` y
+  `X-Forwarded-Proto` antes de reenviarlos; nunca confiar en valores del navegador.
 - [ ] Mantener pagos AZUL y SMTP deshabilitados. Nada de credenciales,
   endpoints ni montos de producción.
 - [ ] Autorizar explícitamente el arranque antes de ejecutar `up`.
@@ -85,6 +91,7 @@ persistencia, separación de redes y opciones de pago/correo. Ese análisis
 1. Configurar `STAGING_HOST` (hostname de staging no productivo),
    `STAGING_ORIGIN` (su URL HTTPS), `STAGING_FIREBASE_PROJECT_ID`,
    `STAGING_SQL_CONNECTION_STRING` (cadena SQL aislada y cifrada),
+   `STAGING_PUBLIC_PAYMENT_CAPABILITY_KEY` (gestor de secretos),
    y opcionalmente `STAGING_LOCAL_HTTP_PORT` (default 8088).
 2. Ejecutar `node scripts/validate-staging-config.mjs --environment` desde
    un contexto con las variables de configuración real inyectadas. El
@@ -98,7 +105,9 @@ persistencia, separación de redes y opciones de pago/correo. Ese análisis
 6. Con credenciales DDL temporales de staging, aplicar de forma controlada
    `dotnet ef database update` utilizando el proyecto
    `EdificiosOliva.Infrastructure` y startup `EdificiosOliva.Api`.
-   Confirmar tablas e índice de idempotencia y correr de nuevo.
+   Confirmar tablas e índice de idempotencia y la migración
+   `20261113193000_AddPublicPaymentCapability`. Repetir; las reservas legadas
+   permanecen sin nonce y no pueden usar checkout público sin recuperación segura.
 7. Tras aprobación del responsable, levantar únicamente staging:
    `docker compose -f ops/staging/compose.yml up -d --build`.
    Compose primero ejecuta el preflight offline; si falla, no inicia la API.
@@ -138,10 +147,9 @@ con secretos en issues o chats.
 
 ## Decisiones de seguridad que permanecen abiertas
 
-1. Reforzar las credenciales públicas de estado/checkout con la propuesta
-   de [ADR-PAY-001](ADR_PAY_001_CAPABILITY_TOKEN_V13.md): capacidad opaca
-   derivada con HMAC sobre nonce CSPRNG y llave secreta, expiración y
-   revocación. **Aún no implementado**, migración y pruebas pendientes.
+1. El PR #35 implementa el contrato de [ADR-PAY-001](ADR_PAY_001_CAPABILITY_TOKEN_V13.md),
+   pero permanecen pendientes la recuperación de reservas legadas, UX
+   multidispositivo, validación de TLS/cabeceras con proveedor y E2E en staging.
 2. Definir la política de consulta de pagos cuando la reserva se crea con
    más de 30 días de anticipación, evitando prolongar acceso por identificadores
    derivados del GUID.
