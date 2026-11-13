@@ -515,6 +515,13 @@ namespace EdificiosOliva.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<int?>("PublicAccessKeyVersion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PublicAccessNonce")
+                        .HasMaxLength(44)
+                        .HasColumnType("nvarchar(44)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 

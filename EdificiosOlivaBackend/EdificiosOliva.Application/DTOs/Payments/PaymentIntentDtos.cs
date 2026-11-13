@@ -87,11 +87,8 @@ public sealed class CreatePublicPaymentCheckoutRequest
     [Required]
     public Guid ReservationId { get; init; }
 
-    [Required, StringLength(32, MinimumLength = 5)]
-    public string ConfirmationCode { get; init; } = string.Empty;
-
-    [Required, EmailAddress, StringLength(200)]
-    public string Email { get; init; } = string.Empty;
+    [Required, StringLength(64, MinimumLength = 64), RegularExpression("^[0-9a-fA-F]{64}$")]
+    public string CapabilityToken { get; init; } = string.Empty;
 
     [Required, StringLength(100, MinimumLength = 8)]
     public string IdempotencyKey { get; init; } = string.Empty;
@@ -105,11 +102,8 @@ public sealed class PublicPaymentStatusRequest
     [Required]
     public Guid ReservationId { get; init; }
 
-    [Required, StringLength(32, MinimumLength = 5)]
-    public string ConfirmationCode { get; init; } = string.Empty;
-
-    [Required, EmailAddress, StringLength(200)]
-    public string Email { get; init; } = string.Empty;
+    [Required, StringLength(64, MinimumLength = 64), RegularExpression("^[0-9a-fA-F]{64}$")]
+    public string CapabilityToken { get; init; } = string.Empty;
 
     /// <summary>
     /// Opcional. Si se envía debe pertenecer a la misma reserva;

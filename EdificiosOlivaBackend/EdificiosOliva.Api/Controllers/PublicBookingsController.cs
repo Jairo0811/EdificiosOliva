@@ -49,6 +49,9 @@ public sealed class PublicBookingsController(IReservationService reservationServ
         CancellationToken cancellationToken)
     {
         var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
+        // La respuesta incluye una credencial temporal: no permitir cache compartida.
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers.Pragma = "no-cache";
         var result = await reservationService.CreatePublicAsync(
             request,
             idempotencyKey,

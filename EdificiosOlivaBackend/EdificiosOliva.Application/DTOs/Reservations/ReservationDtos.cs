@@ -40,7 +40,8 @@ public sealed record PublicBookingResponse(
     int Nights,
     decimal NightlyRate,
     decimal TotalAmount,
-    ReservationStatus Status);
+    ReservationStatus Status,
+    string CapabilityToken);
 
 /// <summary>Resultado de crear una reserva pública; <c>Replayed</c> indica un reintento idempotente.</summary>
 public sealed record PublicBookingCreateResult(

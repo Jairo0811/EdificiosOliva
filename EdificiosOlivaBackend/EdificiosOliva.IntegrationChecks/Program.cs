@@ -6,6 +6,7 @@ using EdificiosOliva.Domain.Entities;
 using EdificiosOliva.Infrastructure.Persistence.Context;
 using EdificiosOliva.Infrastructure.Repositories;
 using EdificiosOliva.Infrastructure.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -49,9 +50,18 @@ async Task<PublicBookingCreateResult> BookAsync(PublicBookingRequest request, st
         db,
         new SilentNotifications(),
         new FixedClock(),
+        TestCapabilityService(),
         NullLogger<ReservationService>.Instance);
     return await service.CreatePublicAsync(request, key);
 }
+
+PublicBookingCapabilityService TestCapabilityService() => new(
+    new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["PublicPayments:ActiveKeyVersion"] = "1",
+        ["PublicPayments:CapabilityKeys:1"] = Convert.ToBase64String(Enumerable.Repeat((byte)42, 32).ToArray()),
+    }).Build(),
+    new FixedClock());
 
 async Task<int> CountByKeyAsync(string key)
 {
@@ -85,7 +95,17 @@ Ensure(!first.Replayed, "La primera reserva se marcó incorrectamente como repla
 Ensure(replay.Replayed, "El reintento idéntico no se marcó como replay.");
 Ensure(first.Booking.ReservationId == replay.Booking.ReservationId,
     "Un reintento idéntico creó una reserva diferente.");
+Ensure(first.Booking.CapabilityToken == replay.Booking.CapabilityToken,
+    "La respuesta idempotente perdió su token de acceso.");
 Ensure(await CountByKeyAsync(key) == 1, "Se crearon reservas duplicadas para la misma clave.");
+await using (var lookup = new ApplicationDbContext(options))
+{
+    var saved = await lookup.Reservations.SingleAsync(r => r.Id == first.Booking.ReservationId);
+    Ensure(TestCapabilityService().Validate(saved, first.Booking.CapabilityToken),
+        "El token de reserva persistida no se verifica.");
+    Ensure(!TestCapabilityService().Validate(saved, new string('0', 64)),
+        "El token manipulado no fue rechazado.");
+}
 
 try
 {
