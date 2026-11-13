@@ -28,7 +28,7 @@ for (const path of ['/', '/reservar', '/contacto', '/galeria']) {
 
     console.log('EO_AXE_AUDIT', JSON.stringify({
       path,
-      violations: violations.map((v) => ({ id: v.id, impact: v.impact, count: v.nodes.length })),
+      violations: violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.slice(0, 6) })),
     }));
     const blocking = violations.filter((item) => item.impact === 'serious' || item.impact === 'critical');
     expect(blocking, `Serious/critical accessibility violations at ${path}`).toEqual([]);
