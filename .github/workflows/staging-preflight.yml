@@ -31,6 +31,8 @@ jobs:
           node-version: 24
       - name: Test fail-closed staging rules
         run: node --test scripts/validate-staging-config.test.mjs
+      - name: Test Compose isolation rules
+        run: node --test scripts/assert-staging-compose.test.mjs
       - name: Validate staging configuration inventory
         run: node scripts/validate-staging-config.mjs --template
       - name: Verify Compose wiring without starting services
