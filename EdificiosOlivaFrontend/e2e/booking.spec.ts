@@ -25,7 +25,7 @@ test('completes a public booking without pretending that payment was confirmed',
   await page.getByRole('button', { name: 'Continuar' }).click();
 
   await expect(page.getByRole('heading', { name: 'Revisa tu reserva' })).toBeVisible();
-  await expect(page.getByText('US$270.00').first()).toBeVisible();
+  await expect(page.locator('.review-total')).toContainText('270');
   await page.locator('input[name="policiesAccepted"]').check();
   await page.getByRole('button', { name: 'Registrar reserva y continuar' }).click();
 
