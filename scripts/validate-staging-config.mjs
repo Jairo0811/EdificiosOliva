@@ -51,7 +51,11 @@ export function validateStagingConfig(vars, { template = false } = {}) {
     problem('El modo --environment requiere hostname real de staging, no el del ejemplo ni localhost.');
   }
   const expectedOrigin = host ? `https://${host}` : '';
-  if (!expectedOrigin || read('Cors__AllowedOrigins__0') !== expectedOrigin) {
+  const configuredCorsOrigins = Object.entries(vars)
+    .filter(([key, value]) => /^Cors__AllowedOrigins__\\d+$/.test(key) && typeof value === 'string' && value.trim())
+    .map(([key]) => key);
+  if (!expectedOrigin || read('Cors__AllowedOrigins__0') !== expectedOrigin ||
+      configuredCorsOrigins.length !== 1 || configuredCorsOrigins[0] !== 'Cors__AllowedOrigins__0') {
     problem('CORS debe usar únicamente el origen HTTPS de staging.');
   }
 
@@ -82,6 +86,16 @@ export function validateStagingConfig(vars, { template = false } = {}) {
   for (const key of ['Payments__Azul__Enabled', 'Notifications__Email__Enabled']) {
     if (read(key).toLowerCase() !== 'false') {
       problem(`${key} debe permanecer false durante el preflight.`);
+    }
+  }
+  if (template) {
+    for (const key of [
+      'Payments__Azul__AuthKey',
+      'Payments__Azul__MerchantId',
+      'Notifications__Email__Password',
+      'Notifications__Email__Username',
+    ]) {
+      if (read(key)) problem(`${key} debe estar vacío en el inventario versionado.`);
     }
   }
   for (const key of ['Payments__Azul__PaymentPageUrl', 'Payments__Azul__AlternatePaymentPageUrl']) {
