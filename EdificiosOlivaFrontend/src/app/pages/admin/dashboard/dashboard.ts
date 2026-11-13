@@ -8,6 +8,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { todayInPropertyZone } from '../../../core/utils/property-date';
 
 import {
   DashboardReservationItem,
@@ -36,6 +37,17 @@ export class Dashboard implements OnInit {
   errorMessage = '';
   summary: DashboardSummary | null = null;
   stats: DashboardStat[] = [];
+  reservationQuery = '';
+  reservationStatus = 0;
+
+  get filteredReservations(): DashboardReservationItem[] {
+    const query = this.reservationQuery.trim().toLocaleLowerCase('es');
+    return (this.summary?.recentReservations ?? []).filter((reservation) =>
+      (this.reservationStatus === 0 || reservation.status === this.reservationStatus) &&
+      (!query || [reservation.customerName, reservation.apartmentName].some((value) =>
+        value.toLocaleLowerCase('es').includes(query))),
+    );
+  }
 
   ngOnInit(): void {
     this.loadDashboard();
@@ -130,11 +142,9 @@ export class Dashboard implements OnInit {
     const date = this.summary?.nextCheckInDate;
     if (!date) return 'Sin próximos check-in';
 
-    const today = new Date();
-    const target = new Date(`${date}T00:00:00`);
-    const difference = Math.round(
-      (target.setHours(0, 0, 0, 0) - today.setHours(0, 0, 0, 0)) / 86400000,
-    );
+    const today = todayInPropertyZone();
+    const utcDay = (value: string): number => Date.parse(`${value}T00:00:00Z`);
+    const difference = Math.round((utcDay(date) - utcDay(today)) / 86400000);
 
     if (difference === 0) return 'Hoy';
     if (difference === 1) return 'Mañana';
