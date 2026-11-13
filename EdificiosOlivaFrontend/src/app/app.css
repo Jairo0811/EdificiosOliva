@@ -1,0 +1,5 @@
+/* Reserve the route viewport while lazy Angular pages load.
+   Without this, the footer initially paints near the header and shifts by
+   hundreds of pixels once the router inserts the page (CLS regression). */
+:host { display: block; }
+#contenido-principal { display: flow-root; min-height: 100dvh; }
