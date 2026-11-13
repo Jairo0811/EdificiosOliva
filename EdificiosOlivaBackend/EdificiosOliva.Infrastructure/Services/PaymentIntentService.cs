@@ -17,11 +17,12 @@ public sealed class PaymentIntentService(
     ApplicationDbContext dbContext,
     IEnumerable<IPaymentGateway> gateways,
     IBookingNotificationService notificationService,
+    PublicBookingCapabilityService capabilityService,
+    IPropertyClock propertyClock,
     ILogger<PaymentIntentService> logger) : IPaymentIntentService
 {
     private const string DefaultCurrency = "USD";
     private static readonly TimeSpan DefaultIntentLifetime = TimeSpan.FromMinutes(30);
-    private static readonly TimeSpan PublicStatusLookupWindow = TimeSpan.FromDays(30);
 
     public async Task<PagedResult<PaymentIntentResponse>> GetPagedAsync(
         PaymentIntentQueryParameters parameters,
@@ -373,8 +374,7 @@ public sealed class PaymentIntentService(
         var gateway = GetGateway(provider);
         var reservation = await ValidatePublicReservationAsync(
             request.ReservationId,
-            request.ConfirmationCode,
-            request.Email,
+            request.CapabilityToken,
             cancellationToken);
 
         var now = DateTime.UtcNow;
@@ -457,23 +457,17 @@ public sealed class PaymentIntentService(
         PublicPaymentStatusRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Mismo mecanismo de autorización que el checkout público (id completo +
-        // código + correo) y mensaje uniforme para evitar enumeración.
+        // El estado público requiere token opaco HMAC, no GUID + código + correo.
         const string notFound = "No se pudo validar la reserva solicitada.";
 
         var reservation = await LoadPublicReservationAsync(
             request.ReservationId,
-            request.ConfirmationCode,
-            request.Email,
+            request.CapabilityToken,
             notFound,
             cancellationToken);
 
+        // La vigencia se verifica contra checkout + 30 días en hora de la propiedad.
         var now = DateTime.UtcNow;
-        if (reservation.CreatedAtUtc < now - PublicStatusLookupWindow)
-        {
-            throw new KeyNotFoundException(notFound);
-        }
-
         var intentsQuery = dbContext.PaymentIntents
             .AsNoTracking()
             .Where(item => !item.IsDeleted && item.ReservationId == reservation.Id);
@@ -875,18 +869,17 @@ public sealed class PaymentIntentService(
 
     private async Task<Reservation> ValidatePublicReservationAsync(
         Guid reservationId,
-        string confirmationCode,
-        string email,
+        string capabilityToken,
         CancellationToken cancellationToken)
     {
         var reservation = await LoadPublicReservationAsync(
             reservationId,
-            confirmationCode,
-            email,
+            capabilityToken,
             "No se pudo validar la reserva para iniciar el pago.",
             cancellationToken);
 
-        if (reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed)
+        if (reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed ||
+            propertyClock.Today > reservation.CheckOutDate)
         {
             throw new InvalidOperationException(
                 "Esta reserva ya no admite nuevos pagos en línea.");
@@ -897,8 +890,7 @@ public sealed class PaymentIntentService(
 
     private async Task<Reservation> LoadPublicReservationAsync(
         Guid reservationId,
-        string confirmationCode,
-        string email,
+        string capabilityToken,
         string notFoundMessage,
         CancellationToken cancellationToken)
     {
@@ -915,18 +907,7 @@ public sealed class PaymentIntentService(
             throw new KeyNotFoundException(notFoundMessage);
         }
 
-        var expectedConfirmationCode =
-            $"EO-{reservation.Id.ToString("N")[..8].ToUpperInvariant()}";
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-
-        if (!string.Equals(
-                expectedConfirmationCode,
-                confirmationCode.Trim(),
-                StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(
-                reservation.Customer.Email.Trim().ToLowerInvariant(),
-                normalizedEmail,
-                StringComparison.Ordinal))
+        if (!capabilityService.Validate(reservation, capabilityToken))
         {
             throw new KeyNotFoundException(notFoundMessage);
         }

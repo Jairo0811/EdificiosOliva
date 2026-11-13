@@ -15,6 +15,9 @@ function validComposeModel() {
     Notifications__Email__Enabled: 'false',
     Security__UseHttpsRedirection: 'false',
     Staging__TrustedHttpsProxy: 'true',
+    ReverseProxy__KnownProxies__0: '172.29.77.10',
+    PublicPayments__ActiveKeyVersion: '1',
+    PublicPayments__CapabilityKeys__1: Buffer.alloc(32, 12).toString('base64'),
   };
   return {
     services: {

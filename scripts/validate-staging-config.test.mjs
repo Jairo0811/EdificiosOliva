@@ -18,6 +18,8 @@ function configuredStaging() {
     Firebase__ProjectId: 'edificios-oliva-staging-qa',
     ConnectionStrings__DefaultConnection: 'Server=sqlserver,1433;Database=EdificiosOliva_Staging;User Id=staging_user;Password=SYNTHETIC_TEST_ONLY;Encrypt=True;TrustServerCertificate=False',
     Security__UseHttpsRedirection: 'true',
+    PublicPayments__ActiveKeyVersion: '1',
+    PublicPayments__CapabilityKeys__1: Buffer.alloc(32, 12).toString('base64'),
   };
 }
 
@@ -78,7 +80,17 @@ test('only an explicitly declared trusted HTTPS proxy permits disabling app redi
   config.Security__UseHttpsRedirection = 'false';
   assert.ok(validateStagingConfig(config).some((message) => message.includes('HTTPS debe')));
   config.Staging__TrustedHttpsProxy = 'true';
+  assert.ok(validateStagingConfig(config).some((message) => message.includes('IP privada')));
+  config.ReverseProxy__KnownProxies__0 = '172.29.77.10';
   assert.deepEqual(validateStagingConfig(config), []);
+});
+
+test('staging refuses absent or weak public capability HMAC key', () => {
+  const config = configuredStaging();
+  config.PublicPayments__CapabilityKeys__1 = 'REPLACE_WITH_SECRET_MANAGER';
+  assert.ok(validateStagingConfig(config).some((s) => s.includes('256 bits')));
+  config.PublicPayments__CapabilityKeys__1 = Buffer.alloc(31, 1).toString('base64');
+  assert.ok(validateStagingConfig(config).some((s) => s.includes('256 bits')));
 });
 
 test('template parser rejects malformed and duplicate keys', () => {

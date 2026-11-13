@@ -23,9 +23,9 @@ La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **E
 
 > **Estado v1.2.0:** el código de la línea v1 está completo. AZUL, SMTP y producción permanecen deshabilitados por defecto hasta suministrar credenciales, dominio, infraestructura y aprobaciones reales. El repositorio no simula esas dependencias externas.
 
-## 🚧 v1.3.0 — Frontend & UX 2.0 (PR #30, sin publicar)
+## 🚧 v1.3.0 — Frontend & UX 2.0 (PR #30 integrado, no publicado)
 
-La rama `feature/v1.3-frontend-ux` contiene mejoras **aún no fusionadas a `master`**:
+El PR #30 está integrado en `master` (commit `6fa7988`). Incluye:
 
 - Reserva pública en cinco pasos, estado de pago consultado desde el backend y reintentos idempotentes.
 - Galería con lightbox accesible y mejoras de navegación y rendimiento.
@@ -55,7 +55,15 @@ No se han realizado cobros reales ni se ha migrado una base de producción.
 [Informe de los bloques A y B](docs/CIERRE_BLOQUES_A_B_V13_2026-11-13.md) ·
 [Pruebas de navegador](docs/PLAYWRIGHT_UX_V13.md)
 
-[Revisar PR #30](https://github.com/Jairo0811/EdificiosOliva/pull/30)
+[PR #30 (fusionado)](https://github.com/Jairo0811/EdificiosOliva/pull/30) · [PR #35 (Bloque C, Draft)](https://github.com/Jairo0811/EdificiosOliva/pull/35)
+
+### Bloque C — seguridad pendiente de integración
+
+El PR #35 añade tokens HMAC opacos, validación de consulta hasta 30 días tras
+la salida, límite por IP efectiva y preparación de proxy HTTPS confiable.
+Es un **cambio incompatible de contrato**: las reservas anteriores al nuevo
+nonce requieren recuperación segura todavía pendiente. No habilitar AZUL/SMTP
+ni producción. Ver [plan del Bloque C](docs/BLOQUE_C_SEGURIDAD_V13.md).
 
 
 ---

@@ -18,6 +18,7 @@ public sealed class ReservationService(
     ApplicationDbContext dbContext,
     IBookingNotificationService notificationService,
     IPropertyClock propertyClock,
+    PublicBookingCapabilityService capabilityService,
     ILogger<ReservationService> logger) : IReservationService
 {
     private static readonly ReservationStatus[] BlockingStatuses =
@@ -208,7 +209,7 @@ public sealed class ReservationService(
             .SingleOrDefaultAsync(item => item.IdempotencyKey == key, cancellationToken);
     }
 
-    private static PublicBookingCreateResult ReplayExisting(
+    private PublicBookingCreateResult ReplayExisting(
         Reservation existing,
         string fingerprint)
     {
@@ -230,6 +231,8 @@ public sealed class ReservationService(
         string? fingerprint,
         CancellationToken cancellationToken)
     {
+        // Validar la versión/clave HMAC antes de persistir una reserva.
+        var activeKeyVersion = capabilityService.ActiveKeyVersion;
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
@@ -286,6 +289,8 @@ public sealed class ReservationService(
             Notes = NormalizeOptional(request.Notes),
             IdempotencyKey = idempotencyKey,
             IdempotencyFingerprint = fingerprint,
+            PublicAccessNonce = PublicBookingCapabilityService.GenerateNonce(),
+            PublicAccessKeyVersion = activeKeyVersion,
         };
 
         await dbContext.Reservations.AddAsync(reservation, cancellationToken);
@@ -479,7 +484,7 @@ public sealed class ReservationService(
             reservation.UpdatedAtUtc);
     }
 
-    private static PublicBookingResponse MapPublicResponse(
+    private PublicBookingResponse MapPublicResponse(
         Reservation reservation,
         string email)
     {
@@ -499,6 +504,7 @@ public sealed class ReservationService(
             nights,
             reservation.NightlyRate,
             reservation.TotalAmount,
-            reservation.Status);
+            reservation.Status,
+            capabilityService.Issue(reservation));
     }
 }

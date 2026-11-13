@@ -24,4 +24,10 @@ public sealed class Reservation : BaseEntity
 
     /// <summary>Huella SHA-256 de la solicitud que originó la clave.</summary>
     public string? IdempotencyFingerprint { get; set; }
+
+    /// <summary>Nonce CSPRNG; null en reservas antiguas sin token público.</summary>
+    public string? PublicAccessNonce { get; set; }
+
+    /// <summary>Versión de clave HMAC para rotación segura.</summary>
+    public int? PublicAccessKeyVersion { get; set; }
 }

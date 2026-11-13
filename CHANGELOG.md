@@ -2,18 +2,27 @@
 
 Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
-## [Unreleased] - v1.3.0 (en curso, PR #30)
+## [Unreleased] - v1.3.0 (UX integrado en master; Bloque C PR #35 Draft)
 
 > Alcance parcial: ver "Pendiente" al final de esta sección. No es una release.
 
+### Bloque C (PR #35, propuesto y no fusionado)
+
+- Token HMAC-SHA256 por reserva con nonce CSPRNG y versión de clave en SQL.
+  Idempotency replay devuelve la misma capacidad; reservas sin nonce no obtienen
+  autorización pública por fallback.
+- Migración `20261113193000_AddPublicPaymentCapability` y tests de regresión.
+- Consulta de pago hasta 30 días tras check-out usando `IPropertyClock`.
+- Límites de solicitudes por IP efectiva, cuota global secundaria y proxy de
+  confianza en staging. Angular usa POST y sessionStorage para el retorno.
+- Staging requiere clave inyectada del gestor de secretos; AZUL/SMTP siguen apagados.
+
 ### Añadido
 
-- `POST /api/public/payments/status`: consulta de **solo lectura** del estado de pago. Autoriza con
-  `reservationId` + código de reserva + correo (igual que el checkout), responde 404 uniforme ante
-  cualquier discrepancia, limita la consulta a reservas de los últimos 30 días, usa la política de
-  rate limit `PublicPayment` y `Cache-Control: no-store`. Se usa POST solo para no exponer correo ni
-  código en la URL. Estados: `NotStarted, Pending, Confirmed, Declined, Cancelled, Refunded,
-  RequiresReview` (numéricos). `Confirmed` exige intento `Succeeded` **y** reserva ya confirmada.
+- `POST /api/public/payments/status`: el contrato base del PR #30 autoriza mediante
+  GUID/código/email; el PR #35 en revisión sustituye ese mecanismo por un token
+  HMAC opaco transportado en el cuerpo POST (no-store). Confirmación financiera
+  solo desde el backend validado, nunca mediante query string.
 - Idempotencia en `POST /api/public/bookings` mediante la cabecera opcional `Idempotency-Key`
   (8-100 caracteres `[A-Za-z0-9._:-]`): reintento idéntico -> 200 con la reserva original y
   `Idempotent-Replayed: true`; misma clave con datos distintos -> 409. Índice único filtrado en
@@ -102,7 +111,8 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
   administración autenticada; los tests actuales usan mocks.
 - Revisión de avisos de dependencias de desarrollo y decisión sobre token opaco
   para consulta pública del estado de pago.
-- PR #30 permanece en borrador y sin fusionar a `master`.
+- PR #30 fue fusionado a `master` (`6fa7988`); PR #35 continúa en Draft.
+  La certificación de staging y la recuperación segura de reservas legadas siguen pendientes.
 
 
 ## [1.2.0] - 2026-10-27

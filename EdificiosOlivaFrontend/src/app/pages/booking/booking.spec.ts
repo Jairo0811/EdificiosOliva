@@ -25,6 +25,7 @@ const statusOf = (paymentState: PublicPaymentState): PublicPaymentStatus => ({
 const confirmationFixture = {
   reservationId: 'test-reservation',
   confirmationCode: 'EO-TEST0001',
+  capabilityToken: 'A'.repeat(64),
   customerName: 'Cliente de prueba',
   email: 'cliente@example.com',
   apartmentId: 'test-apartment',

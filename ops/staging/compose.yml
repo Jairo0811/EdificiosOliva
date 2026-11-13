@@ -20,6 +20,9 @@ services:
       Property__TimeZoneId: America/Santo_Domingo
       ConnectionStrings__DefaultConnection: ${STAGING_SQL_CONNECTION_STRING:?Set isolated TLS-protected staging SQL connection string}
       Firebase__ProjectId: ${STAGING_FIREBASE_PROJECT_ID:?Set isolated Firebase staging project}
+      PublicPayments__ActiveKeyVersion: "1"
+      PublicPayments__CapabilityKeys__1: ${STAGING_PUBLIC_PAYMENT_CAPABILITY_KEY:?Set a 256-bit base64 secret from secret manager}
+      ReverseProxy__KnownProxies__0: "172.29.77.10"
       Payments__Azul__Enabled: "false"
       Payments__Azul__MerchantId: ""
       Payments__Azul__AuthKey: ""
@@ -69,13 +72,17 @@ services:
     security_opt:
       - no-new-privileges:true
     networks:
-      - internal
+      internal:
+        ipv4_address: 172.29.77.10
     # El proxy HTTPS externo (no incluido) debe dirigirse a este puerto SOLO local.
     # Sin proxy HTTPS validado, usar únicamente el loopback para pruebas locales.
 
 networks:
   internal:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.77.0/24
 
 volumes:
   uploads-staging:

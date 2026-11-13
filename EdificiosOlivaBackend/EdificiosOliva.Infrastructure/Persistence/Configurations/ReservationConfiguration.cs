@@ -26,6 +26,9 @@ public sealed class ReservationConfiguration : IEntityTypeConfiguration<Reservat
         builder.Property(reservation => reservation.IdempotencyFingerprint)
             .HasMaxLength(64);
 
+        builder.Property(reservation => reservation.PublicAccessNonce)
+            .HasMaxLength(44);
+
         builder.HasIndex(reservation => reservation.IdempotencyKey)
             .IsUnique()
             .HasFilter("[IdempotencyKey] IS NOT NULL");

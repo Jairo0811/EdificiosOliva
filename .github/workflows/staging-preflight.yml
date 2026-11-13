@@ -45,6 +45,7 @@ jobs:
           STAGING_HOST: staging.oliva-tests.example.org
           STAGING_ORIGIN: https://staging.oliva-tests.example.org
           STAGING_FIREBASE_PROJECT_ID: edificios-oliva-staging-qa
+          STAGING_PUBLIC_PAYMENT_CAPABILITY_KEY: 'DAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw='
           STAGING_SQL_CONNECTION_STRING: 'Server=staging-sql;Database=EdificiosOliva_Staging;User Id=staging_user;Password=SYNTHETIC_TEST_ONLY;Encrypt=True;TrustServerCertificate=False'
         run: |
           set -euo pipefail
