@@ -8,7 +8,7 @@
 
     <div class="review-card" [class.attention]="needsReviewCount > 0">
       <strong>{{ needsReviewCount }}</strong>
-      <span>requieren revisión</span>
+      <span>requieren revisión en esta página</span>
     </div>
   </div>
 
@@ -27,7 +27,7 @@
         type="search"
         [(ngModel)]="search"
         placeholder="Cliente, apartamento, orden..."
-        (keyup.enter)="load()"
+        (keyup.enter)="applyFilters()"
       />
     </label>
 
@@ -53,7 +53,7 @@
       </select>
     </label>
 
-    <button type="button" class="filter-btn" (click)="load()">
+    <button type="button" class="filter-btn" (click)="applyFilters()">
       <i class="bi bi-funnel" aria-hidden="true"></i>
       Aplicar
     </button>
@@ -120,8 +120,54 @@
           }
         </tbody>
       </table>
+
+      <div class="intent-cards" aria-label="Intentos de pago en esta página">
+        @for (intent of intents; track intent.id) {
+          <article class="intent-card" [class.needs-review]="intent.needsReview">
+            <div class="intent-card-head">
+              <div>
+                <span class="intent-code">#{{ shortId(intent.id) }}</span>
+                <h2>{{ intent.customerName }}</h2>
+                <p>{{ intent.apartmentName }}</p>
+              </div>
+              <span class="status status-{{ intent.status }}">{{ statusLabel(intent.status) }}</span>
+            </div>
+            @if (intent.needsReview) {
+              <span class="review-badge">Requiere revisión</span>
+            }
+            <dl class="intent-card-details">
+              <div><dt>Proveedor</dt><dd>{{ intent.provider }}</dd></div>
+              <div><dt>Monto</dt><dd>{{ intent.amount | currency: intent.currency : 'symbol' : '1.2-2' }}</dd></div>
+              <div><dt>Referencia</dt><dd>{{ intent.providerReference || '—' }}</dd></div>
+              <div><dt>Expira</dt><dd>{{ intent.expiresAtUtc ? (intent.expiresAtUtc | date: 'short') : '—' }}</dd></div>
+            </dl>
+            @if (intent.failureMessage) {
+              <p class="failure">{{ intent.failureMessage }}</p>
+            }
+            @if (intent.status !== 4 && intent.status !== 7) {
+              <button class="reconcile-btn" type="button" (click)="openReconciliation(intent)"
+                [attr.aria-label]="'Conciliar intento de ' + intent.customerName">
+                Conciliar intento
+              </button>
+            } @else {
+              <span class="final-state">Estado final</span>
+            }
+          </article>
+        }
+      </div>
     }
   </div>
+
+  @if (!loading && totalItems > 0) {
+    <nav class="pagination" aria-label="Páginas de intentos de pago">
+      <p role="status">Mostrando {{ pageStart }}–{{ pageEnd }} de {{ totalItems }} intentos</p>
+      <div class="pagination-actions">
+        <button type="button" (click)="changePage(-1)" [disabled]="!hasPreviousPage || loading">Anterior</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button type="button" (click)="changePage(1)" [disabled]="!hasNextPage || loading">Siguiente</button>
+      </div>
+    </nav>
+  }
 
   <div class="operational-note">
     <i class="bi bi-shield-check" aria-hidden="true"></i>
