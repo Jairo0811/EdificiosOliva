@@ -1,9 +1,7 @@
 @if (loading) {
   <section class="detail-section">
     <div class="container">
-      <p class="status-message" role="status" aria-live="polite">
-        Cargando apartamento...
-      </p>
+      <p class="status-message" role="status" aria-live="polite">Cargando apartamento...</p>
     </div>
   </section>
 } @else if (errorMessage || !apartment) {
@@ -17,36 +15,58 @@
     </div>
   </section>
 } @else {
-  <section class="detail-hero" aria-labelledby="apartment-detail-title">
-    <img
-      [src]="getMainImage(apartment)"
-      [alt]="'Imagen principal de ' + apartment.name"
-      (error)="handleImageError($event)"
-      loading="lazy"
-      decoding="async"
-    />
-
-    <div class="overlay"></div>
-
-    <div class="hero-content">
-      <span>Edificios Oliva</span>
-      <h1 id="apartment-detail-title">{{ apartment.name }}</h1>
-      <p>{{ apartment.location }}</p>
-    </div>
+  <section class="container detail-header" aria-labelledby="apartment-detail-title">
+    <nav class="breadcrumbs" aria-label="Ruta de navegación">
+      <a routerLink="/">Inicio</a>
+      <span aria-hidden="true">›</span>
+      <a routerLink="/departamentos">Departamentos</a>
+      <span aria-hidden="true">›</span>
+      <span aria-current="page">{{ apartment.name }}</span>
+    </nav>
+    <h1 id="apartment-detail-title">{{ apartment.name }}</h1>
+    <p class="detail-location">
+      <i class="bi bi-geo-alt-fill" aria-hidden="true"></i> {{ apartment.location }}
+    </p>
   </section>
 
-  @if ((apartment.images || []).length > 0) {
-    <section class="detail-gallery" aria-label="Galería del apartamento">
-      <div class="container gallery-layout">
-        @for (image of apartment.images; track image; let i = $index) {
-          <img
-            [src]="image"
-            [alt]="'Imagen ' + (i + 1) + ' de ' + apartment.name"
-          />
-        }
-      </div>
-    </section>
-  }
+  <section class="container detail-gallery" aria-label="Galería del apartamento">
+    <div class="mosaic" [class.mosaic--single]="mosaicImages(apartment).length < 2">
+      @for (image of mosaicImages(apartment); track image; let i = $index) {
+        <img
+          [class.mosaic-main]="i === 0"
+          [src]="image"
+          [alt]="'Imagen ' + (i + 1) + ' de ' + apartment.name"
+          (error)="handleImageError($event)"
+          [attr.loading]="i === 0 ? 'eager' : 'lazy'"
+          decoding="async"
+        />
+      }
+    </div>
+
+    @if ((apartment.images || []).length > 5) {
+      <button
+        type="button"
+        class="photos-toggle"
+        (click)="showAllPhotos.set(!showAllPhotos())"
+        [attr.aria-expanded]="showAllPhotos()"
+      >
+        {{ showAllPhotos() ? 'Ocultar fotos' : 'Ver las ' + apartment.images.length + ' fotos' }}
+      </button>
+
+      @if (showAllPhotos()) {
+        <div class="all-photos">
+          @for (image of apartment.images; track image; let i = $index) {
+            <img
+              [src]="image"
+              [alt]="'Foto ' + (i + 1) + ' de ' + apartment.name"
+              loading="lazy"
+              decoding="async"
+            />
+          }
+        </div>
+      }
+    }
+  </section>
 
   <section class="detail-section" aria-labelledby="detail-description-title">
     <div class="container">
@@ -56,9 +76,18 @@
           <p>{{ apartment.description }}</p>
 
           <div class="features" [attr.aria-label]="'Características de ' + apartment.name">
-            <span>👥 {{ apartment.guests }} huéspedes</span>
-            <span>🛏 {{ apartment.bedrooms }} habitaciones</span>
-            <span>🚿 {{ apartment.bathrooms }} baños</span>
+            <span
+              ><i class="bi bi-people" aria-hidden="true"></i>
+              {{ apartment.guests }} huéspedes</span
+            >
+            <span
+              ><i class="bi bi-door-open" aria-hidden="true"></i>
+              {{ apartment.bedrooms }} habitaciones</span
+            >
+            <span
+              ><i class="bi bi-droplet" aria-hidden="true"></i>
+              {{ apartment.bathrooms }} baños</span
+            >
           </div>
 
           <h3>Amenidades</h3>
@@ -86,20 +115,39 @@
           </div>
         </div>
 
-        <aside class="booking-card" aria-labelledby="booking-title">
+        <aside class="booking-card" id="booking-card" aria-labelledby="booking-title">
           <h2 id="booking-title">
             US$ {{ apartment.price }}
             <small>/ noche</small>
           </h2>
 
           <label for="detail-checkin">Entrada</label>
-          <input id="detail-checkin" name="checkin" type="date" />
+          <input
+            id="detail-checkin"
+            name="checkin"
+            type="date"
+            [value]="checkInDate"
+            [min]="minDate"
+            (change)="onCheckInChange($any($event.target).value)"
+          />
 
           <label for="detail-checkout">Salida</label>
-          <input id="detail-checkout" name="checkout" type="date" />
+          <input
+            id="detail-checkout"
+            name="checkout"
+            type="date"
+            [value]="checkOutDate"
+            [min]="checkInDate || minDate"
+            (change)="onCheckOutChange($any($event.target).value)"
+          />
 
           <label for="detail-guests">Huéspedes</label>
-          <select id="detail-guests" name="guests">
+          <select
+            id="detail-guests"
+            name="guests"
+            [value]="guestCount"
+            (change)="onGuestsChange($any($event.target).value)"
+          >
             @for (guest of getGuestOptions(apartment); track guest) {
               <option [value]="guest">
                 {{ guest }} {{ guest === 1 ? 'huésped' : 'huéspedes' }}
@@ -107,7 +155,43 @@
             }
           </select>
 
-          <button type="button" aria-label="Reservar este apartamento">
+          <div class="booking-status" id="booking-status" aria-live="polite">
+            @if (validationMessage) {
+              <p class="booking-hint">{{ validationMessage }}</p>
+            } @else if (checking()) {
+              <p class="booking-hint">Comprobando disponibilidad…</p>
+            } @else if (availabilityError()) {
+              <p class="booking-hint booking-hint--error">{{ availabilityError() }}</p>
+            } @else if (availability(); as result) {
+              @if (result.available) {
+                <p class="booking-hint booking-hint--ok">
+                  Disponible: {{ result.nights }} noche(s) × US$
+                  {{ result.nightlyRate | number: '1.2-2' }} = US$
+                  {{ result.totalAmount | number: '1.2-2' }}
+                </p>
+              } @else {
+                <p class="booking-hint booking-hint--error">
+                  No disponible para esas fechas. Prueba con otras o consúltanos por WhatsApp.
+                </p>
+              }
+            }
+          </div>
+
+          <button
+            type="button"
+            class="secondary"
+            (click)="checkAvailability()"
+            [disabled]="!!validationMessage || checking()"
+          >
+            Comprobar disponibilidad
+          </button>
+
+          <button
+            type="button"
+            (click)="reserve()"
+            [disabled]="!canReserve"
+            aria-describedby="booking-status"
+          >
             Reservar ahora
           </button>
 
@@ -124,4 +208,12 @@
       </div>
     </div>
   </section>
+
+  <div class="mobile-cta">
+    <p>
+      <strong>US$ {{ apartment.price }}</strong>
+      <span>/ noche</span>
+    </p>
+    <a [routerLink]="[]" fragment="booking-card">Reservar</a>
+  </div>
 }

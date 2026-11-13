@@ -26,13 +26,13 @@
         type="search"
         [(ngModel)]="search"
         placeholder="Cliente, apartamento o transacción"
-        (keyup.enter)="loadPayments()"
+        (keyup.enter)="applyFilters()"
       />
     </label>
 
     <label>
       <span>Estado</span>
-      <select [(ngModel)]="statusFilter" (change)="loadPayments()">
+      <select [(ngModel)]="statusFilter" (change)="applyFilters()">
         <option [ngValue]="0">Todos</option>
         <option [ngValue]="1">Pendiente</option>
         <option [ngValue]="2">Pagado</option>
@@ -43,7 +43,7 @@
 
     <label>
       <span>Método</span>
-      <select [(ngModel)]="methodFilter" (change)="loadPayments()">
+      <select [(ngModel)]="methodFilter" (change)="applyFilters()">
         <option [ngValue]="0">Todos</option>
         <option [ngValue]="1">Efectivo</option>
         <option [ngValue]="2">Transferencia</option>
@@ -52,16 +52,16 @@
       </select>
     </label>
 
-    <button class="filter-btn" type="button" (click)="loadPayments()">
+    <button class="filter-btn" type="button" (click)="applyFilters()">
       Buscar
     </button>
   </section>
 
   <div class="table-card" role="region" aria-label="Tabla de pagos" tabindex="0">
     @if (loading) {
-      <p class="empty-state">Cargando pagos...</p>
+      <p class="empty-state" role="status">Cargando pagos...</p>
     } @else if (payments.length === 0) {
-      <p class="empty-state">No se encontraron pagos.</p>
+      <p class="empty-state" role="status">No se encontraron pagos.</p>
     } @else {
       <table>
         <thead>
@@ -130,12 +130,54 @@
           }
         </tbody>
       </table>
+      <div class="payment-cards" aria-label="Pagos de la página actual">
+        @for (payment of payments; track payment.id) {
+          <article class="payment-card">
+            <div class="payment-card-header">
+              <div><span class="payment-id">#{{ shortId(payment.id) }}</span>
+                <h2>{{ payment.customerName }}</h2><p>{{ payment.apartmentName }}</p></div>
+              <span class="status-badge" [class.pending]="payment.status === 1"
+                [class.paid]="payment.status === 2" [class.refund]="payment.status === 3"
+                [class.failed]="payment.status === 4">{{ statusLabel(payment.status) }}</span>
+            </div>
+            <dl>
+              <div><dt>Monto</dt><dd>US$ {{ payment.amount }}</dd></div>
+              <div><dt>Método</dt><dd>{{ methodLabel(payment.method) }}</dd></div>
+              <div class="full"><dt>Transacción</dt><dd>{{ payment.transactionId || '—' }}</dd></div>
+            </dl>
+            <div class="payment-card-actions">
+              <button class="edit" type="button" (click)="openEditForm(payment)"
+                [attr.aria-label]="'Editar pago de ' + payment.customerName">
+                <i class="bi bi-pencil" aria-hidden="true"></i><span>Editar</span></button>
+              <button class="refund-btn" type="button" (click)="refundPayment(payment)"
+                [disabled]="payment.status !== 2"
+                [attr.aria-label]="'Reembolsar pago de ' + payment.customerName">
+                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span>Reembolsar</span></button>
+              <button class="delete" type="button" (click)="deletePayment(payment)"
+                [attr.aria-label]="'Eliminar pago de ' + payment.customerName">
+                <i class="bi bi-trash" aria-hidden="true"></i><span>Eliminar</span></button>
+            </div>
+          </article>
+        }
+      </div>
     }
   </div>
 
+  @if (!loading && totalItems > 0) {
+    <nav class="pagination" aria-label="Páginas de pagos">
+      <p role="status">Mostrando {{ pageStart }}–{{ pageEnd }} de {{ totalItems }} pagos</p>
+      <div class="pagination-actions">
+        <button type="button" (click)="changePage(-1)" [disabled]="!hasPreviousPage || loading">Anterior</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button type="button" (click)="changePage(1)" [disabled]="!hasNextPage || loading">Siguiente</button>
+      </div>
+    </nav>
+  }
+
   @if (showForm) {
     <div class="modal-backdrop">
-      <div class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+      <div class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
         <div class="modal-header">
           <div>
             <span>{{ editingId ? 'Actualizar transacción' : 'Nueva transacción' }}</span>

@@ -107,6 +107,37 @@
           }
         </tbody>
       </table>
+      <div class="apartment-cards" aria-label="Apartamentos registrados">
+        @for (apartment of apartments; track apartment.id) {
+          <article class="apartment-admin-card">
+            <img [src]="apartment.images[0] || '/images/apartment-placeholder.webp'"
+              [alt]="'Imagen de ' + apartment.name" loading="lazy" />
+            <div class="apartment-admin-card-body">
+              <div class="apartment-admin-card-heading">
+                <h2>{{ apartment.name }}</h2>
+                <span class="status-badge" [class.available]="apartment.status === 'Disponible'"
+                  [class.occupied]="apartment.status === 'Ocupado'"
+                  [class.maintenance]="apartment.status === 'Mantenimiento'">{{ apartment.status }}</span>
+              </div>
+              <dl>
+                <div><dt>Precio por noche</dt><dd>US$ {{ apartment.price }}</dd></div>
+                <div><dt>Capacidad</dt><dd>{{ apartment.guests }} huéspedes</dd></div>
+                <div class="full"><dt>Identificador</dt><dd>{{ apartment.id }}</dd></div>
+              </dl>
+              <div class="apartment-admin-card-actions">
+                <button class="edit" type="button" (click)="openEditForm(apartment)"
+                  [attr.aria-label]="'Editar apartamento ' + apartment.name">
+                  <i class="bi bi-pencil-square" aria-hidden="true"></i> Editar
+                </button>
+                <button class="delete" type="button" (click)="deleteApartment(apartment.id!)"
+                  [attr.aria-label]="'Eliminar apartamento ' + apartment.name">
+                  <i class="bi bi-trash" aria-hidden="true"></i> Eliminar
+                </button>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
     }
   </div>
 
@@ -117,6 +148,7 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="apartment-modal-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
       >
         <div class="modal-header">
           <div>

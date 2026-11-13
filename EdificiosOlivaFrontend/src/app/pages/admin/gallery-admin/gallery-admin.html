@@ -39,6 +39,7 @@
     <button
       type="button"
       [class.active]="selectedCategory === ''"
+      [attr.aria-pressed]="selectedCategory === ''"
       (click)="selectCategory('')"
     >
       Todas
@@ -48,6 +49,7 @@
       <button
         type="button"
         [class.active]="selectedCategory === category"
+        [attr.aria-pressed]="selectedCategory === category"
         (click)="selectCategory(category)"
       >
         {{ category }}
@@ -56,9 +58,9 @@
   </div>
 
   @if (loading) {
-    <p class="empty-state">Cargando imágenes...</p>
+    <p class="empty-state" role="status">Cargando imágenes...</p>
   } @else if (images.length === 0) {
-    <p class="empty-state">No se encontraron imágenes.</p>
+    <p class="empty-state" role="status">No se encontraron imágenes.</p>
   } @else {
     <div class="gallery-grid">
       @for (image of images; track image.id) {
@@ -108,7 +110,8 @@
 
   @if (showForm) {
     <div class="modal-backdrop">
-      <div class="gallery-modal" role="dialog" aria-modal="true" aria-labelledby="gallery-title">
+      <div class="gallery-modal" role="dialog" aria-modal="true" aria-labelledby="gallery-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
         <div class="modal-header">
           <div>
             <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>
@@ -240,10 +243,11 @@
 
   @if (previewImage) {
     <div class="modal-backdrop" (click)="closePreview()">
-      <div class="image-preview" (click)="$event.stopPropagation()">
+      <div class="image-preview" role="dialog" aria-modal="true" aria-labelledby="gallery-preview-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (click)="$event.stopPropagation()">
         <button class="preview-close" type="button" (click)="closePreview()" aria-label="Cerrar">×</button>
         <img [src]="previewImage.url" [alt]="previewImage.altText" />
-        <h2>{{ previewImage.title }}</h2>
+        <h2 id="gallery-preview-title">{{ previewImage.title }}</h2>
         <p>{{ previewImage.category }}</p>
       </div>
     </div>

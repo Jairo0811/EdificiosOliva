@@ -1,3 +1,4 @@
+using EdificiosOliva.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EdificiosOliva.Api.Middlewares;
@@ -63,6 +64,11 @@ public sealed class GlobalExceptionHandlerMiddleware(
             ArgumentException => (
                 StatusCodes.Status400BadRequest,
                 "La solicitud contiene datos inválidos.",
+                exception.Message),
+
+            IdempotencyConflictException => (
+                StatusCodes.Status409Conflict,
+                "La clave de idempotencia ya fue utilizada.",
                 exception.Message),
 
             InvalidOperationException => (

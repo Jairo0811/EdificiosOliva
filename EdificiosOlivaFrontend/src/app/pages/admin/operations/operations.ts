@@ -1,12 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
+  ApartmentPerformanceItem,
   OperationsAnalytics,
   OperationsReservationItem,
   OperationsService,
 } from '../../../core/services/operations';
+import { repaint } from '../../../core/utils/repaint';
+import { todayInPropertyZone } from '../../../core/utils/property-date';
 
 @Component({
   selector: 'app-operations',
@@ -16,6 +19,7 @@ import {
 })
 export class Operations implements OnInit {
   private readonly operationsService = inject(OperationsService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   loading = true;
   downloading = false;
@@ -25,15 +29,29 @@ export class Operations implements OnInit {
 
   fromDate = '';
   toDate = '';
+  apartmentFilter = '';
+  reservationStatusFilter = 0;
+
+  /** List filters never change the backend-calculated period-wide KPIs. */
+  get visibleApartments(): ApartmentPerformanceItem[] {
+    return (this.analytics?.apartments ?? []).filter(
+      (apartment) => !this.apartmentFilter || apartment.apartmentId === this.apartmentFilter,
+    );
+  }
+
+  get visibleReservations(): OperationsReservationItem[] {
+    return (this.analytics?.reservations ?? []).filter(
+      (reservation) =>
+        (!this.apartmentFilter || reservation.apartmentId === this.apartmentFilter) &&
+        (!this.reservationStatusFilter || reservation.status === this.reservationStatusFilter),
+    );
+  }
 
   ngOnInit(): void {
-    const today = new Date();
-    this.fromDate = this.toDateInput(
-      new Date(today.getFullYear(), today.getMonth(), 1),
-    );
-    this.toDate = this.toDateInput(
-      new Date(today.getFullYear(), today.getMonth() + 1, 0),
-    );
+    const today = todayInPropertyZone();
+    const [year, month] = today.split('-').map(Number);
+    this.fromDate = `${today.slice(0, 7)}-01`;
+    this.toDate = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
     this.load();
   }
 
@@ -46,9 +64,17 @@ export class Operations implements OnInit {
     }
 
     this.loading = true;
-    this.operationsService.getAnalytics(this.fromDate, this.toDate).subscribe({
+    this.operationsService
+      .getAnalytics(this.fromDate, this.toDate)
+      .pipe(repaint(this.cdr))
+      .subscribe({
       next: (analytics) => {
         this.analytics = analytics;
+        if (this.apartmentFilter && !analytics.apartments.some(
+          (apartment) => apartment.apartmentId === this.apartmentFilter,
+        )) {
+          this.apartmentFilter = '';
+        }
         this.loading = false;
       },
       error: (error) => {
@@ -63,15 +89,15 @@ export class Operations implements OnInit {
 
   exportReservations(): void {
     this.download(
-      this.operationsService.exportReservations(this.fromDate, this.toDate),
-      `reservas-${this.fromDate}-${this.toDate}.csv`,
+      this.operationsService.exportReservations(this.analytics?.fromDate ?? this.fromDate, this.analytics?.toDate ?? this.toDate),
+      `reservas-${this.analytics?.fromDate ?? this.fromDate}-${this.analytics?.toDate ?? this.toDate}.csv`,
     );
   }
 
   exportPayments(): void {
     this.download(
-      this.operationsService.exportPayments(this.fromDate, this.toDate),
-      `pagos-${this.fromDate}-${this.toDate}.csv`,
+      this.operationsService.exportPayments(this.analytics?.fromDate ?? this.fromDate, this.analytics?.toDate ?? this.toDate),
+      `pagos-${this.analytics?.fromDate ?? this.fromDate}-${this.analytics?.toDate ?? this.toDate}.csv`,
     );
   }
 
@@ -88,6 +114,8 @@ export class Operations implements OnInit {
     } catch {
       this.copyMessage = absoluteUrl;
     }
+
+    this.cdr.markForCheck();
   }
 
   statusLabel(status: number): string {
@@ -115,19 +143,16 @@ export class Operations implements OnInit {
   }
 
   reservationNights(reservation: OperationsReservationItem): number {
-    const start = new Date(`${reservation.checkInDate}T00:00:00`);
-    const end = new Date(`${reservation.checkOutDate}T00:00:00`);
-    return Math.max(
-      0,
-      Math.round((end.getTime() - start.getTime()) / 86400000),
-    );
+    const start = Date.parse(`${reservation.checkInDate}T00:00:00Z`);
+    const end = Date.parse(`${reservation.checkOutDate}T00:00:00Z`);
+    return Math.max(0, Math.round((end - start) / 86400000));
   }
 
   private download(request: import('rxjs').Observable<Blob>, fileName: string): void {
     this.downloading = true;
     this.errorMessage = '';
 
-    request.subscribe({
+    request.pipe(repaint(this.cdr)).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
@@ -144,8 +169,4 @@ export class Operations implements OnInit {
     });
   }
 
-  private toDateInput(date: Date): string {
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    return localDate.toISOString().slice(0, 10);
-  }
 }

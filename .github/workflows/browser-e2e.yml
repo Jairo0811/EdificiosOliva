@@ -1,0 +1,47 @@
+name: Browser E2E and UX Audit
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'EdificiosOlivaFrontend/**'
+      - '.github/workflows/browser-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    name: Playwright Chromium — booking, responsive and web vitals
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: EdificiosOlivaFrontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: EdificiosOlivaFrontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Install pinned Playwright test runner (without changing package lock)
+        run: npm install --no-save --package-lock=false @playwright/test@1.56.1 @axe-core/playwright@4.10.2
+      - name: Install Chromium and OS dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run browser E2E against production-mode Angular
+        run: npx playwright test --config=playwright.config.ts
+        env:
+          CI: 'true'
+      - name: Upload E2E reports and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-report
+          path: |
+            EdificiosOlivaFrontend/playwright-report/
+            EdificiosOlivaFrontend/test-results/
+          retention-days: 7

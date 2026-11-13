@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -13,7 +14,12 @@ import {
 import {
   PublicPaymentCheckout,
   PublicPaymentService,
+  PublicPaymentState,
+  PublicPaymentStatus,
 } from '../../core/services/public-payments';
+import { PaymentStateView, describePaymentState } from '../../core/utils/payment-state';
+import { todayInPropertyZone } from '../../core/utils/property-date';
+import { repaint } from '../../core/utils/repaint';
 
 interface BookingFormModel {
   fullName: string;
@@ -37,9 +43,23 @@ export class Booking implements OnInit {
   private readonly bookingService = inject(PublicBookingService);
   private readonly paymentService = inject(PublicPaymentService);
   private readonly route = inject(ActivatedRoute);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly minDate = this.toDateInputValue(new Date());
+  readonly minDate = todayInPropertyZone();
   readonly whatsappNumber = '18296196970';
+
+  readonly steps = [
+    { id: 1, label: 'Estadía' },
+    { id: 2, label: 'Huésped' },
+    { id: 3, label: 'Revisión' },
+    { id: 4, label: 'Pago' },
+    { id: 5, label: 'Resultado' },
+  ] as const;
+
+  currentStep = 1;
+  attemptedGuestStep = false;
+  private readonly touchedFields = new Set<string>();
 
   apartments: Apartment[] = [];
   availability: BookingAvailability | null = null;
@@ -56,9 +76,13 @@ export class Booking implements OnInit {
   paymentTermsAccepted = false;
   paymentOutcome = '';
   paymentIntentId = '';
+  /** Result of the backend verification after returning from AZUL. */
+  paymentStatus: PublicPaymentStatus | null = null;
+  verificationPhase: 'idle' | 'checking' | 'done' | 'error' | 'unavailable' = 'idle';
 
   private requestedApartmentId = '';
   private paymentIdempotencyKey = '';
+  private bookingAttempt: { signature: string; key: string } | null = null;
   private readonly pendingBookingStorageKey = 'edificiosOliva.pendingBooking';
 
   form: BookingFormModel = {
@@ -75,10 +99,15 @@ export class Booking implements OnInit {
   ngOnInit(): void {
     this.applyPaymentReturn();
     this.restoreConfirmationAfterPaymentReturn();
+    this.startVerificationAfterPaymentReturn();
+    if (this.paymentOutcome) {
+      this.currentStep = 5;
+    }
     this.loadPaymentProviders();
     this.applyQueryPrefill();
 
-    this.apartmentsService.getAvailableApartments().subscribe({
+    this.apartmentsService.getAvailableApartments().pipe(repaint(this.cdr))
+      .subscribe({
       next: (apartments) => {
         this.apartments = apartments.filter((apartment) => Boolean(apartment.id));
         this.loadingApartments = false;
@@ -136,7 +165,11 @@ export class Booking implements OnInit {
   }
 
   refreshAvailability(): void {
-    this.confirmation = null;
+    // Once the reservation exists the stay is locked: it is never recreated.
+    if (this.confirmation) {
+      return;
+    }
+
     this.availability = null;
     this.errorMessage = '';
 
@@ -168,6 +201,7 @@ export class Booking implements OnInit {
         this.form.checkOutDate,
         this.form.guestCount,
       )
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (availability) => {
           this.availability = availability;
@@ -188,8 +222,17 @@ export class Booking implements OnInit {
   }
 
   submit(): void {
+    if (this.submitting || this.confirmation) {
+      return;
+    }
+
     this.errorMessage = '';
-    this.confirmation = null;
+
+    if (!this.paymentTermsAccepted) {
+      this.errorMessage =
+        'Acepta las políticas de reserva, cancelación, privacidad y pago para continuar.';
+      return;
+    }
 
     if (
       !this.form.fullName.trim() ||
@@ -216,18 +259,28 @@ export class Booking implements OnInit {
       return;
     }
 
+    const payload = {
+      fullName: this.form.fullName.trim(),
+      email: this.form.email.trim(),
+      phone: this.form.phone.trim(),
+      apartmentId: this.form.apartmentId,
+      checkInDate: this.form.checkInDate,
+      checkOutDate: this.form.checkOutDate,
+      guestCount: this.form.guestCount,
+      notes: this.form.notes.trim() || null,
+    };
+
+    // Same data => same key, so a retry after a timeout or a double click returns
+    // the original reservation. Changed data => new key (a different request).
+    const signature = JSON.stringify(payload);
+    if (!this.bookingAttempt || this.bookingAttempt.signature !== signature) {
+      this.bookingAttempt = { signature, key: this.createIdempotencyKey('booking') };
+    }
+
     this.submitting = true;
     this.bookingService
-      .create({
-        fullName: this.form.fullName.trim(),
-        email: this.form.email.trim(),
-        phone: this.form.phone.trim(),
-        apartmentId: this.form.apartmentId,
-        checkInDate: this.form.checkInDate,
-        checkOutDate: this.form.checkOutDate,
-        guestCount: this.form.guestCount,
-        notes: this.form.notes.trim() || null,
-      })
+      .create(payload, this.bookingAttempt.key)
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (confirmation) => {
           this.confirmation = confirmation;
@@ -241,6 +294,7 @@ export class Booking implements OnInit {
           };
           this.persistPendingBooking(confirmation);
           this.submitting = false;
+          this.setStep(4);
         },
         error: (error) => {
           this.submitting = false;
@@ -252,10 +306,136 @@ export class Booking implements OnInit {
       });
   }
 
+  get reservationLocked(): boolean {
+    return this.confirmation !== null;
+  }
+
+  canVisit(step: number): boolean {
+    if (step === this.currentStep) {
+      return true;
+    }
+
+    // After the reservation is registered, steps 1-3 are read-only history.
+    return this.reservationLocked ? step >= 4 : step < this.currentStep;
+  }
+
+  goToStep(step: number): void {
+    if (this.canVisit(step)) {
+      this.setStep(step);
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 1 && this.canVisit(this.currentStep - 1)) {
+      this.setStep(this.currentStep - 1);
+    }
+  }
+
+  /** Enter key / primary button: advances the current step only when it is valid. */
+  onStepSubmit(): void {
+    switch (this.currentStep) {
+      case 1:
+        this.continueFromStay();
+        break;
+      case 2:
+        this.continueFromGuest();
+        break;
+      case 3:
+        this.submit();
+        break;
+      default:
+        break;
+    }
+  }
+
+  continueFromStay(): void {
+    this.errorMessage = '';
+
+    if (this.checkingAvailability) {
+      return;
+    }
+
+    if (!this.canCheckAvailability) {
+      this.errorMessage = 'Selecciona apartamento, fechas y huéspedes.';
+      return;
+    }
+
+    if (!this.availability?.available) {
+      this.errorMessage =
+        this.errorMessage || 'Comprueba que las fechas estén disponibles antes de continuar.';
+      return;
+    }
+
+    this.setStep(2);
+  }
+
+  continueFromGuest(): void {
+    this.errorMessage = '';
+    this.attemptedGuestStep = true;
+
+    if (Object.keys(this.guestErrors).length > 0) {
+      this.errorMessage = 'Revisa los campos marcados para continuar.';
+      this.focusFirstInvalid();
+      return;
+    }
+
+    this.setStep(3);
+  }
+
+  get guestErrors(): Partial<Record<'fullName' | 'email' | 'phone', string>> {
+    const errors: Partial<Record<'fullName' | 'email' | 'phone', string>> = {};
+
+    if (this.form.fullName.trim().length < 2) {
+      errors.fullName = 'Ingresa tu nombre completo.';
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email.trim())) {
+      errors.email = 'Ingresa un correo electrónico válido.';
+    }
+
+    const phone = this.form.phone.trim();
+    if (phone.replace(/\D/g, '').length < 7 || phone.length > 30) {
+      errors.phone = 'Ingresa un teléfono válido (mínimo 7 dígitos).';
+    }
+
+    return errors;
+  }
+
+  fieldError(field: 'fullName' | 'email' | 'phone'): string {
+    return this.attemptedGuestStep || this.touchedFields.has(field)
+      ? (this.guestErrors[field] ?? '')
+      : '';
+  }
+
+  touch(field: string): void {
+    this.touchedFields.add(field);
+  }
+
+  private setStep(step: number): void {
+    this.currentStep = step;
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+
+    if (step === 5 && this.confirmation && this.verificationPhase === 'idle') {
+      this.verifyPayment();
+    }
+
+    if (typeof document !== 'undefined') {
+      document.getElementById('step-heading')?.focus();
+    }
+  }
+
+  private focusFirstInvalid(): void {
+    this.cdr.detectChanges();
+    if (typeof document !== 'undefined') {
+      document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    }
+  }
+
   get paymentOutcomeMessage(): string {
     switch (this.paymentOutcome) {
       case 'approved':
-        return 'Pago aprobado y validado. La reserva quedó confirmada en el sistema.';
+        return 'Recibimos el retorno de AZUL con el pago aprobado. Edificios Oliva verifica la confirmación en su sistema; conserva tu código de reserva y revisa tu correo.';
       case 'declined':
         return 'AZUL declinó el pago. Puedes reintentar mientras la reserva conserve saldo pendiente.';
       case 'cancelled':
@@ -267,6 +447,74 @@ export class Booking implements OnInit {
       default:
         return '';
     }
+  }
+
+  /** View model for the backend-reported payment state (null until verified). */
+  get paymentView(): PaymentStateView | null {
+    return this.paymentStatus ? describePaymentState(this.paymentStatus.paymentState) : null;
+  }
+
+  get paymentConfirmedByBackend(): boolean {
+    return this.paymentStatus?.paymentState === PublicPaymentState.Confirmed;
+  }
+
+  get paymentStillPending(): boolean {
+    return this.paymentStatus?.paymentState === PublicPaymentState.Pending;
+  }
+
+  /**
+   * Online payment can only start when the backend says no payment is in flight
+   * or settled. After a gateway return, an unverified state blocks a new charge.
+   */
+  get canStartPayment(): boolean {
+    if (!this.paymentAvailable || this.loadingPaymentOptions) {
+      return false;
+    }
+
+    if (this.verificationPhase === 'checking') {
+      return false;
+    }
+
+    if (this.paymentView) {
+      return this.paymentView.canRetryPayment;
+    }
+
+    // Returned from the gateway but not verified yet: never offer a second charge.
+    return !this.paymentOutcome;
+  }
+
+  /** Asks the backend for the real state; the URL outcome is never trusted. */
+  verifyPayment(): void {
+    if (this.verificationPhase === 'checking') {
+      return;
+    }
+
+    if (!this.confirmation) {
+      this.verificationPhase = 'unavailable';
+      return;
+    }
+
+    this.verificationPhase = 'checking';
+    this.paymentStatus = null;
+    this.paymentService
+      .pollStatus({
+        reservationId: this.confirmation.reservationId,
+        confirmationCode: this.confirmation.confirmationCode,
+        email: this.confirmation.email,
+        paymentIntentId: this.isGuid(this.paymentIntentId) ? this.paymentIntentId : null,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef), repaint(this.cdr))
+      .subscribe({
+        next: (status) => {
+          this.paymentStatus = status;
+        },
+        error: () => {
+          this.verificationPhase = 'error';
+        },
+        complete: () => {
+          this.verificationPhase = 'done';
+        },
+      });
   }
 
   startOnlinePayment(): void {
@@ -282,14 +530,20 @@ export class Booking implements OnInit {
       return;
     }
 
+    if (!this.canStartPayment || this.startingPayment) {
+      this.paymentError =
+        'Verifica primero el estado de tu pago anterior para evitar un cobro duplicado.';
+      return;
+    }
+
     if (!this.paymentTermsAccepted) {
       this.paymentError = 'Confirma los datos de la reserva antes de continuar al portal de pago.';
       return;
     }
 
     if (!this.paymentIdempotencyKey) {
-      this.paymentIdempotencyKey = this.createPaymentIdempotencyKey(
-        this.confirmation.reservationId,
+      this.paymentIdempotencyKey = this.createIdempotencyKey(
+        `azul-${this.confirmation.reservationId}`,
       );
     }
 
@@ -302,6 +556,7 @@ export class Booking implements OnInit {
         idempotencyKey: this.paymentIdempotencyKey,
         provider: 'AZUL',
       })
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (checkout) => {
           this.persistPendingBooking(this.confirmation!);
@@ -342,7 +597,8 @@ export class Booking implements OnInit {
   }
 
   private loadPaymentProviders(): void {
-    this.paymentService.getProviders().subscribe({
+    this.paymentService.getProviders().pipe(repaint(this.cdr))
+      .subscribe({
       next: (providers) => {
         this.paymentAvailable = providers.some(
           (provider) => provider.provider.toUpperCase() === 'AZUL',
@@ -393,6 +649,22 @@ export class Booking implements OnInit {
     }
   }
 
+  private startVerificationAfterPaymentReturn(): void {
+    if (!this.paymentOutcome) {
+      return;
+    }
+
+    if (this.confirmation) {
+      this.verifyPayment();
+    } else {
+      this.verificationPhase = 'unavailable';
+    }
+  }
+
+  private isGuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  }
+
   private persistPendingBooking(confirmation: PublicBookingConfirmation): void {
     if (typeof window === 'undefined') {
       return;
@@ -427,14 +699,14 @@ export class Booking implements OnInit {
     form.submit();
   }
 
-  private createPaymentIdempotencyKey(reservationId: string): string {
+  private createIdempotencyKey(prefix: string): string {
     const suffix =
       typeof globalThis.crypto !== 'undefined' &&
       typeof globalThis.crypto.randomUUID === 'function'
         ? globalThis.crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-    return `azul-${reservationId}-${suffix}`.slice(0, 100);
+    return `${prefix}-${suffix}`.slice(0, 100);
   }
 
   private applyQueryPrefill(): void {
@@ -471,11 +743,6 @@ export class Booking implements OnInit {
 
   private isDateInputValue(value: string): boolean {
     return /^\d{4}-\d{2}-\d{2}$/.test(value);
-  }
-
-  private toDateInputValue(date: Date): string {
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-    return localDate.toISOString().slice(0, 10);
   }
 
   private readProblemDetail(error: unknown, fallback: string): string {

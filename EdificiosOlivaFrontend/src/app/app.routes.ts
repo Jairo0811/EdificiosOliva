@@ -2,52 +2,33 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth-guard';
 
-import { Home } from './pages/home/home';
-import { Apartments } from './pages/apartments/apartments';
-import { ApartmentDetail } from './pages/apartment-detail/apartment-detail';
-import { Contact } from './pages/contact/contact';
-import { Gallery } from './pages/gallery/gallery';
-import { About } from './pages/about/about';
-import { Booking } from './pages/booking/booking';
-import { Login } from './pages/login/login';
-import { Register } from './pages/register/register';
-import { Policies } from './pages/policies/policies';
 
-import { AdminLayout } from './layouts/admin-layout/admin-layout';
-import { Dashboard } from './pages/admin/dashboard/dashboard';
-import { ApartmentsAdmin } from './pages/admin/apartments-admin/apartments-admin';
-import { BookingsAdmin } from './pages/admin/bookings-admin/bookings-admin';
-import { Customers } from './pages/admin/customers/customers';
-import { Payments } from './pages/admin/payments/payments';
-import { PaymentIntentsAdmin } from './pages/admin/payment-intents-admin/payment-intents-admin';
-import { Operations } from './pages/admin/operations/operations';
-import { GalleryAdmin } from './pages/admin/gallery-admin/gallery-admin';
 
 export const routes: Routes = [
-  { path: '', component: Home },
-  { path: 'departamentos', component: Apartments },
-  { path: 'departamentos/:id', component: ApartmentDetail },
-  { path: 'galeria', component: Gallery },
-  { path: 'nosotros', component: About },
-  { path: 'reservar', component: Booking },
-  { path: 'contacto', component: Contact },
-  { path: 'login', component: Login },
-  { path: 'registro', component: Register },
-  { path: 'politicas', component: Policies },
+  { path: '', loadComponent: () => import('./pages/home/home').then(m => m.Home) },
+  { path: 'departamentos', loadComponent: () => import('./pages/apartments/apartments').then(m => m.Apartments) },
+  { path: 'departamentos/:id', loadComponent: () => import('./pages/apartment-detail/apartment-detail').then(m => m.ApartmentDetail) },
+  { path: 'galeria', loadComponent: () => import('./pages/gallery/gallery').then(m => m.Gallery) },
+  { path: 'nosotros', loadComponent: () => import('./pages/about/about').then(m => m.About) },
+  { path: 'reservar', loadComponent: () => import('./pages/booking/booking').then(m => m.Booking) },
+  { path: 'contacto', loadComponent: () => import('./pages/contact/contact').then(m => m.Contact) },
+  { path: 'login', loadComponent: () => import('./pages/login/login').then(m => m.Login) },
+  { path: 'registro', loadComponent: () => import('./pages/register/register').then(m => m.Register) },
+  { path: 'politicas', loadComponent: () => import('./pages/policies/policies').then(m => m.Policies) },
 
   {
     path: 'admin',
-    component: AdminLayout,
+    loadComponent: () => import('./layouts/admin-layout/admin-layout').then(m => m.AdminLayout),
     canActivate: [authGuard],
     children: [
-      { path: '', component: Dashboard },
-      { path: 'apartamentos', component: ApartmentsAdmin },
-      { path: 'reservas', component: BookingsAdmin },
-      { path: 'clientes', component: Customers },
-      { path: 'pagos', component: Payments },
-      { path: 'intentos-pago', component: PaymentIntentsAdmin },
-      { path: 'operacion', component: Operations },
-      { path: 'galeria', component: GalleryAdmin },
+      { path: '', loadComponent: () => import('./pages/admin/dashboard/dashboard').then(m => m.Dashboard) },
+      { path: 'apartamentos', loadComponent: () => import('./pages/admin/apartments-admin/apartments-admin').then(m => m.ApartmentsAdmin) },
+      { path: 'reservas', loadComponent: () => import('./pages/admin/bookings-admin/bookings-admin').then(m => m.BookingsAdmin) },
+      { path: 'clientes', loadComponent: () => import('./pages/admin/customers/customers').then(m => m.Customers) },
+      { path: 'pagos', loadComponent: () => import('./pages/admin/payments/payments').then(m => m.Payments) },
+      { path: 'intentos-pago', loadComponent: () => import('./pages/admin/payment-intents-admin/payment-intents-admin').then(m => m.PaymentIntentsAdmin) },
+      { path: 'operacion', loadComponent: () => import('./pages/admin/operations/operations').then(m => m.Operations) },
+      { path: 'galeria', loadComponent: () => import('./pages/admin/gallery-admin/gallery-admin').then(m => m.GalleryAdmin) },
     ],
   },
 

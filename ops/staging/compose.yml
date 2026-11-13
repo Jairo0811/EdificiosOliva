@@ -1,0 +1,82 @@
+# Edificios Oliva v1.3 — staging PREPARADO, NO DESPLEGADO
+# Dependencias externas: SQL Server aislado con certificado TLS válido, HTTPS en un proxy de confianza.
+# No publicar puertos de API/SQL; el frontend escucha solo en 127.0.0.1.
+name: oliva-staging
+
+services:
+  preflight:
+    image: node:24-alpine
+    restart: "no"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ../../scripts/validate-staging-config.mjs:/checks/validate-staging-config.mjs:ro
+    environment: &stage_environment
+      AllowedHosts: ${STAGING_HOST:?Set a non-production staging hostname}
+      Cors__AllowedOrigins__0: ${STAGING_ORIGIN:?Set staging HTTPS origin}
+      Payments__FrontendReturnUrl: ${STAGING_ORIGIN:?Set staging HTTPS origin}/reservar
+      Notifications__Email__PublicBaseUrl: ${STAGING_ORIGIN:?Set staging HTTPS origin}
+      Property__TimeZoneId: America/Santo_Domingo
+      ConnectionStrings__DefaultConnection: ${STAGING_SQL_CONNECTION_STRING:?Set isolated TLS-protected staging SQL connection string}
+      Firebase__ProjectId: ${STAGING_FIREBASE_PROJECT_ID:?Set isolated Firebase staging project}
+      Payments__Azul__Enabled: "false"
+      Payments__Azul__MerchantId: ""
+      Payments__Azul__AuthKey: ""
+      Payments__Azul__PaymentPageUrl: ""
+      Payments__Azul__AlternatePaymentPageUrl: ""
+      Payments__Azul__ReturnBaseUrl: ""
+      Notifications__Email__Enabled: "false"
+      Notifications__Email__Host: ""
+      Notifications__Email__Username: ""
+      Notifications__Email__Password: ""
+      Security__UseHttpsRedirection: "false"
+      Staging__TrustedHttpsProxy: "true"
+    command: ["node", "/checks/validate-staging-config.mjs", "--environment"]
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ../..
+      dockerfile: EdificiosOlivaBackend/Dockerfile
+    depends_on:
+      preflight:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    environment:
+      <<: *stage_environment
+      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_URLS: http://+:8080
+    volumes:
+      - uploads-staging:/app/wwwroot/uploads
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
+    # NUNCA publicar 8080 directamente; API solo accesible a nginx en Docker.
+
+  web:
+    build:
+      context: ../..
+      dockerfile: EdificiosOlivaFrontend/Dockerfile
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${STAGING_LOCAL_HTTP_PORT:-8088}:80"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
+    # El proxy HTTPS externo (no incluido) debe dirigirse a este puerto SOLO local.
+    # Sin proxy HTTPS validado, usar únicamente el loopback para pruebas locales.
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  uploads-staging:
+    name: edificios_oliva_uploads_staging

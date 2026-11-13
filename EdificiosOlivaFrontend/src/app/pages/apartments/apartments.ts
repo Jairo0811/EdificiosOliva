@@ -1,10 +1,12 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { Apartment } from '../../core/models/apartment.model';
 import { Apartments as ApartmentsService } from '../../core/services/apartments';
+import { todayInPropertyZone } from '../../core/utils/property-date';
+import { repaint } from '../../core/utils/repaint';
 
 interface ApartmentSearchModel {
   checkInDate: string;
@@ -22,8 +24,9 @@ export class Apartments implements OnInit {
   private readonly apartmentsService = inject(ApartmentsService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  readonly minDate = this.toDateInputValue(new Date());
+  readonly minDate = todayInPropertyZone();
 
   apartments: Apartment[] = [];
   loading = true;
@@ -40,6 +43,7 @@ export class Apartments implements OnInit {
     this.apartmentsService
       .getAvailableApartments()
       .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(repaint(this.cdr))
       .subscribe({
         next: (apartments) => {
           this.apartments = apartments;
@@ -110,10 +114,5 @@ export class Apartments implements OnInit {
     if (!image.src.endsWith('apartment-placeholder.webp')) {
       image.src = '/images/apartment-placeholder.webp';
     }
-  }
-
-  private toDateInputValue(date: Date): string {
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-    return localDate.toISOString().slice(0, 10);
   }
 }

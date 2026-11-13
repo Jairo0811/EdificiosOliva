@@ -7,11 +7,11 @@
     </div>
 
     <div class="header-actions">
-      <button type="button" class="secondary-btn" (click)="exportReservations()" [disabled]="downloading || loading">
+      <button type="button" class="secondary-btn" (click)="exportReservations()" [disabled]="downloading || loading || !analytics">
         <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
         Reservas CSV
       </button>
-      <button type="button" class="secondary-btn" (click)="exportPayments()" [disabled]="downloading || loading">
+      <button type="button" class="secondary-btn" (click)="exportPayments()" [disabled]="downloading || loading || !analytics">
         <i class="bi bi-cash-coin" aria-hidden="true"></i>
         Pagos CSV
       </button>
@@ -50,9 +50,19 @@
         <strong>{{ analytics.totalReservations }}</strong>
       </article>
       <article>
+        <i class="bi bi-patch-check" aria-hidden="true"></i>
+        <span>Confirmadas</span>
+        <strong>{{ analytics.confirmedReservations }}</strong>
+      </article>
+      <article>
         <i class="bi bi-moon-stars" aria-hidden="true"></i>
         <span>Noches reservadas</span>
         <strong>{{ analytics.bookedNights }}</strong>
+      </article>
+      <article>
+        <i class="bi bi-building" aria-hidden="true"></i>
+        <span>Noches de inventario</span>
+        <strong>{{ analytics.inventoryNights }}</strong>
       </article>
       <article>
         <i class="bi bi-pie-chart" aria-hidden="true"></i>
@@ -76,6 +86,33 @@
       </article>
     </section>
 
+    <section class="list-filters" aria-label="Filtros de listados operativos">
+      <div>
+        <h2>Explorar el período</h2>
+        <p>Estos filtros afectan los listados, no los indicadores generales ni los archivos CSV.</p>
+      </div>
+      <label>
+        <span>Apartamento</span>
+        <select [(ngModel)]="apartmentFilter">
+          <option value="">Todos los apartamentos</option>
+          @for (apartment of analytics.apartments; track apartment.apartmentId) {
+            <option [value]="apartment.apartmentId">{{ apartment.apartmentName }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Estado de reserva</span>
+        <select [(ngModel)]="reservationStatusFilter">
+          <option [ngValue]="0">Todos los estados</option>
+          <option [ngValue]="1">Pendiente</option>
+          <option [ngValue]="2">Confirmada</option>
+          <option [ngValue]="3">En curso</option>
+          <option [ngValue]="4">Completada</option>
+          <option [ngValue]="5">Cancelada</option>
+        </select>
+      </label>
+    </section>
+
     <section class="panel">
       <div class="panel-header">
         <div>
@@ -85,7 +122,7 @@
         <small>El ingreso se reconoce por pagos con estado Pagado durante el período.</small>
       </div>
 
-      <div class="table-wrapper">
+      <div class="table-wrapper" role="region" aria-label="Rendimiento por apartamento" tabindex="0">
         <table>
           <thead>
             <tr>
@@ -98,7 +135,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (apartment of analytics.apartments; track apartment.apartmentId) {
+            @for (apartment of visibleApartments; track apartment.apartmentId) {
               <tr>
                 <td><strong>{{ apartment.apartmentName }}</strong></td>
                 <td>{{ apartment.bookedNights }}</td>
@@ -122,6 +159,26 @@
           </tbody>
         </table>
       </div>
+      @if (visibleApartments.length === 0) {
+        <p class="empty-state" role="status">No hay apartamentos para mostrar.</p>
+      }
+      <div class="performance-cards" aria-label="Rendimiento por apartamento">
+        @for (apartment of visibleApartments; track apartment.apartmentId) {
+          <article class="performance-card">
+            <h3>{{ apartment.apartmentName }}</h3>
+            <dl>
+              <div><dt>Noches reservadas</dt><dd>{{ apartment.bookedNights }}</dd></div>
+              <div><dt>Inventario</dt><dd>{{ apartment.inventoryNights }}</dd></div>
+              <div><dt>Ocupación</dt><dd>{{ apartment.occupancyRate }}%</dd></div>
+              <div><dt>Ingresos reconocidos</dt><dd>{{ apartment.recognizedRevenue | currency: 'USD' : 'symbol' : '1.2-2' }}</dd></div>
+            </dl>
+            <div class="meter" aria-hidden="true"><span [style.width.%]="apartment.occupancyRate"></span></div>
+            <button type="button" class="copy-btn" (click)="copyCalendar(apartment.apartmentId)">
+              Copiar feed iCal
+            </button>
+          </article>
+        }
+      </div>
     </section>
 
     <section class="panel calendar-panel">
@@ -133,11 +190,14 @@
         <small>{{ analytics.fromDate }} → {{ analytics.toDate }}</small>
       </div>
 
-      @if (analytics.reservations.length === 0) {
-        <p class="empty-state">No hay reservas que se crucen con este período.</p>
+      @if (visibleReservations.length === 0) {
+        <p class="empty-state" role="status">No hay estadías que coincidan con los filtros seleccionados.</p>
       } @else {
+        <p class="result-count" role="status">
+          Mostrando {{ visibleReservations.length }} de {{ analytics.reservations.length }} estadías del período
+        </p>
         <div class="reservation-list">
-          @for (reservation of analytics.reservations; track reservation.reservationId) {
+          @for (reservation of visibleReservations; track reservation.reservationId) {
             <article [class.cancelled]="reservation.status === 5">
               <div class="date-block">
                 <strong>{{ dateDay(reservation.checkInDate) }}</strong>

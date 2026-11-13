@@ -1,5 +1,6 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { firstValueFrom } from 'rxjs';
 
 import { Customer } from '../../../core/models/customer.model';
@@ -7,13 +8,14 @@ import { Customers as CustomersService } from '../../../core/services/customers'
 
 @Component({
   selector: 'app-customers',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   templateUrl: './customers.html',
   styleUrl: './customers.css',
 })
 export class Customers implements OnInit {
   private readonly customersService = inject(CustomersService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
+  private previouslyFocused: HTMLElement | null = null;
 
   customers: Customer[] = [];
   search = '';
@@ -40,6 +42,7 @@ export class Customers implements OnInit {
   }
 
   openCreateForm(): void {
+    this.rememberFocus();
     this.editingId = null;
     this.customerForm = this.getEmptyForm();
     this.clearMessages();
@@ -47,6 +50,7 @@ export class Customers implements OnInit {
   }
 
   openEditForm(customer: Customer): void {
+    this.rememberFocus();
     this.editingId = customer.id ?? null;
     this.customerForm = {
       name: customer.name,
@@ -64,6 +68,23 @@ export class Customers implements OnInit {
     this.showForm = false;
     this.editingId = null;
     this.customerForm = this.getEmptyForm();
+    this.restoreFocus();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showForm && !this.saving) this.closeForm();
+  }
+
+  private rememberFocus(): void {
+    this.previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+  }
+
+  private restoreFocus(): void {
+    const element = this.previouslyFocused;
+    this.previouslyFocused = null;
+    queueMicrotask(() => element?.focus());
   }
 
   async saveCustomer(): Promise<void> {
@@ -100,6 +121,7 @@ export class Customers implements OnInit {
       this.showForm = false;
       this.editingId = null;
       this.customerForm = this.getEmptyForm();
+      this.restoreFocus();
       await this.loadCustomers(false);
     } catch (error: unknown) {
       this.errorMessage = error instanceof Error ? error.message : 'No fue posible guardar el cliente.';

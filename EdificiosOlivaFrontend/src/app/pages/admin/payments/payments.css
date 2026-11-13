@@ -1,7 +1,6 @@
 .admin-page {
-  min-height: 100vh;
-  padding: 40px;
-  background: #f7f9fb;
+  min-width: 0;
+  background: transparent;
 }
 
 .page-header {
@@ -294,4 +293,36 @@ button:disabled {
   .secondary-btn {
     width: 100%;
   }
+}
+
+/* v1.3: paginated and responsive payment administration. */
+.payment-cards { display: none; }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  flex-wrap: wrap; margin: 18px 0 0; color: #667085; }
+.pagination p { margin: 0; }
+.pagination-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.pagination-actions button { min-height: 44px; padding: 10px 16px; border: 1px solid #cddbe7;
+  border-radius: 10px; background: #fff; color: #0f4c81; font-weight: 700; }
+.pagination-actions button:disabled { opacity: .45; }
+@media (max-width: 767px) {
+  .admin-page { padding: 0; }
+  .page-header h1 { font-size: 26px; }
+  .table-card { overflow: visible; background: transparent; box-shadow: none; }
+  .table-card table { display: none; }
+  .payment-cards { display: grid; gap: 14px; }
+  .payment-card { min-width: 0; padding: 18px; border: 1px solid #dce5ed;
+    border-radius: 18px; background: #fff; box-shadow: 0 5px 20px rgba(15,76,129,.06); }
+  .payment-card-header { display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; }
+  .payment-card-header h2 { margin: 4px 0; font-size: 18px; overflow-wrap: anywhere; }
+  .payment-card-header p { margin: 0; color: #667085; }
+  .payment-id { font-size: 12px; color: #0f4c81; font-weight: 700; }
+  .payment-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
+  .payment-card dt { font-size: 12px; color: #667085; }
+  .payment-card dd { margin: 3px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+  .payment-card dl .full { grid-column: 1 / -1; }
+  .payment-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .payment-card-actions button { width: auto; height: auto; min-height: 44px; padding: 10px 12px;
+    margin: 0; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+  .payment-modal { max-height: 90dvh; padding: 18px; }
 }

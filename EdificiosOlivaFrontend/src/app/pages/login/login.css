@@ -79,32 +79,6 @@ form {
   gap: 16px;
 }
 
-label {
-  font-weight: 700;
-
-  color: #1f2933;
-}
-
-input {
-  width: 100%;
-
-  padding: 16px;
-
-  border-radius: 14px;
-
-  border: 1px solid #d8dee9;
-
-  transition: 0.25s;
-
-  outline: none;
-}
-
-input:focus {
-  border-color: #0f4c81;
-
-  box-shadow: 0 0 0 4px rgba(15, 76, 129, 0.12);
-}
-
 .password-field {
   position: relative;
 }
@@ -125,52 +99,6 @@ input:focus {
   cursor: pointer;
 
   color: #0f4c81;
-}
-
-.error-message {
-  background: #fdeaea;
-
-  color: #b00020;
-
-  border-radius: 12px;
-
-  padding: 14px;
-
-  font-weight: 600;
-}
-
-.login-btn {
-  margin-top: 10px;
-
-  border: none;
-
-  background: #0f4c81;
-
-  color: white;
-
-  padding: 17px;
-
-  border-radius: 15px;
-
-  font-size: 17px;
-
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: 0.3s;
-}
-
-.login-btn:hover {
-  transform: translateY(-2px);
-
-  background: #0c3d68;
-}
-
-.login-btn:disabled {
-  opacity: 0.75;
-
-  cursor: not-allowed;
 }
 
 .back-home {
@@ -249,23 +177,20 @@ input:focus {
   background: #d8dee9;
 }
 
-.google-btn {
-  border: 1px solid #d8dee9;
-  background: white;
-  color: #1f2933;
-  padding: 15px;
-  border-radius: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.google-btn:hover {
-  border-color: #0f4c81;
-  transform: translateY(-2px);
-}
-
 .google-btn i {
   color: #db4437;
   margin-right: 8px;
+}
+
+.login-btn {
+  margin-top: 10px;
+}
+
+.password-field .eo-input {
+  padding-right: 52px;
+}
+
+.password-field button {
+  min-width: 44px;
+  min-height: 44px;
 }

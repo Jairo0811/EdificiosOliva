@@ -26,13 +26,13 @@
         type="search"
         [(ngModel)]="search"
         placeholder="Cliente, correo o apartamento"
-        (keyup.enter)="loadBookings()"
+        (keyup.enter)="applyFilters()"
       />
     </label>
 
     <label>
       <span>Estado</span>
-      <select [(ngModel)]="statusFilter" (change)="loadBookings()">
+      <select [(ngModel)]="statusFilter" (change)="applyFilters()">
         <option [ngValue]="0">Todos</option>
         <option [ngValue]="1">Pendiente</option>
         <option [ngValue]="2">Confirmada</option>
@@ -42,7 +42,7 @@
       </select>
     </label>
 
-    <button class="filter-btn" type="button" (click)="loadBookings()">
+    <button class="filter-btn" type="button" (click)="applyFilters()">
       Buscar
     </button>
   </section>
@@ -113,12 +113,62 @@
           }
         </tbody>
       </table>
+
+      <div class="booking-cards" aria-label="Reservas en esta página">
+        @for (booking of bookings; track booking.id) {
+          <article class="booking-card">
+            <div class="booking-card-head">
+              <div>
+                <span class="booking-code" [title]="booking.id">#{{ shortId(booking.id) }}</span>
+                <h2>{{ booking.customerName }}</h2>
+                <p>{{ booking.apartmentName }}</p>
+              </div>
+              <span
+                class="status-badge"
+                [class.pending]="booking.status === 1"
+                [class.confirmed]="booking.status === 2"
+                [class.in-progress]="booking.status === 3"
+                [class.completed]="booking.status === 4"
+                [class.cancelled]="booking.status === 5"
+              >{{ statusLabel(booking.status) }}</span>
+            </div>
+            <dl class="booking-card-details">
+              <div><dt>Entrada</dt><dd>{{ booking.checkInDate }}</dd></div>
+              <div><dt>Salida</dt><dd>{{ booking.checkOutDate }}</dd></div>
+              <div><dt>Huéspedes</dt><dd>{{ booking.guestCount }}</dd></div>
+              <div><dt>Total</dt><dd>US$ {{ booking.totalAmount }}</dd></div>
+            </dl>
+            <div class="booking-card-actions">
+              <button class="edit" type="button" (click)="openEditForm(booking)"
+                [attr.aria-label]="'Editar reserva de ' + booking.customerName">
+                <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+              </button>
+              <button class="delete" type="button" (click)="deleteReservation(booking)"
+                [attr.aria-label]="'Eliminar reserva de ' + booking.customerName">
+                <i class="bi bi-trash" aria-hidden="true"></i> Eliminar
+              </button>
+            </div>
+          </article>
+        }
+      </div>
     }
   </div>
 
+  @if (!loading && totalItems > 0) {
+    <nav class="pagination" aria-label="Páginas de reservas">
+      <p role="status">Mostrando {{ pageStart }}–{{ pageEnd }} de {{ totalItems }} reservas</p>
+      <div class="pagination-actions">
+        <button type="button" (click)="changePage(-1)" [disabled]="!hasPreviousPage || loading">Anterior</button>
+        <span>Página {{ page }} de {{ totalPages }}</span>
+        <button type="button" (click)="changePage(1)" [disabled]="!hasNextPage || loading">Siguiente</button>
+      </div>
+    </nav>
+  }
+
   @if (showForm) {
     <div class="modal-backdrop">
-      <div class="reservation-modal" role="dialog" aria-modal="true" aria-labelledby="reservation-title">
+      <div class="reservation-modal" role="dialog" aria-modal="true" aria-labelledby="reservation-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
         <div class="modal-header">
           <div>
             <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>

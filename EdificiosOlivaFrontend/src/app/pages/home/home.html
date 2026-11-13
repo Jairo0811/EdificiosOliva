@@ -78,7 +78,8 @@
         [disabled]="availabilityForm.invalid"
         aria-label="Continuar a la consulta de disponibilidad"
       >
-        Consultar disponibilidad
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <span>Buscar</span>
       </button>
     </form>
 
@@ -100,9 +101,19 @@
     </div>
 
     @if (loadingApartments) {
-      <p class="status-message" role="status" aria-live="polite">
-        Cargando apartamentos destacados...
-      </p>
+      <p class="sr-only" role="status" aria-live="polite">Cargando apartamentos destacados...</p>
+      <div class="apartments-grid apartment-skeleton-grid" aria-hidden="true">
+        @for (placeholder of [1, 2, 3]; track placeholder) {
+          <div class="apartment-card skeleton-card">
+            <div class="image-wrapper skeleton-shimmer"></div>
+            <div class="card-body">
+              <div class="skeleton-line skeleton-shimmer"></div>
+              <div class="skeleton-line short skeleton-shimmer"></div>
+              <div class="skeleton-line medium skeleton-shimmer"></div>
+            </div>
+          </div>
+        }
+      </div>
     } @else if (apartmentsError) {
       <p class="status-message error" role="alert">{{ apartmentsError }}</p>
     } @else if (featuredApartments.length === 0) {
@@ -111,37 +122,34 @@
       <div class="apartments-grid">
         @for (apartment of featuredApartments; track apartment.id) {
           <article class="apartment-card">
-            <img
-              [src]="getApartmentImage(apartment)"
-              [alt]="'Imagen principal de ' + apartment.name"
-              (error)="handleImageError($event)"
-              loading="lazy"
-              decoding="async"
-            />
+            <div class="image-wrapper">
+              <img
+                [src]="getApartmentImage(apartment)"
+                [alt]="'Imagen principal de ' + apartment.name"
+                (error)="handleImageError($event)"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
 
             <div class="card-body">
-              <div class="card-top">
-                <h3>{{ apartment.name }}</h3>
-                <span>Desde US${{ apartment.price }}/noche</span>
-              </div>
-
-              <p>{{ apartment.description }}</p>
-
-              <div class="features" [attr.aria-label]="'Características de ' + apartment.name">
-                <span>{{ apartment.guests }} huéspedes</span>
-                <span>{{ apartment.bedrooms }} habitaciones</span>
-                <span>{{ apartment.bathrooms }} baños</span>
-                @for (amenity of (apartment.amenities || []).slice(0, 2); track amenity) {
-                  <span>{{ amenity }}</span>
-                }
-              </div>
-
-              <a
-                [routerLink]="['/departamentos', apartment.id]"
-                [attr.aria-label]="'Ver detalles de ' + apartment.name"
-              >
-                Ver detalles
-              </a>
+              <h3>
+                <a
+                  class="card-link"
+                  [routerLink]="['/departamentos', apartment.id]"
+                  [attr.aria-label]="'Ver detalles de ' + apartment.name"
+                >
+                  {{ apartment.name }}
+                </a>
+              </h3>
+              <p class="location">{{ apartment.location }}</p>
+              <p class="specs">
+                {{ apartment.guests }} huéspedes · {{ apartment.bedrooms }} hab. ·
+                {{ apartment.bathrooms }} baños
+              </p>
+              <p class="price">
+                Desde <strong>US$ {{ apartment.price }}</strong> / noche
+              </p>
             </div>
           </article>
         }
@@ -214,10 +222,21 @@
       </p>
 
       <div class="location-list">
-        <span><i class="bi bi-basket-fill" aria-hidden="true"></i> Cerca de supermercados y comercios</span>
-        <span><i class="bi bi-cup-hot-fill" aria-hidden="true"></i> Restaurantes y servicios a pocos minutos</span>
-        <span><i class="bi bi-sun-fill" aria-hidden="true"></i> Acceso rápido a playas de Bávaro</span>
-        <span><i class="bi bi-airplane-fill" aria-hidden="true"></i> Conexión rápida al Aeropuerto Internacional</span>
+        <span
+          ><i class="bi bi-basket-fill" aria-hidden="true"></i> Cerca de supermercados y
+          comercios</span
+        >
+        <span
+          ><i class="bi bi-cup-hot-fill" aria-hidden="true"></i> Restaurantes y servicios a pocos
+          minutos</span
+        >
+        <span
+          ><i class="bi bi-sun-fill" aria-hidden="true"></i> Acceso rápido a playas de Bávaro</span
+        >
+        <span
+          ><i class="bi bi-airplane-fill" aria-hidden="true"></i> Conexión rápida al Aeropuerto
+          Internacional</span
+        >
       </div>
     </div>
 
@@ -227,7 +246,8 @@
         src="https://www.google.com/maps?q=18.6644942,-68.4434565&z=16&output=embed"
         loading="lazy"
         allowfullscreen
-        referrerpolicy="no-referrer-when-downgrade">
+        referrerpolicy="no-referrer-when-downgrade"
+      >
       </iframe>
     </div>
   </div>
@@ -277,11 +297,18 @@
     <div class="section-header">
       <span>Galería real</span>
       <h2 id="gallery-preview-title">Conoce los espacios publicados de Edificios Oliva</h2>
-      <p>Las fotografías de esta sección provienen directamente de la galería administrada del alojamiento.</p>
+      <p>
+        Las fotografías de esta sección provienen directamente de la galería administrada del
+        alojamiento.
+      </p>
     </div>
 
     @if (loadingGallery) {
-      <p class="status-message" role="status" aria-live="polite">Cargando fotografías...</p>
+      <div class="gallery-empty gallery-loading" role="status" aria-live="polite">
+        <i class="bi bi-images" aria-hidden="true"></i>
+        <h3>Preparando galería</h3>
+        <p>Cargando fotografías publicadas...</p>
+      </div>
     } @else if (publicVisuals.length === 0) {
       <div class="gallery-empty">
         <i class="bi bi-images" aria-hidden="true"></i>
@@ -306,7 +333,9 @@
       </div>
 
       @if (galleryError) {
-        <p class="gallery-source-note">{{ galleryError }} Se muestran imágenes disponibles de los apartamentos.</p>
+        <p class="gallery-source-note">
+          {{ galleryError }} Se muestran imágenes disponibles de los apartamentos.
+        </p>
       }
 
       <div class="gallery-actions">

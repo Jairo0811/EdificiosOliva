@@ -2,11 +2,13 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  HostListener,
   OnInit,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Observable, finalize } from 'rxjs';
 
 import { Booking } from '../../../core/models/booking.model';
@@ -25,7 +27,7 @@ interface PaymentForm {
 
 @Component({
   selector: 'app-payments',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   templateUrl: './payments.html',
   styleUrl: './payments.css',
 })
@@ -34,6 +36,7 @@ export class Payments implements OnInit {
   private readonly reservationsService = inject(Reservations);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private previouslyFocused: HTMLElement | null = null;
 
   payments: Payment[] = [];
   reservations: Booking[] = [];
@@ -46,6 +49,23 @@ export class Payments implements OnInit {
   search = '';
   statusFilter = 0;
   methodFilter = 0;
+  page = 1;
+  readonly pageSize = 20;
+  totalItems = 0;
+  totalPages = 0;
+  hasPreviousPage = false;
+  hasNextPage = false;
+
+  get pageStart(): number { return this.totalItems ? (this.page - 1) * this.pageSize + 1 : 0; }
+  get pageEnd(): number { return Math.min(this.page * this.pageSize, this.totalItems); }
+
+  applyFilters(): void { this.page = 1; this.loadPayments(); }
+  changePage(direction: -1 | 1): void {
+    if (this.loading || (direction === -1 && !this.hasPreviousPage) ||
+        (direction === 1 && !this.hasNextPage)) return;
+    this.page += direction;
+    this.loadPayments();
+  }
   successMessage = '';
   errorMessage = '';
 
@@ -63,8 +83,8 @@ export class Payments implements OnInit {
 
     this.paymentsService
       .getAll({
-        page: 1,
-        pageSize: 100,
+        page: this.page,
+        pageSize: this.pageSize,
         search: this.search,
         status: this.statusFilter || undefined,
         method: this.methodFilter || undefined,
@@ -79,10 +99,23 @@ export class Payments implements OnInit {
       .subscribe({
         next: (result) => {
           this.payments = result.items;
+          this.page = result.page;
+          this.totalItems = result.totalItems;
+          this.totalPages = result.totalPages;
+          this.hasPreviousPage = result.hasPreviousPage;
+          this.hasNextPage = result.hasNextPage;
           this.changeDetector.markForCheck();
+          if (!result.items.length && result.page > 1 && result.totalItems > 0) {
+            this.page = Math.max(1, result.totalPages);
+            this.loadPayments();
+          }
         },
         error: (error: unknown) => {
           this.payments = [];
+          this.totalItems = 0;
+          this.totalPages = 0;
+          this.hasPreviousPage = false;
+          this.hasNextPage = false;
           this.errorMessage =
             error instanceof Error
               ? error.message
@@ -93,6 +126,7 @@ export class Payments implements OnInit {
   }
 
   openCreateForm(): void {
+    this.rememberFocus();
     this.editingId = null;
     this.paymentForm = this.getEmptyForm();
     this.clearMessages();
@@ -100,6 +134,7 @@ export class Payments implements OnInit {
   }
 
   openEditForm(payment: Payment): void {
+    this.rememberFocus();
     this.editingId = payment.id;
     this.paymentForm = {
       reservationId: payment.reservationId,
@@ -118,6 +153,7 @@ export class Payments implements OnInit {
     this.showForm = false;
     this.editingId = null;
     this.paymentForm = this.getEmptyForm();
+    this.restoreFocus();
   }
 
   onReservationChange(): void {
@@ -173,6 +209,7 @@ export class Payments implements OnInit {
           this.showForm = false;
           this.editingId = null;
           this.paymentForm = this.getEmptyForm();
+          this.restoreFocus();
           this.loadPayments();
         },
         error: (error: unknown) => {
@@ -290,6 +327,22 @@ export class Payments implements OnInit {
       transactionId: '',
       notes: '',
     };
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showForm && !this.saving) this.closeForm();
+  }
+
+  private rememberFocus(): void {
+    this.previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+  }
+
+  private restoreFocus(): void {
+    const element = this.previouslyFocused;
+    this.previouslyFocused = null;
+    queueMicrotask(() => element?.focus());
   }
 
   private clearMessages(): void {

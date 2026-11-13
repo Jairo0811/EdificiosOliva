@@ -47,7 +47,7 @@
     @if (loading) {
       <p class="empty-state" role="status">Cargando clientes...</p>
     } @else if (filteredCustomers.length === 0) {
-      <p class="empty-state">No se encontraron clientes.</p>
+      <p class="empty-state" role="status">No se encontraron clientes.</p>
     } @else {
       <table>
         <thead>
@@ -86,12 +86,40 @@
           }
         </tbody>
       </table>
+      <div class="customer-cards" aria-label="Clientes encontrados">
+        @for (customer of filteredCustomers; track customer.id) {
+          <article class="customer-card">
+            <div class="customer-card-heading">
+              <div><span class="customer-id">#{{ shortId(customer.id) }}</span>
+                <h2>{{ customer.name }}</h2></div>
+              <span class="customer-status" [class.active]="customer.status === 'Activo'"
+                [class.inactive]="customer.status === 'Inactivo'">{{ customer.status }}</span>
+            </div>
+            <dl>
+              <div><dt>Correo</dt><dd>{{ customer.email }}</dd></div>
+              <div><dt>Teléfono</dt><dd>{{ customer.phone }}</dd></div>
+              <div><dt>Reservas</dt><dd>{{ customer.bookings }}</dd></div>
+            </dl>
+            <div class="customer-card-actions">
+              <button class="edit" type="button" (click)="openEditForm(customer)"
+                [attr.aria-label]="'Editar ' + customer.name">
+                <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+              </button>
+              <button class="delete" type="button" (click)="deleteCustomer(customer)"
+                [attr.aria-label]="'Eliminar ' + customer.name">
+                <i class="bi bi-trash" aria-hidden="true"></i> Eliminar
+              </button>
+            </div>
+          </article>
+        }
+      </div>
     }
   </div>
 
   @if (showForm) {
     <div class="modal-backdrop">
-      <div class="customer-modal" role="dialog" aria-modal="true" aria-labelledby="customer-title">
+      <div class="customer-modal" role="dialog" aria-modal="true" aria-labelledby="customer-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
         <div class="modal-header">
           <div>
             <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>

@@ -354,3 +354,103 @@ td {
     transition: none;
   }
 }
+
+/* v1.3: filtros locales de las últimas reservas (los KPIs siguen siendo globales). */
+.reservation-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(145px, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.reservation-filters label {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reservation-filters input,
+.reservation-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.result-count {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.reservation-cards {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .reservation-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .reservations-panel .table-responsive {
+    display: none;
+  }
+
+  .reservation-cards {
+    display: grid;
+    gap: 12px;
+  }
+
+  .reservation-card {
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  .reservation-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .reservation-card-header strong {
+    overflow-wrap: anywhere;
+  }
+
+  .reservation-card dl {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 0;
+  }
+
+  .reservation-card dl div {
+    display: grid;
+    grid-template-columns: minmax(0, 100px) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .reservation-card dt {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .reservation-card dd {
+    margin: 0;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+
+  .reservations-panel .panel-header a {
+    display: inline-flex;
+  }
+}

@@ -2,11 +2,13 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  HostListener,
   OnInit,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Observable, finalize, forkJoin } from 'rxjs';
 
 import { Apartment } from '../../../core/models/apartment.model';
@@ -31,7 +33,7 @@ interface ReservationForm {
 
 @Component({
   selector: 'app-bookings-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   templateUrl: './bookings-admin.html',
   styleUrl: './bookings-admin.css',
 })
@@ -41,6 +43,7 @@ export class BookingsAdmin implements OnInit {
   private readonly apartmentsService = inject(Apartments);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private previouslyFocused: HTMLElement | null = null;
 
   bookings: Booking[] = [];
   customers: Customer[] = [];
@@ -53,6 +56,32 @@ export class BookingsAdmin implements OnInit {
 
   search = '';
   statusFilter = 0;
+  page = 1;
+  readonly pageSize = 20;
+  totalItems = 0;
+  totalPages = 0;
+  hasPreviousPage = false;
+  hasNextPage = false;
+
+  get pageStart(): number {
+    return this.totalItems === 0 ? 0 : (this.page - 1) * this.pageSize + 1;
+  }
+
+  get pageEnd(): number {
+    return Math.min(this.page * this.pageSize, this.totalItems);
+  }
+
+  applyFilters(): void {
+    this.page = 1;
+    this.loadBookings();
+  }
+
+  changePage(direction: -1 | 1): void {
+    if (this.loading || (direction === -1 && !this.hasPreviousPage) ||
+        (direction === 1 && !this.hasNextPage)) return;
+    this.page += direction;
+    this.loadBookings();
+  }
   successMessage = '';
   errorMessage = '';
 
@@ -70,8 +99,8 @@ export class BookingsAdmin implements OnInit {
 
     this.reservationsService
       .getAll({
-        page: 1,
-        pageSize: 100,
+        page: this.page,
+        pageSize: this.pageSize,
         search: this.search,
         status: this.statusFilter || undefined,
       })
@@ -85,10 +114,25 @@ export class BookingsAdmin implements OnInit {
       .subscribe({
         next: (result) => {
           this.bookings = result.items;
+          this.page = result.page;
+          this.totalItems = result.totalItems;
+          this.totalPages = result.totalPages;
+          this.hasPreviousPage = result.hasPreviousPage;
+          this.hasNextPage = result.hasNextPage;
+          // Deleting the last item of the final page must not strand the operator.
+          if (result.items.length === 0 && result.page > 1 && result.totalItems > 0) {
+            this.page = Math.max(1, result.totalPages);
+            this.loadBookings();
+            return;
+          }
           this.changeDetector.markForCheck();
         },
         error: (error: unknown) => {
           this.bookings = [];
+          this.totalItems = 0;
+          this.totalPages = 0;
+          this.hasPreviousPage = false;
+          this.hasNextPage = false;
           this.errorMessage =
             error instanceof Error
               ? error.message
@@ -99,6 +143,7 @@ export class BookingsAdmin implements OnInit {
   }
 
   openCreateForm(): void {
+    this.rememberFocus();
     this.editingId = null;
     this.reservationForm = this.getEmptyForm();
     this.clearMessages();
@@ -106,6 +151,7 @@ export class BookingsAdmin implements OnInit {
   }
 
   openEditForm(booking: Booking): void {
+    this.rememberFocus();
     this.editingId = booking.id;
     this.reservationForm = {
       customerId: booking.customerId,
@@ -125,6 +171,7 @@ export class BookingsAdmin implements OnInit {
     this.showForm = false;
     this.editingId = null;
     this.reservationForm = this.getEmptyForm();
+    this.restoreFocus();
   }
 
   saveReservation(): void {
@@ -176,6 +223,7 @@ export class BookingsAdmin implements OnInit {
           this.showForm = false;
           this.editingId = null;
           this.reservationForm = this.getEmptyForm();
+          this.restoreFocus();
           this.loadBookings();
         },
         error: (error: unknown) => {
@@ -278,6 +326,22 @@ export class BookingsAdmin implements OnInit {
       status: 1,
       notes: '',
     };
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showForm && !this.saving) this.closeForm();
+  }
+
+  private rememberFocus(): void {
+    this.previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+  }
+
+  private restoreFocus(): void {
+    const element = this.previouslyFocused;
+    this.previouslyFocused = null;
+    queueMicrotask(() => element?.focus());
   }
 
   private clearMessages(): void {
