@@ -13,7 +13,7 @@ test('completes a public booking without pretending that payment was confirmed',
   });
 
   await page.goto(`/reservar?apartmentId=${APARTMENT_ID}&checkIn=2030-01-10&checkOut=2030-01-13&guests=2`);
-  await expect(page.getByRole('heading', { name: 'Tu estadía', exact: true })).toBeVisible();
+  await expect(page.locator('#step-heading')).toHaveText('Tu estadía');
   await expect(page.getByText('Disponible para estas fechas')).toBeVisible();
   await expect(page.locator('select[name="apartmentId"]')).toHaveValue(APARTMENT_ID);
   await page.getByRole('button', { name: 'Continuar' }).click();
