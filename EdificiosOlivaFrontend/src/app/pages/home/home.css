@@ -65,8 +65,8 @@
 }
 
 .btn-primary {
-  border: 2px solid var(--accent);
-  background: var(--accent);
+  border: 2px solid #c43d2f;
+  background: #c43d2f;
 
   color: white;
 

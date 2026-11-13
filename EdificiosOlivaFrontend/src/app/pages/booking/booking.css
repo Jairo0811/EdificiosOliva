@@ -2,7 +2,7 @@
 
 
 .eyebrow {
-  color: #c79b51;
+  color: #8b5c17;
   font-weight: 800;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -91,7 +91,7 @@
 }
 
 .field small {
-  color: #8191a0;
+  color: #526578;
   font-weight: 500;
 }
 
@@ -166,7 +166,7 @@
   padding: 12px 14px;
   border-radius: 12px;
   background: #f0f3f6;
-  color: #66788a;
+  color: #526578;
   font-weight: 700;
   font-size: 0.9rem;
 }
@@ -209,7 +209,7 @@
 
 .whatsapp-btn {
   margin-top: 15px;
-  background: #1f9f54;
+  background: #14783e;
 }
 
 .whatsapp-btn.inline {
