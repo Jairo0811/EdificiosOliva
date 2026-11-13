@@ -8,6 +8,9 @@ on:
       - '.gitignore'
       - 'scripts/validate-staging-config.mjs'
       - 'scripts/validate-staging-config.test.mjs'
+      - 'scripts/assert-staging-compose.mjs'
+      - 'scripts/assert-staging-compose.test.mjs'
+      - 'ops/staging/**'
       - '.github/workflows/staging-preflight.yml'
   workflow_dispatch:
 
@@ -30,3 +33,13 @@ jobs:
         run: node --test scripts/validate-staging-config.test.mjs
       - name: Validate staging configuration inventory
         run: node scripts/validate-staging-config.mjs --template
+      - name: Verify Compose wiring without starting services
+        shell: bash
+        env:
+          STAGING_HOST: staging.oliva-tests.example.org
+          STAGING_ORIGIN: https://staging.oliva-tests.example.org
+          STAGING_FIREBASE_PROJECT_ID: edificios-oliva-staging-qa
+          STAGING_SQL_CONNECTION_STRING: 'Server=staging-sql;Database=EdificiosOliva_Staging;User Id=staging_user;Password=SYNTHETIC_TEST_ONLY;Encrypt=True;TrustServerCertificate=False'
+        run: |
+          set -euo pipefail
+          docker compose -f ops/staging/compose.yml config --format json | node scripts/assert-staging-compose.mjs
