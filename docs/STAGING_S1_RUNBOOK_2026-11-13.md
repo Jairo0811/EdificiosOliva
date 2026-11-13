@@ -105,8 +105,20 @@ persistencia, separación de redes y opciones de pago/correo. Ese análisis
 8. Solo en la red prevista, comprobar `/health` y `/health/ready`
    (200 con SQL, 503 cuando SQL está caído), protección 401/403,
    reservas sintéticas, galería, persistencia y observabilidad.
-9. Cerrar con evidencias, no habilitar AZUL/SMTP hasta su propia
-   certificación explícita.
+9. Con autorización y un dominio de staging operativo, lanzar solo lectura:
+
+   ```bash
+   node scripts/smoke-staging.mjs https://staging.example.org
+   ```
+
+   Consulta exclusivamente `GET /health` (200), `GET /health/ready`
+   (200) y `GET /api/reservations` sin token (401); no crea reservas,
+   no procesa pagos y no envía correos. Para diagnosticar el puerto
+   de loopback existe `--loopback`, pero con `AllowedHosts` restringido
+   puede devolver 400 si no se conserva el Host de staging, por lo que
+   **no sustituye la prueba detrás del proxy HTTPS real**.
+10. Cerrar con evidencias, no habilitar AZUL/SMTP hasta su propia
+    certificación explícita.
 
 **Importante:** el paso 7 NO ha sido ejecutado. `docker compose config`
 puede mostrar contraseñas si se omite `--quiet`; evitar pegar salidas
@@ -126,9 +138,10 @@ con secretos en issues o chats.
 
 ## Decisiones de seguridad que permanecen abiertas
 
-1. Sustituir los identificadores redundantes de consulta/checkout por un
-   token opaco de alta entropía, con hash en servidor, expiración y
-   invalidación. Definir transición/migración antes de modificar el contrato.
+1. Reforzar las credenciales públicas de estado/checkout con la propuesta
+   de [ADR-PAY-001](ADR_PAY_001_CAPABILITY_TOKEN_V13.md): capacidad opaca
+   derivada con HMAC sobre nonce CSPRNG y llave secreta, expiración y
+   revocación. **Aún no implementado**, migración y pruebas pendientes.
 2. Definir la política de consulta de pagos cuando la reserva se crea con
    más de 30 días de anticipación, evitando prolongar acceso por identificadores
    derivados del GUID.
