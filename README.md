@@ -23,6 +23,29 @@ La solución utiliza **Angular 21**, **ASP.NET Core Web API sobre .NET 10**, **E
 
 > **Estado v1.2.0:** el código de la línea v1 está completo. AZUL, SMTP y producción permanecen deshabilitados por defecto hasta suministrar credenciales, dominio, infraestructura y aprobaciones reales. El repositorio no simula esas dependencias externas.
 
+## 🚧 v1.3.0 — Frontend & UX 2.0 (PR #30, sin publicar)
+
+La rama `feature/v1.3-frontend-ux` contiene mejoras **aún no fusionadas a `master`**:
+
+- Reserva pública en cinco pasos, estado de pago consultado desde el backend y reintentos idempotentes.
+- Galería con lightbox accesible y mejoras de navegación y rendimiento.
+- Dashboard con búsqueda/estado sobre reservas recientes y tarjetas para móvil.
+- Administración de reservas e intentos de pago: **paginación real de 20 elementos por página** y
+  tarjetas móviles que conservan las acciones CRUD y de conciliación.
+- Operación PMS: filtros de listados por apartamento y estado, KPI de reservas confirmadas y
+  noches de inventario, tarjetas de rendimiento en móvil y fechas del período según la zona
+  horaria de la propiedad.
+- Los filtros de listados **no recalculan ni alteran** los KPI globales del período. Los CSV
+  corresponden al último rango cargado, no a los filtros locales.
+- Migración de SQL Server `AddReservationIdempotency` requerida antes de desplegar el backend v1.3.
+
+**Pendiente antes de release:** validar la migración y concurrencia real con SQL Server,
+completar auditoría responsive/accesibilidad, pruebas Playwright E2E y mediciones Lighthouse.
+La integración de AZUL y SMTP con proveedores reales sigue siendo una activación externa.
+
+[Revisar PR #30](https://github.com/Jairo0811/EdificiosOliva/pull/30)
+
+
 ---
 
 # ✅ Edificios Oliva v1.2.0
@@ -160,9 +183,8 @@ Reglas relevantes:
 - **TypeScript 5.9**
 - **Angular Material / CDK**
 - **Bootstrap 5**
-- **AOS**
-- **Swiper**
-- **Leaflet**
+- **Sistema de diseño propio (CSS/tokens v1.3 en desarrollo)**
+- **Bootstrap Icons**
 - **Firebase modular SDK**
 - **Vitest**
 - **iCalendar (RFC 5545)** para feeds de disponibilidad
