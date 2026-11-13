@@ -18,7 +18,8 @@ public sealed class PublicBookingCapabilityService(
     {
         get
         {
-            var version = configuration.GetValue<int>("PublicPayments:ActiveKeyVersion");
+            if (!int.TryParse(configuration["PublicPayments:ActiveKeyVersion"], out var version))
+                throw new InvalidOperationException("Falta una versión de clave pública válida.");
             if (version <= 0)
                 throw new InvalidOperationException("Falta PublicPayments:ActiveKeyVersion.");
             _ = ReadKey(version); // Fail-closed antes de crear la reserva.

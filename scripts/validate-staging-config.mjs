@@ -148,7 +148,7 @@ export function validateStagingConfig(vars, { template = false } = {}) {
   const trustedProxy = read('Staging__TrustedHttpsProxy').toLowerCase();
   const knownProxy = read('ReverseProxy__KnownProxies__0');
   if (!template && tls === 'false' && trustedProxy === 'true' &&
-      !/^(?:10\\.|172\\.(?:1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)[0-9.]+$/.test(knownProxy)) {
+      !/^(?:10\.|172\.(?:1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9.]+$/.test(knownProxy)) {
     problem('La terminación TLS exige la IP privada exacta del proxy nginx confiable.');
   }
   if (tls !== 'true' && !(tls === 'false' && trustedProxy === 'true')) {
