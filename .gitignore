@@ -11,3 +11,16 @@ EdificiosOlivaBackend/EdificiosOliva.Api/wwwroot/uploads/**
 
 # Mantener la carpeta uploads en Git
 !EdificiosOlivaBackend/EdificiosOliva.Api/wwwroot/uploads/.gitkeep
+
+# Configuraciones locales y secretos: nunca versionar entornos reales.
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!.env.staging.example
+
+# Certificados y credenciales locales
+*.pfx
+*.p12
+*.key
