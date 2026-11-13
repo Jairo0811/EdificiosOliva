@@ -23,6 +23,7 @@ describe('Customers v1.3', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('renders mobile cards with contact details and full actions', () => {

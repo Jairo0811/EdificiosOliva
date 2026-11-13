@@ -580,3 +580,26 @@ textarea:focus {
   background: #f3f8fc;
   color: #234b6e;
 }
+
+/* Administration v1.3: mobile apartment cards; desktop table remains available. */
+app-apartments-admin .apartment-cards { display: none; }
+@media (max-width: 767px) {
+  app-apartments-admin .admin-page .table-card { overflow: visible; background: transparent; box-shadow: none; }
+  app-apartments-admin .admin-page .table-card table { display: none; }
+  app-apartments-admin .admin-page .apartment-cards { display: grid; gap: 14px; }
+  app-apartments-admin .apartment-admin-card { min-width: 0; overflow: hidden; border: 1px solid var(--border);
+    border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-sm); }
+  app-apartments-admin .apartment-admin-card > img { width: 100%; height: 180px; object-fit: cover; }
+  app-apartments-admin .apartment-admin-card-body { padding: 18px; }
+  app-apartments-admin .apartment-admin-card-heading { display: flex; justify-content: space-between;
+    flex-wrap: wrap; align-items: flex-start; gap: 10px; }
+  app-apartments-admin .apartment-admin-card h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+  app-apartments-admin .apartment-admin-card dl { display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin: 16px 0; }
+  app-apartments-admin .apartment-admin-card dl .full { grid-column: 1 / -1; }
+  app-apartments-admin .apartment-admin-card dt { font-size: 12px; color: var(--text-muted); }
+  app-apartments-admin .apartment-admin-card dd { margin: 3px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+  app-apartments-admin .apartment-admin-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  app-apartments-admin .apartment-admin-card-actions button { width: auto; height: auto; min-height: 44px;
+    padding: 10px 14px; margin: 0; display: inline-flex; align-items: center; gap: 8px; }
+}
