@@ -54,41 +54,78 @@
         @if (summary.recentReservations.length === 0) {
           <p class="empty-state">Todavía no hay reservas registradas.</p>
         } @else {
-          <div
-            class="table-responsive"
-            role="region"
-            aria-label="Últimas reservas"
-            tabindex="0"
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Cliente</th>
-                  <th scope="col">Apartamento</th>
-                  <th scope="col">Entrada</th>
-                  <th scope="col">Estado</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                @for (
-                  reservation of summary.recentReservations;
-                  track reservation.id
-                ) {
-                  <tr>
-                    <td>{{ reservation.customerName }}</td>
-                    <td>{{ reservation.apartmentName }}</td>
-                    <td>{{ reservation.checkInDate }}</td>
-                    <td>
-                      <span class="status" [class]="'status ' + statusClass(reservation.status)">
-                        {{ statusLabel(reservation.status) }}
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <div class="reservation-filters" role="search" aria-label="Filtrar últimas reservas">
+            <label>
+              <span>Buscar en las últimas reservas</span>
+              <input
+                type="search"
+                [value]="reservationQuery"
+                (input)="reservationQuery = $any($event.target).value"
+                placeholder="Cliente o apartamento"
+              />
+            </label>
+            <label>
+              <span>Estado</span>
+              <select [value]="reservationStatus" (change)="reservationStatus = +$any($event.target).value">
+                <option value="0">Todos</option>
+                <option value="1">Pendiente</option>
+                <option value="2">Confirmada</option>
+                <option value="3">En curso</option>
+                <option value="4">Completada</option>
+                <option value="5">Cancelada</option>
+              </select>
+            </label>
           </div>
+
+          @if (filteredReservations.length === 0) {
+            <p class="empty-state" role="status">No hay coincidencias entre las últimas reservas.</p>
+          } @else {
+            <p class="result-count" role="status">
+              Mostrando {{ filteredReservations.length }} de {{ summary.recentReservations.length }} reservas recientes
+            </p>
+            <div class="table-responsive" role="region" aria-label="Últimas reservas" tabindex="0">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Apartamento</th>
+                    <th scope="col">Entrada</th>
+                    <th scope="col">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (reservation of filteredReservations; track reservation.id) {
+                    <tr>
+                      <td>{{ reservation.customerName }}</td>
+                      <td>{{ reservation.apartmentName }}</td>
+                      <td>{{ reservation.checkInDate }}</td>
+                      <td>
+                        <span class="status" [class]="'status ' + statusClass(reservation.status)">
+                          {{ statusLabel(reservation.status) }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="reservation-cards" aria-label="Últimas reservas">
+              @for (reservation of filteredReservations; track reservation.id) {
+                <article class="reservation-card">
+                  <div class="reservation-card-header">
+                    <strong>{{ reservation.customerName }}</strong>
+                    <span class="status" [class]="'status ' + statusClass(reservation.status)">
+                      {{ statusLabel(reservation.status) }}
+                    </span>
+                  </div>
+                  <dl>
+                    <div><dt>Apartamento</dt><dd>{{ reservation.apartmentName }}</dd></div>
+                    <div><dt>Entrada</dt><dd>{{ reservation.checkInDate }}</dd></div>
+                  </dl>
+                </article>
+              }
+            </div>
+          }
         }
       </article>
 
