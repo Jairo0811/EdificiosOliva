@@ -176,7 +176,8 @@
 
   @if (showForm) {
     <div class="modal-backdrop">
-      <div class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+      <div class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
         <div class="modal-header">
           <div>
             <span>{{ editingId ? 'Actualizar transacción' : 'Nueva transacción' }}</span>

@@ -167,7 +167,8 @@
 
   @if (showForm) {
     <div class="modal-backdrop">
-      <div class="reservation-modal" role="dialog" aria-modal="true" aria-labelledby="reservation-title">
+      <div class="reservation-modal" role="dialog" aria-modal="true" aria-labelledby="reservation-title"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
         <div class="modal-header">
           <div>
             <span>{{ editingId ? 'Actualizar registro' : 'Nuevo registro' }}</span>

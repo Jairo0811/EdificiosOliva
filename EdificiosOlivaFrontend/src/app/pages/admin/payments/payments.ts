@@ -2,11 +2,13 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  HostListener,
   OnInit,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Observable, finalize } from 'rxjs';
 
 import { Booking } from '../../../core/models/booking.model';
@@ -25,7 +27,7 @@ interface PaymentForm {
 
 @Component({
   selector: 'app-payments',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   templateUrl: './payments.html',
   styleUrl: './payments.css',
 })
@@ -34,6 +36,7 @@ export class Payments implements OnInit {
   private readonly reservationsService = inject(Reservations);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private previouslyFocused: HTMLElement | null = null;
 
   payments: Payment[] = [];
   reservations: Booking[] = [];
@@ -123,6 +126,7 @@ export class Payments implements OnInit {
   }
 
   openCreateForm(): void {
+    this.rememberFocus();
     this.editingId = null;
     this.paymentForm = this.getEmptyForm();
     this.clearMessages();
@@ -130,6 +134,7 @@ export class Payments implements OnInit {
   }
 
   openEditForm(payment: Payment): void {
+    this.rememberFocus();
     this.editingId = payment.id;
     this.paymentForm = {
       reservationId: payment.reservationId,
@@ -148,6 +153,7 @@ export class Payments implements OnInit {
     this.showForm = false;
     this.editingId = null;
     this.paymentForm = this.getEmptyForm();
+    this.restoreFocus();
   }
 
   onReservationChange(): void {
@@ -203,6 +209,7 @@ export class Payments implements OnInit {
           this.showForm = false;
           this.editingId = null;
           this.paymentForm = this.getEmptyForm();
+          this.restoreFocus();
           this.loadPayments();
         },
         error: (error: unknown) => {
@@ -320,6 +327,22 @@ export class Payments implements OnInit {
       transactionId: '',
       notes: '',
     };
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showForm && !this.saving) this.closeForm();
+  }
+
+  private rememberFocus(): void {
+    this.previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+  }
+
+  private restoreFocus(): void {
+    const element = this.previouslyFocused;
+    this.previouslyFocused = null;
+    queueMicrotask(() => element?.focus());
   }
 
   private clearMessages(): void {

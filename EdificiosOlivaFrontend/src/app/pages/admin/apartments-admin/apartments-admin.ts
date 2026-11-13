@@ -2,12 +2,14 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  HostListener,
   OnDestroy,
   OnInit,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { finalize, timeout } from 'rxjs';
 
 import { Apartment } from '../../../core/models/apartment.model';
@@ -25,7 +27,7 @@ interface PendingImage {
 
 @Component({
   selector: 'app-apartments-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   templateUrl: './apartments-admin.html',
   styleUrl: './apartments-admin.css',
 })
@@ -34,6 +36,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   private readonly storageService = inject(StorageService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
+  private previouslyFocused: HTMLElement | null = null;
 
   private readonly maxImages = 10;
   private readonly allowedTypes = [
@@ -119,6 +122,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   }
 
   openCreateForm(): void {
+    this.rememberFocus();
     this.resetFormState();
     this.apartmentForm = this.getEmptyApartment();
     this.editingMode = false;
@@ -126,6 +130,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
   }
 
   openEditForm(apartment: Apartment): void {
+    this.rememberFocus();
     this.resetFormState();
 
     this.apartmentForm = {
@@ -145,6 +150,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
 
     this.showForm = false;
     this.resetFormState();
+    this.restoreFocus();
   }
 
   toggleAmenity(
@@ -450,6 +456,7 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
       }
 
       this.showForm = false;
+      this.restoreFocus();
       this.editingMode = false;
       this.apartmentForm = this.getEmptyApartment();
       this.resetFormState(false);
@@ -701,6 +708,22 @@ export class ApartmentsAdmin implements OnInit, OnDestroy {
         image.previewUrl,
       );
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showForm && !this.saving) this.closeForm();
+  }
+
+  private rememberFocus(): void {
+    this.previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+  }
+
+  private restoreFocus(): void {
+    const element = this.previouslyFocused;
+    this.previouslyFocused = null;
+    queueMicrotask(() => element?.focus());
   }
 
   private clearMessages(): void {

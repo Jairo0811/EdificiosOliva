@@ -2,11 +2,13 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  HostListener,
   OnInit,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Observable, finalize, forkJoin } from 'rxjs';
 
 import { Apartment } from '../../../core/models/apartment.model';
@@ -31,7 +33,7 @@ interface ReservationForm {
 
 @Component({
   selector: 'app-bookings-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   templateUrl: './bookings-admin.html',
   styleUrl: './bookings-admin.css',
 })
@@ -41,6 +43,7 @@ export class BookingsAdmin implements OnInit {
   private readonly apartmentsService = inject(Apartments);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private previouslyFocused: HTMLElement | null = null;
 
   bookings: Booking[] = [];
   customers: Customer[] = [];
@@ -140,6 +143,7 @@ export class BookingsAdmin implements OnInit {
   }
 
   openCreateForm(): void {
+    this.rememberFocus();
     this.editingId = null;
     this.reservationForm = this.getEmptyForm();
     this.clearMessages();
@@ -147,6 +151,7 @@ export class BookingsAdmin implements OnInit {
   }
 
   openEditForm(booking: Booking): void {
+    this.rememberFocus();
     this.editingId = booking.id;
     this.reservationForm = {
       customerId: booking.customerId,
@@ -166,6 +171,7 @@ export class BookingsAdmin implements OnInit {
     this.showForm = false;
     this.editingId = null;
     this.reservationForm = this.getEmptyForm();
+    this.restoreFocus();
   }
 
   saveReservation(): void {
@@ -217,6 +223,7 @@ export class BookingsAdmin implements OnInit {
           this.showForm = false;
           this.editingId = null;
           this.reservationForm = this.getEmptyForm();
+          this.restoreFocus();
           this.loadBookings();
         },
         error: (error: unknown) => {
@@ -319,6 +326,22 @@ export class BookingsAdmin implements OnInit {
       status: 1,
       notes: '',
     };
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showForm && !this.saving) this.closeForm();
+  }
+
+  private rememberFocus(): void {
+    this.previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+  }
+
+  private restoreFocus(): void {
+    const element = this.previouslyFocused;
+    this.previouslyFocused = null;
+    queueMicrotask(() => element?.focus());
   }
 
   private clearMessages(): void {
