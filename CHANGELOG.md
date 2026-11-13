@@ -60,15 +60,27 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
 ### Seguridad
 
+- Se corrigieron los avisos de seguridad `NU1902`/`NU1903` de la dependencia transitiva
+  `System.Security.Cryptography.Pkcs` 9.0.4 mediante una referencia explícita a `9.0.21`,
+  versión corregida para `GHSA-846f-f764-76mx` y `GHSA-2fmv-rv2c-59x7`.
 - La UI nunca declara un pago aprobado sin confirmación del backend; un retorno manipulado no confirma.
 - No se inicia un segundo cobro mientras el pago esté pendiente, confirmado, en revisión o sin verificar.
 - Sin cambios en la verificación criptográfica de AZUL ni en la conciliación.
+
+### Validación ejecutada
+
+- Se añadió CI con SQL Server 2022 efímero: `dotnet ef migrations has-pending-model-changes`,
+  aplicación desde base vacía, segunda ejecución idempotente y listado de migraciones.
+- Se comprobó `AddReservationIdempotency` aplicada en SQL Server real (contenedor CI).
+- Se añadieron comprobaciones de integración con EF Core y SQL Server para reintento idéntico,
+  conflicto de payload y tres carreras de dos solicitudes concurrentes con la misma clave.
+- Evidencia: `docs/VALIDACION_V13_2026-11-13.md`. No se ha migrado ninguna base de producción.
 
 ### Pendiente en v1.3 (no implementado)
 
 Administración 2.0 (resto de tablas administrativas y uniformidad de tokens),
 auditoría responsive/WCAG completa, métricas LCP/CLS/Lighthouse, pruebas E2E,
-pruebas backend con base de datos (concurrencia real). README ampliado para documentar
+pruebas de carga y concurrencia sostenida en staging (las carreras acotadas de CI ya pasan). README ampliado para documentar
 la rama v1.3 sin presentarla como release. El audit de dependencias de desarrollo aún informa avisos; `npm audit --omit=dev` permanece limpio.
 
 ## [1.2.0] - 2026-10-27
