@@ -22,10 +22,13 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
   este backend (agrega dos columnas nulas y un índice).
 - Stepper de reserva de cinco pasos (Estadía, Huésped, Revisión, Pago, Resultado) accesible por teclado.
 - Verificación del pago en `/reservar` tras el retorno de AZUL con sondeo acotado (6 intentos / 4 s).
-- Pruebas: backend 32 (CI), frontend 83.
+- Pruebas: backend 32 (CI), frontend 107 (42 archivos; CI del 13-11-2026).
 
 ### Cambiado
 
+- Dashboard administrativo: filtros locales de reservas recientes por cliente/apartamento y estado,
+  tarjetas móviles con datos etiquetados y fecha de próximo check-in calculada según la zona horaria
+  de la propiedad. Los KPI globales no se alteran al filtrar. Cuatro pruebas del dashboard.
 - Dependencias sin consumidores eliminadas: `@fortawesome/fontawesome-free`, `aos`, `leaflet` (CSS y JS
   globales en `angular.json`) y `swiper`. Se conservan Bootstrap, Bootstrap Icons (92 usos) y Angular
   Material (aporta el tema `--mat-sys-*`; `@angular/cdk` es su dependencia). Medido en build de producción
@@ -54,10 +57,10 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
 ### Pendiente en v1.3 (no implementado)
 
-Administración 2.0 (dashboard con filtros/KPI, vistas adaptadas de tablas, estilos con tokens en las
-pantallas admin; solo se hizo navegación, accesibilidad y repintado), auditoría responsive/WCAG completa,
+Administración 2.0 (KPI avanzados, filtros de período y vistas móviles de otras tablas, estilos con tokens en las
+pantallas admin; ya se hicieron filtros de reservas recientes y tarjetas móviles del dashboard), auditoría responsive/WCAG completa,
 métricas LCP/CLS/Lighthouse, pruebas E2E, pruebas backend con base de datos (concurrencia real),
-README ampliado.
+README ampliado. El audit de dependencias de desarrollo aún informa avisos; `npm audit --omit=dev` permanece limpio.
 
 ## [1.2.0] - 2026-10-27
 
