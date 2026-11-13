@@ -6,8 +6,7 @@ import { PublicPaymentService, PublicPaymentState } from './public-payments';
 
 const request = {
   reservationId: 'r1',
-  confirmationCode: 'EO-ABCDEF12',
-  email: 'a@b.com',
+  capabilityToken: 'A'.repeat(64),
 };
 
 const status = (paymentState: number) => ({
@@ -38,13 +37,23 @@ describe('PublicPaymentService status', () => {
     vi.useRealTimers();
   });
 
-  it('queries the status with POST so email and code stay out of the URL', () => {
+  it('queries status with POST, keeping the opaque capability out of the URL', () => {
     service.getStatus(request).subscribe();
 
     const req = http.expectOne((r) => r.url.endsWith('/public/payments/status'));
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     req.flush(status(PublicPaymentState.Pending));
+  });
+
+  it('sends checkout credentials only in POST body', () => {
+    const body = { ...request, idempotencyKey: 'checkout-12345678', provider: 'AZUL' };
+    service.createCheckout(body).subscribe();
+    const req = http.expectOne((r) => r.url.endsWith('/public/payments/checkout'));
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(body);
+    expect(req.request.url).not.toContain(body.capabilityToken);
+    req.flush({ paymentIntentId: 'intent-test' });
   });
 
   it('stops polling at the first non-pending state', () => {

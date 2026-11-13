@@ -467,7 +467,7 @@ export class Booking implements OnInit {
    * or settled. After a gateway return, an unverified state blocks a new charge.
    */
   get canStartPayment(): boolean {
-    if (!this.paymentAvailable || this.loadingPaymentOptions) {
+    if (!this.paymentAvailable || this.loadingPaymentOptions || !this.confirmation?.capabilityToken) {
       return false;
     }
 
@@ -489,7 +489,7 @@ export class Booking implements OnInit {
       return;
     }
 
-    if (!this.confirmation) {
+    if (!this.confirmation?.capabilityToken) {
       this.verificationPhase = 'unavailable';
       return;
     }
@@ -499,14 +499,16 @@ export class Booking implements OnInit {
     this.paymentService
       .pollStatus({
         reservationId: this.confirmation.reservationId,
-        confirmationCode: this.confirmation.confirmationCode,
-        email: this.confirmation.email,
+        capabilityToken: this.confirmation.capabilityToken,
         paymentIntentId: this.isGuid(this.paymentIntentId) ? this.paymentIntentId : null,
       })
       .pipe(takeUntilDestroyed(this.destroyRef), repaint(this.cdr))
       .subscribe({
         next: (status) => {
           this.paymentStatus = status;
+          if (status.paymentState === PublicPaymentState.Confirmed && typeof window !== 'undefined') {
+            window.sessionStorage.removeItem(this.pendingBookingStorageKey);
+          }
         },
         error: () => {
           this.verificationPhase = 'error';
@@ -520,8 +522,8 @@ export class Booking implements OnInit {
   startOnlinePayment(): void {
     this.paymentError = '';
 
-    if (!this.confirmation) {
-      this.paymentError = 'Primero debes registrar la reserva.';
+    if (!this.confirmation?.capabilityToken) {
+      this.paymentError = 'La reserva necesita una credencial de acceso válida para pagar en línea.';
       return;
     }
 
@@ -551,8 +553,7 @@ export class Booking implements OnInit {
     this.paymentService
       .createCheckout({
         reservationId: this.confirmation.reservationId,
-        confirmationCode: this.confirmation.confirmationCode,
-        email: this.confirmation.email,
+        capabilityToken: this.confirmation.capabilityToken,
         idempotencyKey: this.paymentIdempotencyKey,
         provider: 'AZUL',
       })
@@ -641,7 +642,7 @@ export class Booking implements OnInit {
 
     try {
       const confirmation = JSON.parse(stored) as PublicBookingConfirmation;
-      if (confirmation?.reservationId && confirmation?.confirmationCode) {
+      if (confirmation?.reservationId && confirmation?.confirmationCode && confirmation?.capabilityToken) {
         this.confirmation = confirmation;
       }
     } catch {

@@ -27,6 +27,8 @@ export interface BookingAvailability {
 export interface PublicBookingConfirmation {
   reservationId: string;
   confirmationCode: string;
+  /** Capacidad opaca temporal, solo para estado y checkout; nunca incluir en enlaces. */
+  capabilityToken: string;
   customerName: string;
   email: string;
   apartmentId: string;

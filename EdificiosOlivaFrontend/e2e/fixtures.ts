@@ -21,6 +21,7 @@ export const apartment = {
 export const confirmation = {
   reservationId: RESERVATION_ID,
   confirmationCode: 'EO-E2E12345',
+  capabilityToken: 'A'.repeat(64),
   customerName: 'Ana Pérez',
   email: 'ana@example.test',
   apartmentId: APARTMENT_ID,

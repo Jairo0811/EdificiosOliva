@@ -11,8 +11,7 @@ export interface PublicPaymentProvider {
 
 export interface PublicPaymentCheckoutRequest {
   reservationId: string;
-  confirmationCode: string;
-  email: string;
+  capabilityToken: string;
   idempotencyKey: string;
   provider: string;
 }
@@ -46,8 +45,7 @@ export type PublicPaymentState =
 
 export interface PublicPaymentStatusRequest {
   reservationId: string;
-  confirmationCode: string;
-  email: string;
+  capabilityToken: string;
   paymentIntentId?: string | null;
 }
 
