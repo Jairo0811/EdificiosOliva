@@ -29,7 +29,7 @@ jobs:
       - name: Install locked frontend dependencies
         run: npm ci
       - name: Install pinned Playwright test runner (without changing package lock)
-        run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+        run: npm install --no-save --package-lock=false @playwright/test@1.56.1 @axe-core/playwright@4.10.2
       - name: Install Chromium and OS dependencies
         run: npx playwright install --with-deps chromium
       - name: Run browser E2E against production-mode Angular

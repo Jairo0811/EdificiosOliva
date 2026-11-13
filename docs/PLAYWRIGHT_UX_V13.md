@@ -7,6 +7,7 @@ El workflow `.github/workflows/browser-e2e.yml` inicia Angular en **modo de comp
 - Reserva pública: precarga desde URL, disponibilidad, huésped, revisión, aceptación de políticas, creación con cabecera `Idempotency-Key`, código de reserva y pago en línea deshabilitado.
 - Regresión de seguridad: manipular `?payment=approved` **no** declara el pago confirmado cuando el backend informa `Pending`.
 - Responsive: rutas Inicio, Reservar, Contacto y Galería a 320, 390, 768 y 1440 px; se detecta contenido principal que sale del viewport.
+- Accesibilidad: axe-core revisa WCAG 2.0/2.1/2.2 A/AA en las rutas públicas principales y bloquea infracciones graves/críticas; guarda todas las observaciones para revisión manual.
 - Web Vitals de laboratorio: captura LCP y CLS en Chromium; CLS se verifica bajo 0.25. Se guarda evidencia JSON y trazas cuando falla.
 
 ## Límites importantes
@@ -21,7 +22,7 @@ Desde `EdificiosOlivaFrontend`, con Node 24:
 
 ```bash
 npm ci
-npm install --no-save --package-lock=false @playwright/test@1.56.1
+npm install --no-save --package-lock=false @playwright/test@1.56.1 @axe-core/playwright@4.10.2
 npx playwright install chromium
 npx playwright test --config=playwright.config.ts
 ```
