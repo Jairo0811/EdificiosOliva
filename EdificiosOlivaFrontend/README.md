@@ -44,15 +44,24 @@ To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use th
 ng test
 ```
 
-## Running end-to-end tests
+## Pruebas E2E con Playwright (v1.3)
 
-For end-to-end (e2e) testing, run:
+Desde este directorio, con Node.js 24:
 
 ```bash
-ng e2e
+npm ci
+npm install --no-save --package-lock=false @playwright/test@1.56.1 @axe-core/playwright@4.10.2
+npx playwright install chromium
+npx playwright test --config=playwright.config.ts
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+La suite levanta Angular en modo de producción en `127.0.0.1:4200`,
+intercepta `/api/**` y **no procesa pagos ni modifica datos reales**.
+Incluye reservas, seguridad del retorno de pago, 16 comprobaciones responsive,
+4 auditorías WCAG automatizadas y captura LCP/CLS.
+No sustituye E2E con SQL Server y AZUL reales.
+
+Ver [documentación técnica](../docs/PLAYWRIGHT_UX_V13.md).
 
 ## Additional Resources
 

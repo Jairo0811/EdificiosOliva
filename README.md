@@ -30,8 +30,10 @@ La rama `feature/v1.3-frontend-ux` contiene mejoras **aún no fusionadas a `mast
 - Reserva pública en cinco pasos, estado de pago consultado desde el backend y reintentos idempotentes.
 - Galería con lightbox accesible y mejoras de navegación y rendimiento.
 - Dashboard con búsqueda/estado sobre reservas recientes y tarjetas para móvil.
-- Administración de reservas e intentos de pago: **paginación real de 20 elementos por página** y
-  tarjetas móviles que conservan las acciones CRUD y de conciliación.
+- Administración de reservas, pagos e intentos de pago: **paginación real de 20 elementos por página**,
+  filtros y tarjetas móviles que conservan las acciones CRUD, reembolso y conciliación.
+- Clientes y apartamentos: tarjetas móviles; galería administrativa y formularios con mejoras
+  de foco, navegación por teclado y Escape.
 - Operación PMS: filtros de listados por apartamento y estado, KPI de reservas confirmadas y
   noches de inventario, tarjetas de rendimiento en móvil y fechas del período según la zona
   horaria de la propiedad.
@@ -39,9 +41,19 @@ La rama `feature/v1.3-frontend-ux` contiene mejoras **aún no fusionadas a `mast
   corresponden al último rango cargado, no a los filtros locales.
 - Migración de SQL Server `AddReservationIdempotency` requerida antes de desplegar el backend v1.3.
 
-**Pendiente antes de release:** validar la migración y concurrencia real con SQL Server,
-completar auditoría responsive/accesibilidad, pruebas Playwright E2E y mediciones Lighthouse.
-La integración de AZUL y SMTP con proveedores reales sigue siendo una activación externa.
+**Validado en CI:** 120 pruebas Angular; 32 pruebas backend; Docker; migraciones e idempotencia
+en SQL Server 2022 efímero; **23 pruebas Playwright** (reserva, retorno manipulado,
+16 comprobaciones responsive, cuatro auditorías axe-core y LCP/CLS).
+El CLS de laboratorio se redujo de ~0.69 a ~0.000024 y las cuatro rutas auditadas
+terminaron sin infracciones WCAG graves/críticas detectadas por axe.
+
+**Pendiente antes de producción:** pruebas con infraestructura y servicios reales (AZUL/SMTP),
+staging con datos representativos, Lighthouse en entorno desplegado, auditoría accesible de
+pantallas administrativas autenticadas, pruebas de carga sostenida y revisión de secretos/contratos.
+No se han realizado cobros reales ni se ha migrado una base de producción.
+
+[Informe de los bloques A y B](docs/CIERRE_BLOQUES_A_B_V13_2026-11-13.md) ·
+[Pruebas de navegador](docs/PLAYWRIGHT_UX_V13.md)
 
 [Revisar PR #30](https://github.com/Jairo0811/EdificiosOliva/pull/30)
 

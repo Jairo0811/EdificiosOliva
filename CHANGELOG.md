@@ -22,10 +22,21 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
   este backend (agrega dos columnas nulas y un índice).
 - Stepper de reserva de cinco pasos (Estadía, Huésped, Revisión, Pago, Resultado) accesible por teclado.
 - Verificación del pago en `/reservar` tras el retorno de AZUL con sondeo acotado (6 intentos / 4 s).
-- Pruebas: backend 32 (CI); frontend 113 pruebas aprobadas en 42 archivos (CI del 13-11-2026), incluyendo paginación, tarjetas móviles y filtros PMS.
+- Pruebas: backend 32 (CI); frontend **120 pruebas aprobadas en 42 archivos**;
+  Playwright **23 pruebas aprobadas**, incluidas 16 comprobaciones responsive y cuatro auditorías axe-core.
 
 ### Cambiado
 
+- Pagos administrativos: paginación backend de 20 registros, tarjetas móviles con acciones
+  de edición, reembolso y eliminación, y filtros que reinician la página.
+- Clientes y apartamentos: tarjetas móviles con acciones completas y sin scroll horizontal
+  de tablas; galería administrativa con vista previa accesible, categorías `aria-pressed`,
+  Escape y restauración del foco.
+- Formularios administrativos de reservas, pagos, clientes, apartamentos y galería:
+  trampas de foco y Escape; menú lateral móvil oculto a navegación por teclado cuando está cerrado.
+- Reserva pública y contacto: contraste WCAG corregido en cinco elementos detectados por axe.
+- Rendimiento: el contenedor de ruta reserva el viewport mientras Angular carga páginas
+  diferidas; skeletons de apartamentos y galería. CLS de laboratorio ~0.69 → ~0.000024.
 - Administración de reservas: paginación backend de 20 registros por página, búsqueda que reinicia
   la página, indicadores de registros y tarjetas móviles con acciones de edición/eliminación.
 - Intentos de pago: paginación de 20 registros, tarjetas móviles y conciliación accesible desde
@@ -69,6 +80,13 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
 
 ### Validación ejecutada
 
+- Playwright Chromium (Ubuntu 24.04): **23/23 pruebas PASS** en CI,
+  incluidas reserva completa con API simulada, retorno de pago manipulado,
+  16 escenarios responsive (320/390/768/1440 px) y 4 auditorías axe-core
+  sin infracciones WCAG graves/críticas detectadas.
+- Web Vitals de laboratorio con API simulada: LCP ~396 ms, CLS ~0.000024;
+  no son valores de producción. Evidencia en `docs/PLAYWRIGHT_UX_V13.md`.
+- Angular: 120 pruebas / 42 archivos, build Release y `npm audit --omit=dev` sin vulnerabilidades.
 - Se añadió CI con SQL Server 2022 efímero: `dotnet ef migrations has-pending-model-changes`,
   aplicación desde base vacía, segunda ejecución idempotente y listado de migraciones.
 - Se comprobó `AddReservationIdempotency` aplicada en SQL Server real (contenedor CI).
@@ -76,12 +94,16 @@ Todos los cambios relevantes de Edificios Oliva se documentan en este archivo.
   conflicto de payload y tres carreras de dos solicitudes concurrentes con la misma clave.
 - Evidencia: `docs/VALIDACION_V13_2026-11-13.md`. No se ha migrado ninguna base de producción.
 
-### Pendiente en v1.3 (no implementado)
+### Pendiente antes de producción
 
-Administración 2.0 (resto de tablas administrativas y uniformidad de tokens),
-auditoría responsive/WCAG completa, métricas LCP/CLS/Lighthouse, pruebas E2E,
-pruebas de carga y concurrencia sostenida en staging (las carreras acotadas de CI ya pasan). README ampliado para documentar
-la rama v1.3 sin presentarla como release. El audit de dependencias de desarrollo aún informa avisos; `npm audit --omit=dev` permanece limpio.
+- E2E contra backend desplegado, Firebase Auth, AZUL y SMTP reales; pruebas de carga
+  y concurrencia sostenida en staging con respaldos y rollback.
+- Lighthouse con CDN/imágenes reales, auditoría manual WCAG 2.2 AA y axe en
+  administración autenticada; los tests actuales usan mocks.
+- Revisión de avisos de dependencias de desarrollo y decisión sobre token opaco
+  para consulta pública del estado de pago.
+- PR #30 permanece en borrador y sin fusionar a `master`.
+
 
 ## [1.2.0] - 2026-10-27
 
